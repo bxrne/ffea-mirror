@@ -861,7 +861,7 @@ class FFEA_viewer_control_window:
                 self.springs = FFEA_springs.FFEA_springs(self.script.spring)
                 print("Number of springs: " + str(self.springs.get_num_springs() / 2))  # get_num_springs returns double what it should be?
             except Exception as e:
-                sys.stdout.write("Springs could not be loaded. Continuing...")
+                sys.stdout.write("Springs could not be loaded. Continuing...\n")
                 print(e)
                 sys.stdout.flush()
                 self.springs = None
