@@ -1723,36 +1723,36 @@ class FFEA_viewer_control_window:
             l = np.linalg.norm(zax)
             zax = zax / l
             
-        if np.fabs(np.dot(zax, np.array([1.0,0.0,0.0]))) < 1.0:
-            xax = np.cross(zax, np.array([1.0,0.0,0.0]))
-            yax = np.cross(zax, xax)
-        else:
-            xax = np.cross(zax, np.array([0.0,1.0,0.0]))
-            yax = np.cross(zax, xax)
-        
-        xax = xax / np.linalg.norm(xax)
-        yax = yax / np.linalg.norm(yax)
+            if np.fabs(np.dot(zax, np.array([1.0,0.0,0.0]))) < 1.0:
+                xax = np.cross(zax, np.array([1.0,0.0,0.0]))
+                yax = np.cross(zax, xax)
+            else:
+                xax = np.cross(zax, np.array([0.0,1.0,0.0]))
+                yax = np.cross(zax, xax)
+            
+            xax = xax / np.linalg.norm(xax)
+            yax = yax / np.linalg.norm(yax)
 
-	    # Radius of helix (let original radius be 5A, poisson ratio = 0.01)
-        r = 2 - 0.01 * (l - s.l)
+	        # Radius of helix (let original radius be 5A, poisson ratio = 0.01)
+            r = 2 - 0.01 * (l - s.l)
 
-	    # We want 5 spins, say, so pitch:
-        c = l / (10 * np.pi)
+	        # We want 5 spins, say, so pitch:
+            c = l / (10 * np.pi)
 
-	    # Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
-        step = (10 * np.pi) / 40
-        obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
-	    # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
-        for i in range(40):
-            tstart = step * i
-            tend = step * (i + 1)
-            verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
-            obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-            verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
-            obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
-        
-        obj.append(END)
-        cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
+	        # Draw 40 nodes. Equation is r = r0 + (Rcos(t), Rsin(t), ct)
+            step = (10 * np.pi) / 40
+            obj = [ BEGIN, LINES, LINEWIDTH, 4.0 ]
+	        # obj.extend( [ COLOR, 192/255.0, 192/255.0, 192/255.0 ] )
+            for i in range(40):
+                tstart = step * i
+                tend = step * (i + 1)
+                verts = springjoints[0] + np.array([r * np.cos(tstart) * xax[i] + r * np.sin(tstart) * yax[i] + c * tstart * zax[i] for i in range(3)])
+                obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+                verts = springjoints[0] + np.array([r * np.cos(tend) * xax[i] + r * np.sin(tend) * yax[i] + c * tend * zax[i] for i in range(3)])
+                obj.extend( [ VERTEX, verts[0], verts[1], verts[2] ] )
+            
+            obj.append(END)
+            cmd.load_cgo(obj, self.display_flags['system_name'] + "_string_" + str(self.springs.spring.index(s)), f + 1)
 	    
 
 
