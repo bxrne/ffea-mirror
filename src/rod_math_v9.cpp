@@ -1197,6 +1197,20 @@ void get_perturbation_energy(
     energies[1] = stretch_energy;
     energies[2] = twist_energy;
 }
+
+/**
+Compute the distance between two 1D line segments
+
+\f| d = \big(\frac{p_a}{|p_a|} \times \frac{p_b}{|p_b|}\big) \cdot (r_b - r_a)  \f|
+*/ 
+
+float get_line_distance(){
+    // Check other functions in here, such as cross_product()
+    float distance = 0.0;
+    return distance;
+}
+
+
 //   _ _
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
 //  (| |)  SOURCE CODE AND IT WILL BE BUG
