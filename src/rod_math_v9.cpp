@@ -325,7 +325,8 @@ float safe_cos(float in){
 */
  
  /**
- * Get the value of L_i.
+ * Get the value of L_i, the length of the integration domain used
+ * when converting from an integral to discrete rod description.
  */
 float get_l_i(float p_i[3], float p_im1[3]){
     return (absolute(p_i) + absolute(p_im1))/2.0;
@@ -1199,17 +1200,41 @@ void get_perturbation_energy(
 }
 
 /**
-Compute the distance between two 1D line segments
+Compute the distance between two rod elements
 
-\f| d = \big(\frac{p_a}{|p_a|} \times \frac{p_b}{|p_b|}\big) \cdot (r_b - r_a)  \f|
+\f| d = \big(\frac{p_a}{|p_a|} \times \frac{p_b}{|p_b|}\big) \cdot (r_b - r_a - R_a - R_b)  \f|
 */ 
 
-float get_line_distance(){
+float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
     // Check other functions in here, such as cross_product()
-    float distance = 0.0;
+    float distance;
+    float p_a_norm[3];
+    float p_b_norm[3];
+    float p_norm_cross[3];
+    float r_disp[3];
+
+    // Cross product of element unit vectors
+    normalize(p_a,  p_a_norm);
+    normalize(p_b,  p_b_norm);
+    cross_product(p_a_norm, p_b_norm, p_norm_cross);
+
+    // Displacement vector between nodes adjusted for radii
+    vec3d(n){r_disp[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
+
+    distance = abs(p_norm_cross[0]*r_disp[0] + p_norm_cross[1]*r_disp[1] + p_norm_cross[2]*r_disp[2]);
     return distance;
 }
 
+/**
+ * Get point of connection of the shortest inter-rod distance on a single element
+ * 
+ * \f| d = \big(\frac{p_a}{|p_a|} \times \frac{p_b}{|p_b|}\big) \cdot (r_b - r_a - R_a - R_b)  \f|
+*/
+
+float get_contact_point(){
+    float contact_point[3] = {0.0, 0.0, 0.0};
+    return 0;
+}
 
 //   _ _
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
