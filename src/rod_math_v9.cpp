@@ -1200,7 +1200,7 @@ void get_perturbation_energy(
 }
 
 /**
-Compute the distance between two rod elements
+Compute the distance between two skew rod elements
 
 \f| d = \big(\frac{p_a}{|p_a|} \times \frac{p_b}{|p_b|}\big) \cdot (r_b - r_a - R_a - R_b)  \f|
 */ 
@@ -1214,6 +1214,7 @@ float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[
     float r_disp[3];
 
     // Cross product of element unit vectors
+    // See if you can obtain l_a from the rod instead of re-calculating p_a_norm, etc! (l_a = p_a / |p_a|)
     normalize(p_a,  p_a_norm);
     normalize(p_b,  p_b_norm);
     cross_product(p_a_norm, p_b_norm, p_norm_cross);
@@ -1221,6 +1222,7 @@ float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[
     // Displacement vector between nodes adjusted for radii
     vec3d(n){r_disp[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
 
+    // NOTE: Only skew elements work with this formula. Parallel elements need a separate case.
     distance = abs(p_norm_cross[0]*r_disp[0] + p_norm_cross[1]*r_disp[1] + p_norm_cross[2]*r_disp[2]);
     return distance;
 }

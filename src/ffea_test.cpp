@@ -95,6 +95,10 @@ int ffea_test::do_ffea_test(std::string filename){
     if (buffer.str().find("lower_sphere") != std::string::npos ){
         result = ffea_test::lower_sphere();
     }
+
+    if (buffer.str().find("distance_between_rod_elements") != std::string::npos ){
+        result = ffea_test::distance_between_rod_elements();
+    }
     
     return result;
 }
@@ -1217,6 +1221,41 @@ int ffea_test::lower_sphere(){
     world->run();
     
     return 1;
+
+}
+
+// Compute the shortest distance between two rod elements and compare to precalculated values
+
+int ffea_test::distance_between_rod_elements(){
+
+    // Two rod elements separated in z by 1, arranged in a cross (+)
+    float r_a_1[3] = {-1, 0, 0};
+    float r_a_2[3] = {1, 0, 0};
+    float r_b_1[3] = {0, -1, 1};
+    float r_b_2[3] = {0, 1, 1};
+    float p_a[3];
+    float p_b[3];
+    float radius = 0.0;  // line elements
+    float d;
+
+    vec3d(n){p_a[3] = r_a_2[n] - r_a_1[n];}
+    vec3d(n){p_b[3] = r_b_2[n] - r_b_1[n];}
+    
+    d = rod::get_shortest_distance(p_a, p_b, r_a_1, r_b_1, radius, radius);
+
+    rod::print_array("rod a node", r_a_1, 3);
+    rod::print_array("rod a element", p_a, 3);
+    rod::print_array("rod b node", r_b_1, 3);
+    rod::print_array("rod b element", p_b, 3);
+    cout << "Rod radius: " << radius << endl;
+    cout << "Shortest distance between elements: " << d << endl;
+    
+    if (d < 1.01 && d > 0.99){
+        return 0;
+    }
+    else {
+        return 1;
+    }
 
 }
 
