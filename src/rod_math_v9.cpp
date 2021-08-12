@@ -1225,17 +1225,6 @@ float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[
     return distance;
 }
 
-/**
- * Get point of connection of the shortest inter-rod distance on a single element
- * 
- * \f| d = \big(\frac{p_a}{|p_a|} \times \frac{p_b}{|p_b|}\big) \cdot (r_b - r_a - R_a - R_b)  \f|
-*/
-
-float get_contact_point(){
-    float contact_point[3] = {0.0, 0.0, 0.0};
-    return 0;
-}
-
 //   _ _
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
 //  (| |)  SOURCE CODE AND IT WILL BE BUG

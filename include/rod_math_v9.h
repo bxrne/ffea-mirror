@@ -205,5 +205,7 @@ void get_perturbation_energy(
         float energies[3]
 );
 
+float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b);
+
 }
 #endif
