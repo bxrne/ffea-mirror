@@ -1250,7 +1250,7 @@ int ffea_test::shortest_distance_between_elements(){
     rod::print_array("rod b element", p_b, 3);
     cout << "Rod radius: " << radius << endl;
     cout << "Expected distance: " << answer << endl;
-    printf("Calculated distance: %.3lf",d);
+    printf("Calculated distance: %.3lf\n",d);
     
     if (d < answer * 1.001 && d > answer * 0.999){
         return 0;

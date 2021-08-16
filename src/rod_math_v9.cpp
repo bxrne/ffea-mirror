@@ -1232,8 +1232,8 @@ float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[
         print_array("Element b normalised", p_b_norm, 3);
         print_array("p_a_norm x p_b_norm", p_norm_cross, 3);
         print_array("r_b - r_a - radius_a - radius_b", r_disp, 3);
-        printf("Distance: %.3lf", distance);
-        printf("Absolute distance: %.3lf", abs(distance));
+        printf("Distance: %.3lf\n", distance);
+        printf("Absolute distance: %.3lf\n", abs(distance));
     }
 
     return abs(distance);
