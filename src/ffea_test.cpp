@@ -1229,21 +1229,15 @@ int ffea_test::lower_sphere(){
 int ffea_test::shortest_distance_between_elements(){
 
     // Two rod elements separated in z by 1, arranged in a cross (+)
-    float r_a_1[3] = {-1, 0, 0};
-    float r_a_2[3] = {1, 0, 0};
-    float r_b_1[3] = {0, -1, 1};
-    float r_b_2[3] = {0, 1, 1};
-    float p_a[3];
-    float p_b[3];
+    float r_a[3] = {-1, 0, 0};  // p = r2 - r1
+    float r_b[3] = {0, -1, 1};
+    float p_a[3] = {1, 0, 0};
+    float p_b[3] = {0, 1, 0};
     float radius = 0.0;  // line elements
     float answer = 1.0;
     float d;
-
-    vec3d(n){p_a[3] = r_a_2[n] - r_a_1[n];}
-    vec3d(n){p_b[3] = r_b_2[n] - r_b_1[n];}
     
-    d = rod::get_shortest_distance(p_a, p_b, r_a_1, r_b_1, radius, radius);
-
+    d = rod::get_shortest_distance(p_a, p_b, r_a, r_b, radius, radius);
     cout << "Expected distance: " << answer << endl;
     
     if (d < answer * 1.001 && d > answer * 0.999){
