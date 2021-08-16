@@ -1226,6 +1226,8 @@ float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[
     distance = p_norm_cross[0]*r_disp[0] + p_norm_cross[1]*r_disp[1] + p_norm_cross[2]*r_disp[2];
 
     if(dbg_print){
+        printf("Radius a: %.3lf\n", radius_a);
+        printf("Radius b: %.3lf\n", radius_b);
         print_array("Element a", p_a, 3);
         print_array("Element a normalised", p_a_norm, 3);
         print_array("Element b", p_b, 3);

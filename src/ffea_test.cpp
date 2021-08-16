@@ -1244,13 +1244,7 @@ int ffea_test::shortest_distance_between_elements(){
     
     d = rod::get_shortest_distance(p_a, p_b, r_a_1, r_b_1, radius, radius);
 
-    rod::print_array("rod a node", r_a_1, 3);
-    rod::print_array("rod a element", p_a, 3);
-    rod::print_array("rod b node", r_b_1, 3);
-    rod::print_array("rod b element", p_b, 3);
-    cout << "Rod radius: " << radius << endl;
     cout << "Expected distance: " << answer << endl;
-    printf("Calculated distance: %.3lf\n",d);
     
     if (d < answer * 1.001 && d > answer * 0.999){
         return 0;
