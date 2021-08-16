@@ -1224,7 +1224,7 @@ int ffea_test::lower_sphere(){
 
 }
 
-// Compute the shortest distance between two rod elements and compare to precalculated values
+// Compute the shortest distance between two separate rod elements and compare to an expected value
 
 int ffea_test::shortest_distance_between_elements(){
 
@@ -1236,6 +1236,7 @@ int ffea_test::shortest_distance_between_elements(){
     float p_a[3];
     float p_b[3];
     float radius = 0.0;  // line elements
+    float answer = 1.0;
     float d;
 
     vec3d(n){p_a[3] = r_a_2[n] - r_a_1[n];}
@@ -1248,9 +1249,10 @@ int ffea_test::shortest_distance_between_elements(){
     rod::print_array("rod b node", r_b_1, 3);
     rod::print_array("rod b element", p_b, 3);
     cout << "Rod radius: " << radius << endl;
-    cout << "Shortest distance between elements: " << d << endl;
+    cout << "Expected distance: " << answer << endl;
+    cout << "Calculated distance: " << d << endl;
     
-    if (d < 1.01 && d > 0.99){
+    if (d < answer * 1.001 && d > answer * 0.999){
         return 0;
     }
     else {
