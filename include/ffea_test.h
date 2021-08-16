@@ -84,6 +84,6 @@ struct ffea_test{
     
     static int lower_sphere();
 
-    static int distance_between_rod_elements();
+    static int shortest_distance_between_elements();
 
 };

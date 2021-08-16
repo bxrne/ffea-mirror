@@ -96,8 +96,8 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::lower_sphere();
     }
 
-    if (buffer.str().find("distance_between_rod_elements") != std::string::npos ){
-        result = ffea_test::distance_between_rod_elements();
+    if (buffer.str().find("shortest_distance_between_elements") != std::string::npos ){
+        result = ffea_test::shortest_distance_between_elements();
     }
     
     return result;
@@ -1226,7 +1226,7 @@ int ffea_test::lower_sphere(){
 
 // Compute the shortest distance between two rod elements and compare to precalculated values
 
-int ffea_test::distance_between_rod_elements(){
+int ffea_test::shortest_distance_between_elements(){
 
     // Two rod elements separated in z by 1, arranged in a cross (+)
     float r_a_1[3] = {-1, 0, 0};

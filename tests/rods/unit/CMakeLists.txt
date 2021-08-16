@@ -1,4 +1,4 @@
-# 
+e# 
 #  This file is part of the FFEA simulation package
 #  
 #  Copyright (c) by the Theory and Development FFEA teams,
@@ -41,3 +41,4 @@ add_subdirectory(connection_energy_3)
 add_subdirectory(connection_identify_face)
 add_subdirectory(jacobian_rotate)
 add_subdirectory(recover_normal)
+add_subdirectory(shortest_distance_between_elements)
