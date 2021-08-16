@@ -1223,8 +1223,20 @@ float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[
     vec3d(n){r_disp[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
 
     // NOTE: Only skew elements work with this formula. Parallel elements need a separate case.
-    distance = abs(p_norm_cross[0]*r_disp[0] + p_norm_cross[1]*r_disp[1] + p_norm_cross[2]*r_disp[2]);
-    return distance;
+    distance = p_norm_cross[0]*r_disp[0] + p_norm_cross[1]*r_disp[1] + p_norm_cross[2]*r_disp[2];
+
+    if(dbg_print){
+        print_array("Element a", p_a)
+        print_array("Element a normalised", p_a_norm)
+        print_array("Element b", p_b)
+        print_array("Element b normalised", p_b_norm)
+        print_array("p_a_norm x p_b_norm", p_norm_cross)
+        print_array("r_b - r_a - radius_a - radius_b", r_disp)
+        printf("Distance: %.3lf",distance);
+        printf("Absolute distance: %.3lf",abs(distance));
+    }
+
+    return abs(distance);
 }
 
 //   _ _
