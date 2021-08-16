@@ -24,4 +24,3 @@
 set (SHORTESTDISTANCEDIR "${PROJECT_BINARY_DIR}/tests/rods/unit/shortest_distance_between_elements/")
 file (COPY shortest_distance_between_elements.ffeatest DESTINATION ${SHORTESTDISTANCEDIR})
 add_test(NAME shortest_distance_between_elements COMMAND ${PROJECT_BINARY_DIR}/src/ffea shortest_distance_between_elements.ffeatest)
-
