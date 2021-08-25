@@ -96,8 +96,8 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::lower_sphere();
     }
 
-    if (buffer.str().find("shortest_distance_between_elements") != std::string::npos ){
-        result = ffea_test::shortest_distance_between_elements();
+    if (buffer.str().find("shortest_distance_between_rod_elements") != std::string::npos ){
+        result = ffea_test::shortest_distance_between_rod_elements();
     }
     
     return result;
@@ -1224,9 +1224,9 @@ int ffea_test::lower_sphere(){
 
 }
 
-// Compute the shortest distance between two separate rod elements and compare to an expected value
+// Compute the shortest distance between two skew (non-parallel) rod elements and compare to an expected value
 
-int ffea_test::shortest_distance_between_elements(){
+int ffea_test::shortest_distance_between_rod_elements(){
 
     // Two rod elements separated in z by 1, arranged in a cross (+)
     float r_a[3] = {-1, 0, 0};  // p = r2 - r1
@@ -1237,7 +1237,7 @@ int ffea_test::shortest_distance_between_elements(){
     float answer = 1.0;
     float d;
     
-    d = rod::get_shortest_distance(p_a, p_b, r_a, r_b, radius, radius);
+    d = rod::get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius, radius);
     cout << "Expected distance: " << answer << endl;
     
     if (d < answer * 1.001 && d > answer * 0.999){

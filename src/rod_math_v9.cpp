@@ -1218,7 +1218,7 @@ void get_perturbation_energy(
  \f| d = \big| (\boldsymbol{l}_a \times \boldsymbol{l}_b) \cdot (\boldsymbol{r}_b - \boldsymbol{r}_a - R_a - R_b) \big|    \f|
 */
 
-float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
+float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
     // NOTE: parallel elements are invalid for this method (this is unlikely due to thermal fluctuations, but still possible).
     float distance;
     float l_a[3];  // l_a = p_a / |p_a|
@@ -1253,14 +1253,14 @@ float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[
     return abs(distance);
 }
 
-/** Compute one of the two points, c_a (or c_b), that forms the line segment joining the two rod elements, p_a and p_b.
+/** Compute one of the two points, c_a (or c_b), that forms the line segment joining two rod elements, p_a and p_b.
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
 */
 
 void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3]){
     float l_a[3];  // l_a = p_a / |p_a|
     float l_b[3];
-    float l_a_cross_l_b[3];  // NOTE: This is already calculated in get_shortest_distance() and may end up being expensive
+    float l_a_cross_l_b[3];  // NOTE: This is already calculated in get_shortest_distance()
     float n_b[3];
     float r_ba[3];
     float r_ba_dot_n_b;

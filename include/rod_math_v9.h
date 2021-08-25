@@ -210,7 +210,7 @@ void get_perturbation_energy(
     /* Rod-rod interactions  */
    /*-----------------------*/
    
-float get_shortest_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b);
+float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b);
 float get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3]);
 
 }
