@@ -1,3 +1,4 @@
+# 
 #  This file is part of the FFEA simulation package
 #  
 #  Copyright (c) by the Theory and Development FFEA teams,
@@ -20,25 +21,6 @@
 #  the research papers on the package.
 #
 
-
-add_subdirectory(bend_test)
-add_subdirectory(parallel_transport_test)
-add_subdirectory(rodrigues_test)
-add_subdirectory(test_bend_against_mathematica)
-add_subdirectory(test_bend_for_non_straight_equilibrium)
-add_subdirectory(test_mutual_bend_against_mathematica)
-add_subdirectory(test_parallel_transport)
-add_subdirectory(translation_and_rotation_test)
-add_subdirectory(twist_bend_independence)
-add_subdirectory(twisted_stretch_test)
-add_subdirectory(twist_bend_independence_v2)
-add_subdirectory(connection)
-add_subdirectory(arbitrary_equilibrium_twist)
-add_subdirectory(arbitrary_equilibrium_bend)
-add_subdirectory(connection_energy_2)
-add_subdirectory(connection_energy_3)
-add_subdirectory(connection_identify_face)
-add_subdirectory(jacobian_rotate)
-add_subdirectory(recover_normal)
-add_subdirectory(shortest_distance_between_rod_elements)
-add_subdirectory(line_connecting_rod_elements)
+set (SHORTESTDISTANCEDIR "${PROJECT_BINARY_DIR}/tests/rods/unit/shortest_distance_between_rod_elements/")
+file (COPY shortest_distance_between_rod_elements.ffeatest DESTINATION ${SHORTESTDISTANCEDIR})
+add_test(NAME shortest_distance_between_rod_elements COMMAND ${PROJECT_BINARY_DIR}/src/ffea shortest_distance_between_rod_elements.ffeatest)

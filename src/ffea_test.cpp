@@ -99,7 +99,11 @@ int ffea_test::do_ffea_test(std::string filename){
     if (buffer.str().find("shortest_distance_between_rod_elements") != std::string::npos ){
         result = ffea_test::shortest_distance_between_rod_elements();
     }
-    
+
+    if (buffer.str().find("line_connecting_rod_elements") != std::string::npos ){
+        result = ffea_test::line_connecting_rod_elements();
+    }
+
     return result;
 }
 
@@ -1228,24 +1232,50 @@ int ffea_test::lower_sphere(){
 
 int ffea_test::shortest_distance_between_rod_elements(){
 
-    // Two rod elements separated in z by 1, arranged in a cross (+)
+    // Two perpendicular rod elements separated in z by 1
     float r_a[3] = {-1, 0, 0};  // p = r2 - r1
     float r_b[3] = {0, -1, 1};
     float p_a[3] = {1, 0, 0};
     float p_b[3] = {0, 1, 0};
     float radius = 0.0;  // line elements
-    float answer = 1.0;
-    float d;
+    float d = 0.0;
     
     d = rod::get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius, radius);
-    cout << "Expected distance: " << answer << endl;
+    cout << "Expected distance: 1" << endl;
     
-    if (d < answer * 1.001 && d > answer * 0.999){
+    if (d < 1.01 && d > 0.99){
         return 0;
     }
-    else {
-        return 1;
+
+    return 1;
+
+}
+
+// Get two points, c_a and c_b, that form the straight line connecting two rod elements
+
+int ffea_test::line_connecting_rod_elements(){
+
+    // Two perpendicular rod elements separated in z by 2
+    float r_a[3] = {-2, 0, 0};  // p = r2 - r1
+    float r_b[3] = {0, -2, 2};
+    float p_a[3] = {2, 0, 0};
+    float p_b[3] = {0, 2, 0};
+    float c_a[3] = {0, 0, 0};
+    float c_b[3] = {0, 0, 0};
+    
+    rod::get_point_on_connecting_line(p_a, p_b, r_a, r_b, c_a);
+    rod::get_point_on_connecting_line(p_b, p_a, r_b, r_a, c_b);
+
+    cout << "Expected c_a: (0, 0, 0)" << endl;
+    cout << "Expected c_b: (0, 0, 2)" << endl;
+    
+    if(rod::absolute(c_a) < 0.01 && rod::absolute(c_a) > -0.01){
+        if(rod::absolute(c_b) < 2.01 && rod::absolute(c_b) > 1.99 && c_b[2] < 2.01 && c_b[2] > 1.99){
+                return 0;
+        }
     }
+    
+    return 1;
 
 }
 

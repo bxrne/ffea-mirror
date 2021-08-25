@@ -258,8 +258,8 @@ void matmul_3x3_3x3(float a[9], float b[9], OUT float out[9]){
 /**
  Dot product of two 3x1 vectors.
 */
-void dot_product_3x1(float a[3], float b[3], OUT float out){
-    out = a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+float dot_product_3x1(float a[3], float b[3]){
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
 // These are utility functions specific to the math for the rods
@@ -1220,11 +1220,11 @@ void get_perturbation_energy(
 
 float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
     // NOTE: parallel elements are invalid for this method (this is unlikely due to thermal fluctuations, but still possible).
-    float distance;
-    float l_a[3];  // l_a = p_a / |p_a|
-    float l_b[3];
-    float l_a_cross_l_b[3];
-    float r_ba[3];
+    float distance = 0.0;
+    float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
+    float l_b[3] = {0, 0, 0};
+    float l_a_cross_l_b[3] = {0, 0, 0};
+    float r_ba[3] = {0, 0, 0};
 
     // NOTE: See if you can obtain l_a from the rod object instead of re-calculating it here
     normalize(p_a,  l_a);
@@ -1233,65 +1233,67 @@ float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float
 
     vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
 
-    distance = l_a_cross_l_b[0]*r_ba[0] + l_a_cross_l_b[1]*r_ba[1] + l_a_cross_l_b[2]*r_ba[2];
+    distance = dot_product_3x1(l_a_cross_l_b, r_ba);
 
     if(dbg_print){
         printf("Radius a: %.3lf\n", radius_a);
         printf("Radius b: %.3lf\n", radius_b);
-    }
-    print_array("p_a", p_a, 3);
-    print_array("l_a", l_a, 3);
-    print_array("p_b", p_b, 3);
-    print_array("l_b", l_b, 3);
-    print_array("l_a x l_b", l_a_cross_l_b, 3);
-    print_array("r_b - r_a - radius_a - radius_b", r_ba, 3);
-    if(dbg_print){
+        print_array("p_a", p_a, 3);
+        print_array("l_a", l_a, 3);
+        print_array("p_b", p_b, 3);
+        print_array("l_b", l_b, 3);
+        print_array("l_a x l_b", l_a_cross_l_b, 3);
+        print_array("r_b - r_a - radius_a - radius_b", r_ba, 3);
         printf("Distance: %.3lf\n", distance);
         printf("Absolute distance: %.3lf\n", abs(distance));
+        std::cout << std::endl;
     }
 
     return abs(distance);
 }
 
-/** Compute one of the two points, c_a (or c_b), that forms the line segment joining two rod elements, p_a and p_b.
+/** Compute one of the two points, c_a (or c_b, with other indices switched), that forms the line segment joining two rod elements, p_a and p_b.
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
 */
 
 void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3]){
-    float l_a[3];  // l_a = p_a / |p_a|
-    float l_b[3];
-    float l_a_cross_l_b[3];  // NOTE: This is already calculated in get_shortest_distance()
-    float n_b[3];
-    float r_ba[3];
-    float r_ba_dot_n_b;
-    float l_a_dot_n_b;
-    float inv_l_a_dot_n_b;
+    float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
+    float l_b[3] = {0, 0, 0};
+    float l_a_cross_l_b[3] = {0, 0, 0};  // NOTE: This is already calculated in get_shortest_distance()
+    float n_b[3] = {0, 0, 0};
+    float r_ba[3] = {0, 0, 0};
+    float r_ba_dot_n_b = 0.0;
+    float l_a_dot_n_b = 0.0;
+    float inv_l_a_dot_n_b = 0.0;
 
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
-
     cross_product(l_a, l_b, l_a_cross_l_b);
-    cross_product(l_b, l_a_cross_l_b, n_b);
 
-    dot_product_3x1(r_ba, n_b, r_ba_dot_n_b);
-    dot_product_3x1(l_a, n_b, l_a_dot_n_b);
+    cross_product(l_b, l_a_cross_l_b, n_b);
+    vec3d(n){r_ba[n] = r_b[n] - r_a[n];}
+    r_ba_dot_n_b = dot_product_3x1(r_ba, n_b);
+
+    l_a_dot_n_b = dot_product_3x1(l_a, n_b);
     inv_l_a_dot_n_b = 1.0 / l_a_dot_n_b;  // avoid three divisions
 
     vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b * l_a[n] * inv_l_a_dot_n_b;}
 
-    print_array("p_a", p_a, 3);
-    print_array("l_a", l_a, 3);
-    print_array("p_b", p_b, 3);
-    print_array("l_b", l_b, 3);
-    print_array("l_a x l_b", l_a_cross_l_b, 3);
-    print_array("n_b", n_b, 3);
-    print_array("r_b - r_a", r_ba, 3);
     if(dbg_print){
+        print_array("p_a", p_a, 3);
+        print_array("l_a", l_a, 3);
+        print_array("p_b", p_b, 3);
+        print_array("l_b", l_b, 3);
+        print_array("l_a x l_b", l_a_cross_l_b, 3);
+        print_array("n_b", n_b, 3);
+        print_array("r_a", r_a, 3);
+        print_array("r_b", r_b, 3);
+        print_array("r_b - r_a", r_ba, 3);
         printf("r_ba_dot_n_b: %.3lf\n", r_ba_dot_n_b);
         printf("l_a_dot_n_b: %.3lf\n", l_a_dot_n_b);
+        print_array("c_a", c_a, 3);
+        std::cout << std::endl;
     }
-    print_array("c_a", c_a, 3);
-
 }
 
 //   _ _

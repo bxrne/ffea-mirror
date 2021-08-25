@@ -85,7 +85,7 @@ void get_rotation_matrix(float a[3], float b[3], float rotation_matrix[9]);
 void apply_rotation_matrix(float vec[3], float matrix[9], OUT float rotated_vec[3]);
 void apply_rotation_matrix_row(float vec[3], float matrix[9], OUT float rotated_vec[3]);
 void matmul_3x3_3x3(float a[9], float b[9], OUT float out[9]);
-void dot_product_3x1(float a[3], float b[3], OUT float out);
+float dot_product_3x1(float a[3], float b[3]);
 
 // These are utility functions specific to the math for the rods
 void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]);
@@ -211,7 +211,7 @@ void get_perturbation_energy(
    /*-----------------------*/
    
 float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b);
-float get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3]);
+void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float c_a[3]);
 
 }
 #endif
