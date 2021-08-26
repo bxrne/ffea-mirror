@@ -1251,7 +1251,10 @@ int ffea_test::shortest_distance_between_rod_elements(){
 
 }
 
-// Get two points, c_a and c_b, that form the straight line connecting two rod elements
+/* Get two points, c_a and c_b, that form the straight line connecting two rod elements
+ * and check their values
+ */
+
 
 int ffea_test::line_connecting_rod_elements(){
 
@@ -1263,15 +1266,16 @@ int ffea_test::line_connecting_rod_elements(){
     float c_a[3] = {0, 0, 0};
     float c_b[3] = {0, 0, 0};
     
+    // Compute c
     rod::get_point_on_connecting_line(p_a, p_b, r_a, r_b, c_a);
     rod::get_point_on_connecting_line(p_b, p_a, r_b, r_a, c_b);
-
-    cout << "Expected c_a: (0, 0, 0)" << endl;
-    cout << "Expected c_b: (0, 0, 2)" << endl;
+ 
+    std::cout << "Expected c_a: (0, 0, 0)" << std::endl;
+    std::cout << "Expected c_b: (0, 0, 2)" << std::endl;
     
     if(rod::absolute(c_a) < 0.01 && rod::absolute(c_a) > -0.01){
         if(rod::absolute(c_b) < 2.01 && rod::absolute(c_b) > 1.99 && c_b[2] < 2.01 && c_b[2] > 1.99){
-                return 0;
+                    return 0;
         }
     }
     

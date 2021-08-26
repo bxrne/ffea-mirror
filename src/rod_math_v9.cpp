@@ -1214,7 +1214,7 @@ void get_perturbation_energy(
 */
 
 /** 
- Compute the distance between two skew (non-parallel) rod elements
+ Compute the distance between two skew (non-parallel) rod elements with finite radii
  \f| d = \big| (\boldsymbol{l}_a \times \boldsymbol{l}_b) \cdot (\boldsymbol{r}_b - \boldsymbol{r}_a - R_a - R_b) \big|    \f|
 */
 
@@ -1236,6 +1236,7 @@ float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float
     distance = dot_product_3x1(l_a_cross_l_b, r_ba);
 
     if(dbg_print){
+        std::cout << "# -- get_shortest_skew_distance -- #" << std::endl;
         printf("Radius a: %.3lf\n", radius_a);
         printf("Radius b: %.3lf\n", radius_b);
         print_array("p_a", p_a, 3);
@@ -1252,7 +1253,8 @@ float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float
     return abs(distance);
 }
 
-/** Compute one of the two points, c_a (or c_b, with other indices switched), that forms the line segment joining two rod elements, p_a and p_b.
+/** Compute one of the two points, c_a (or c_b, reversing the a and b indices), that forms the line segment joining two rod elements together, where c_a sits
+ * on the element p_a. Element radii are not taken into account.
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
 */
 
@@ -1271,7 +1273,7 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], floa
     cross_product(l_a, l_b, l_a_cross_l_b);
 
     cross_product(l_b, l_a_cross_l_b, n_b);
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n];}
+    vec3d(n){r_ba[n] = r_b[n] - r_a[n];}  // NOTE: This might be the place to insert the radius parameter?
     r_ba_dot_n_b = dot_product_3x1(r_ba, n_b);
 
     l_a_dot_n_b = dot_product_3x1(l_a, n_b);
@@ -1280,6 +1282,7 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], floa
     vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b * l_a[n] * inv_l_a_dot_n_b;}
 
     if(dbg_print){
+        std::cout << "# -- get_point_on_connecting_line -- #" << std::endl;
         print_array("p_a", p_a, 3);
         print_array("l_a", l_a, 3);
         print_array("p_b", p_b, 3);
