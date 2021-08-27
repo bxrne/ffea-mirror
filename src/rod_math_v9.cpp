@@ -1214,13 +1214,14 @@ void get_perturbation_energy(
 */
 
 /** 
- Compute the distance between two skew (non-parallel) rod elements with finite radii
- \f| d = \big| (\boldsymbol{l}_a \times \boldsymbol{l}_b) \cdot (\boldsymbol{r}_b - \boldsymbol{r}_a - R_a - R_b) \big|    \f|
+ Compute the distance between two skew (non-parallel) rod elements with finite radii. A negative distance means the elements
+ are overlapping.
+ \f| d = (\boldsymbol{l}_a \times \boldsymbol{l}_b) \cdot (\boldsymbol{r}_b - \boldsymbol{r}_a - R_a - R_b)    \f|
 */
 
 float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
     // NOTE: parallel elements are invalid for this method (this is unlikely due to thermal fluctuations, but still possible).
-    float distance = 0.0;
+    float d = 0.0;
     float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
     float l_b[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0, 0, 0};
@@ -1233,10 +1234,9 @@ float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float
 
     vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
 
-    distance = dot_product_3x1(l_a_cross_l_b, r_ba);
+    d = dot_product_3x1(l_a_cross_l_b, r_ba);
 
     if(dbg_print){
-        std::cout << "# -- get_shortest_skew_distance -- #" << std::endl;
         printf("Radius a: %.3lf\n", radius_a);
         printf("Radius b: %.3lf\n", radius_b);
         print_array("p_a", p_a, 3);
@@ -1250,7 +1250,7 @@ float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float
         std::cout << std::endl;
     }
 
-    return abs(distance);
+    return d;
 }
 
 /** Compute one of the two points, c_a (or c_b, reversing the a and b indices), that forms the line segment joining two rod elements together, where c_a sits
@@ -1282,7 +1282,6 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], floa
     vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b * l_a[n] * inv_l_a_dot_n_b;}
 
     if(dbg_print){
-        std::cout << "# -- get_point_on_connecting_line -- #" << std::endl;
         print_array("p_a", p_a, 3);
         print_array("l_a", l_a, 3);
         print_array("p_b", p_b, 3);
@@ -1298,6 +1297,7 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], floa
         std::cout << std::endl;
     }
 }
+
 
 //   _ _
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
