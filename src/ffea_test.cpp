@@ -1243,7 +1243,7 @@ int ffea_test::shortest_distance_between_rod_elements(){
     d = rod::get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius, radius);
     cout << "Expected distance: 1" << endl;
     
-    if (rod::absolute(d) < 1.01 && rod::absolute(d) > 0.99){
+    if (abs(d) < 1.01 && abs(d) > 0.99){
         return 0;
     }
 

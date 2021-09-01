@@ -273,6 +273,12 @@ void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]){
     not_simulation_destroying(p_i, "Get_p_i is simulation destroying.");
 }
 
+// \f[ p_{mid} = \frac{1}{2}p_i - r_i \f]
+void get_p_midpoint(float p_i[3], float r_i[3], OUT float p_mid[3]){
+    vec3d(n){p_mid[n] = 0.5 * p_i[n] - r_i[3];}
+    not_simulation_destroying(p_mid, "get_p_midpoint is simulation destroying.");
+}
+
 /**
  \f[ {\mathbf  {v}}_{{\mathrm  {rot}}}={\mathbf  {v}}\cos \theta +({\mathbf  {k}}\times {\mathbf  {v}})\sin \theta +{\mathbf  {k}}({\mathbf  {k}}\cdot {\mathbf  {v}})(1-\cos \theta )~. \f]
  Where \f$ v_{rot} \f$ is the resultant vector, \f$ \theta \f$ is the angle to rotate,\f$ v \f$ is the original vector and \f$ k \f$ is the axis of rotation.
@@ -1245,8 +1251,8 @@ float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float
         print_array("l_b", l_b, 3);
         print_array("l_a x l_b", l_a_cross_l_b, 3);
         print_array("r_b - r_a - radius_a - radius_b", r_ba, 3);
-        printf("Distance: %.3lf\n", distance);
-        printf("Absolute distance: %.3lf\n", abs(distance));
+        printf("Distance: %.3lf\n", d);
+        printf("Absolute distance: %.3lf\n", abs(d));
         std::cout << std::endl;
     }
 
