@@ -415,7 +415,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float y_force = (perturbed_y_energy_negative[node_no*3]+perturbed_y_energy_negative[(node_no*3)+1]+perturbed_y_energy_negative[(node_no*3)+2] - (perturbed_y_energy_positive[node_no*3]+perturbed_y_energy_positive[(node_no*3)+1]+perturbed_y_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float z_force = (perturbed_z_energy_negative[node_no*3]+perturbed_z_energy_negative[(node_no*3)+1]+perturbed_z_energy_negative[(node_no*3)+2] - (perturbed_z_energy_positive[node_no*3]+perturbed_z_energy_positive[(node_no*3)+1]+perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float twist_force = (twisted_energy_negative[node_no*3]+twisted_energy_negative[(node_no*3)+1]+twisted_energy_negative[(node_no*3)+2] - (twisted_energy_positive[node_no*3]+twisted_energy_positive[(node_no*3)+1]+twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
-                                
+
+        // Get steric interaction forces
+
         // Get applied force, if any
         float applied_force_x = applied_forces[node_no*4];
         float applied_force_y = applied_forces[(node_no*4)+1];

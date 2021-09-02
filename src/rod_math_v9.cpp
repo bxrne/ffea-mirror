@@ -1227,18 +1227,18 @@ void get_perturbation_energy(
 
 float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
     // NOTE: parallel elements are invalid for this method (this is unlikely due to thermal fluctuations, but still possible).
-    float d = 0.0;
     float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
     float l_b[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0, 0, 0};
     float r_ba[3] = {0, 0, 0};
+    float d = 0.0;
 
     // NOTE: See if you can obtain l_a from the rod object instead of re-calculating it here
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
     cross_product(l_a, l_b, l_a_cross_l_b);
 
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
+    vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}  // nodes are the 'first' of each element (pi = ri+1 - ri)
 
     d = dot_product_3x1(l_a_cross_l_b, r_ba);
 
@@ -1302,6 +1302,40 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], floa
         print_array("c_a", c_a, 3);
         std::cout << std::endl;
     }
+}
+
+/** Perturb the intersection radius, d, between two rod elements, a and b. A perturbation is applied 
+ * positively and negatively in a given degree of freedom (x, y, z), and we calculate part of a 
+ * central difference formula for the current rod element, a:
+ * 
+ * \f| \partial d = d(x+\Delta x) - d(x-\Delta x) \f|
+ * 
+ * This will later be used to calculate the steric repulsion force.
+ * 
+ * a: UNperturbed rod element
+ * b: perturbed rod element
+ * delta: perturbation amount
+ * dim: the dimension of the perturbation (0 = x, 1 = y, 2 = z)
+*/
+float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3], float p_a[3], float p_b[3], float radius_a, float radius_b){
+    float d_positive = 0.0;
+    float d_negative = 0.0;
+    // p remains the same, so by perturbing the start node the end node
+    // has, implicitly, also been perturbed by the same amount
+    r_b[dim] += delta;
+    d_positive = get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
+
+    r_b[dim] -= 2*delta;
+    d_negative = get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
+
+    if(dbg_print){
+        printf("delta: %.3lf\n", delta);
+        std::cout << "dim: " << dim << std::endl;
+        printf("d(r+delta) - d(r-delta): %.3lf\n", d_positive - d_negative);
+        std::cout << std::endl;
+    }
+
+    return d_positive - d_negative;
 }
 
 
