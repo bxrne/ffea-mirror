@@ -214,6 +214,7 @@ void get_perturbation_energy(
 float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b);
 void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float c_a[3]);
 float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3], float p_a[3], float p_b[3], float radius_a, float radius_b);
+float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);
 
 }
 #endif

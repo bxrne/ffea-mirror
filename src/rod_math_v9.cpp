@@ -1338,6 +1338,27 @@ float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3]
     return d_positive - d_negative;
 }
 
+/** Compute the volume of intersection of two spheres, whose centres are separated
+ * by a straight line. This is equal to the sum of the volumes of the two spherical
+ * caps comprising the intersection.
+ *
+ * https://en.wikipedia.org/wiki/Spherical_cap#Applications
+ *
+ * \f[ \frac{\pi}{12d}(r_a+r_b-d)^2 (d^2+2d(r_a+r_b)-3(r_a-r_b)^2) \f]
+*/
+float get_spherical_volume_intersection(float separation, float radius_a, float radius_b){
+    float volume = 0.0;    
+    float bracket1 = 0.0;
+    float bracket2 = 0.0;
+
+    bracket1 = (radius_a + radius_b - separation) * (radius_a + radius_b - separation);
+    bracket2 = separation*separation + 2*separation*(radius_a + radius_b) - 3*(radius_a - radius_b)*(radius_a - radius_b);
+    
+    volume = M_PI / (12.0 * separation) * bracket1 * bracket2;
+
+    return volume;
+}
+
 
 //   _ _
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
