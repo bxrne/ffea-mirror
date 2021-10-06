@@ -1,10 +1,3 @@
-import os
-
-test_dir = input("Enter CMake test directory in allcaps (ALLCAPS): ")
-test_name = input("Enter name of unit test (snake_case): ")
-prefix = "/home/ryan/Software/ffea/"
-path_to_test = f"tests/rods/unit/{test_name}"
-cmake_text = """# 
 #  This file is part of the FFEA simulation package
 #  
 #  Copyright (c) by the Theory and Development FFEA teams,
@@ -26,6 +19,27 @@ cmake_text = """#
 #  To help us fund FFEA development, we humbly ask that you cite 
 #  the research papers on the package.
 #
+
+# This script requires Python 3 to run!
+#
+# It will automatically insert some boilerplate CMake stuff into the FFEA
+# test directory, allowing ctest to find your unit test so that you can check
+# it runs correctly.
+#
+# Currently, only rod unit tests will be written!
+import os
+
+# TODO: Check for Python 3
+# TODO: Choose which test directory to put stuff in
+# TODO: Automatically search for $FFEA_SRC bash environment variable
+# TODO: Search src/ffea_test.cpp to check that test_name is entered correctly
+
+test_dir = input("Enter name of CMake test directory in allcaps, e.g. TESTNAMEDIR: ")
+test_name = input("Enter name of unit test in snake case, e.g. this_is_a_test: ")
+prefix = input("Enter path to FFEA source code directory (with trailing /):  ")
+path_to_test = f"tests/rods/unit/{test_name}"
+
+cmake_text = """# 
 
 set ({0} "${{PROJECT_BINARY_DIR}}/{1}/")
 file (COPY {2}.ffeatest DESTINATION ${{{0}}})

@@ -90,4 +90,6 @@ struct ffea_test{
 
     static int perturb_intersection_radius();
 
+    static int two_sphere_volume_intersection();
+
 };
