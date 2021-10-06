@@ -109,7 +109,7 @@ int ffea_test::do_ffea_test(std::string filename){
     }
 
     if (buffer.str().find("two_sphere_volume_intersection") != std::string::npos ){
-        result = ffea_test::perturb_intersection_radius();
+        result = ffea_test::two_sphere_volume_intersection();
     }
 
     return result;
@@ -1317,63 +1317,68 @@ int ffea_test::perturb_intersection_radius(){
 int ffea_test::two_sphere_volume_intersection(){
     float r_a = 1.0;
     float r_b = 2.0;
-    float d = {2.5, 1, 0, 3.5, 2, 1, 0.5, 0}  // distance between sphere centres
+    float d[8] = {2.5, 1, 0, 3.5, 2, 1, 0.5, 0};  // distance between sphere centres
     float volume = 0.0;  // overlap amount
     float answer = 0.0;
     int pass_count = 0;  // count number of cases that have passed
 
-    for(int i=0; i<9; i++){
+    for(int i=0; i<8; i++){
         if(i < 3){
             // r_a = r_b = 1
-            volume = rod::get_spherical_volume_intersection(d[i], r_a, r_a)
+            volume = rod::get_spherical_volume_intersection(d[i], r_a, r_a);
         }
         else{
             // r_a < r_b
-            volume = rod::get_spherical_volume_intersection(d[i], r_a, r_b)
+            volume = rod::get_spherical_volume_intersection(d[i], r_a, r_b);
         }
+        std::cout << "case " << i << std::endl;
         switch(i){
-            case 0;
+            case 0:
                 // d>r_a+r_b, d>|r_a-r_b|
-                answer = 0.0;
-                break;                
-            case 1;
+                answer = 0.0;         
+                break;     
+            case 1:
                 // d<r_a+r_b, d>|r_a-r_b|
                 answer = 5.0/12.0*M_PI;
-                break;
-            case 2;
+                break; 
+            case 2:
                 // d=|r_a-r_b|=0
                 answer = 4.0/3.0*M_PI;
-                break;
-            case 3;
+                break; 
+            case 3:
                 // d>r_a+r_b, d>|r_a-r_b|
                 answer = 0.0;
-                break;
-            case 4;
+                break; 
+            case 4:
                 // d<r_a+r_b, d>|r_a-r_b|
                 answer = 13.0/24.0*M_PI;
-                break;
-            case 5;
+                break; 
+            case 5:
                 // d=|r_a-r_b|, d>0
                 answer = 4.0/3.0*M_PI;
-                break;
-            case 6;
+                break; 
+            case 6:
                 // d<|r_a-r_b|, d>0
                 answer = 4.0/3.0*M_PI;
-                break;
-            case 7;
+                break; 
+            case 7:
                 // d=0
                 answer = 4.0/3.0*M_PI;
-                break;
-            if(volume < answer*1.001 && volume > answer*0.999){pass_count++;}
-            std::cout << "V = " << volume << ", pass_count = " << pass_count << std::endl;
+                break; 
+            default:
+                // return negative if no cases are activating
+                answer = -1;
         }
-        if(pass_count == 8){
-            return 0;
-        else{
-            return 1;
-        }
+        // Add 1 whilst checking, to account for zeroes!
+        if(volume+1 < (answer+1)*1.01 && volume+1 > (answer+1)*0.99){pass_count++;}
+        std::cout << "expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
     }
-
+    if(pass_count == 8){
+        return 0;
+    }
+    else{
+        return 1;
+    }
 }
 
 

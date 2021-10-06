@@ -1351,13 +1351,13 @@ float get_spherical_volume_intersection(float separation, float radius_a, float 
     float bracket2 = 0.0;
 
     // Spheres intersecting
-    if (separation < radius_a + radius_b && separation >= std::abs(radius_a - radius_b)){
+    if (separation < radius_a + radius_b && separation > std::abs(radius_a - radius_b) && separation > 0){
         bracket1 = (radius_a + radius_b - separation) * (radius_a + radius_b - separation);
         bracket2 = separation*separation + 2*separation*(radius_a + radius_b) - 3*(radius_a - radius_b)*(radius_a - radius_b);
         return 0.0833 * M_PI / separation * bracket1 * bracket2;
     }
     // One sphere fully contained within the other
-    else if (separation < std::abs(radius_a - radius_b)){
+    else if (separation <= std::abs(radius_a - radius_b)){
         float radius_min = 0.0;
         radius_min = std::min(radius_a, radius_b);
         return 1.3333 * M_PI * radius_min * radius_min * radius_min;

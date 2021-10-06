@@ -31,12 +31,14 @@ import os
 
 # TODO: Check for Python 3
 # TODO: Choose which test directory to put stuff in
+# TODO: Check that FFEA source directory exists
 # TODO: Automatically search for $FFEA_SRC bash environment variable
 # TODO: Search src/ffea_test.cpp to check that test_name is entered correctly
 
 test_dir = input("Enter name of CMake test directory in allcaps, e.g. TESTNAMEDIR: ")
 test_name = input("Enter name of unit test in snake case, e.g. this_is_a_test: ")
 prefix = input("Enter path to FFEA source code directory (with trailing /):  ")
+
 path_to_test = f"tests/rods/unit/{test_name}"
 
 cmake_text = """# 
