@@ -1220,27 +1220,30 @@ void get_perturbation_energy(
 */
 
 /** 
- Compute the distance between two skew (non-parallel) rod elements with finite radii. A negative distance means the elements
- are overlapping.
+ Compute the distance between two rod elements with finite radii. A negative distance means the elements
+ are overlapping. Only valid for rods that are not parallel
  \f| d = (\boldsymbol{l}_a \times \boldsymbol{l}_b) \cdot (\boldsymbol{r}_b - \boldsymbol{r}_a - R_a - R_b)    \f|
 */
-
-float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
-    // NOTE: parallel elements are invalid for this method (this is unlikely due to thermal fluctuations, but still possible).
+float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b){
     float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
     float l_b[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0, 0, 0};
     float r_ba[3] = {0, 0, 0};
     float d = 0.0;
 
-    // NOTE: See if you can obtain l_a from the rod object instead of re-calculating it here
+    // NOTE: Obtain l_a from the rod object instead of re-calculating it here?
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
     cross_product(l_a, l_b, l_a_cross_l_b);
+    vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
 
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}  // nodes are the 'first' of each element (pi = ri+1 - ri)
-
-    d = dot_product_3x1(l_a_cross_l_b, r_ba);
+    // Rods are skew or perpendicular: use skew line formulae
+    if (absolute(l_a_cross_l_b) > 0.0){
+        d = dot_product_3x1(l_a_cross_l_b, r_ba);
+    }
+    else{
+        throw std::domain_error("Rods must not be parallel");
+    }
 
     if(dbg_print){
         printf("Radius a: %.3lf\n", radius_a);
@@ -1263,7 +1266,6 @@ float get_shortest_skew_distance(float p_a[3], float p_b[3], float r_a[3], float
  * on the element p_a. Element radii are not taken into account.
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
 */
-
 void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3]){
     float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
     float l_b[3] = {0, 0, 0};
@@ -1323,10 +1325,10 @@ float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3]
     // p remains the same, so by perturbing the start node the end node
     // has, implicitly, also been perturbed by the same amount
     r_b[dim] += delta;
-    d_positive = get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
+    d_positive = get_inter_rod_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
 
     r_b[dim] -= 2*delta;
-    d_negative = get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
+    d_negative = get_inter_rod_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
 
     if(dbg_print){
         printf("delta: %.3lf\n", delta);

@@ -1247,7 +1247,7 @@ int ffea_test::shortest_distance_between_rod_elements(){
     float radius = 0.0;  // line elements
     float d = 0.0;
     
-    d = rod::get_shortest_skew_distance(p_a, p_b, r_a, r_b, radius, radius);
+    d = rod::get_inter_rod_distance(p_a, p_b, r_a, r_b, radius, radius);
     cout << "Expected distance: 1" << endl;
     
     if (abs(d) < 1.01 && abs(d) > 0.99){
@@ -1312,7 +1312,7 @@ int ffea_test::perturb_intersection_radius(){
 }
 
 // Compute the overlap of two spheres with equivalent and different radii in
-// the cases they are each likely to encounter. Compare to volume overlaps
+// the cases they are physically likely to encounter. Compare to volume overlaps
 // calculated by hand.
 int ffea_test::two_sphere_volume_intersection(){
     float r_a = 1.0;
@@ -1331,7 +1331,6 @@ int ffea_test::two_sphere_volume_intersection(){
             // r_a < r_b
             volume = rod::get_spherical_volume_intersection(d[i], r_a, r_b);
         }
-        std::cout << "case " << i << std::endl;
         switch(i){
             case 0:
                 // d>r_a+r_b, d>|r_a-r_b|
@@ -1371,7 +1370,7 @@ int ffea_test::two_sphere_volume_intersection(){
         }
         // Add 1 whilst checking, to account for zeroes!
         if(volume+1 < (answer+1)*1.01 && volume+1 > (answer+1)*0.99){pass_count++;}
-        std::cout << "expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
+        std::cout << "case = " << i << ", expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
     }
     if(pass_count == 8){
         return 0;
