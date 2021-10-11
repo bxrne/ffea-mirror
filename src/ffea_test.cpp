@@ -1259,33 +1259,113 @@ int ffea_test::shortest_distance_between_rod_elements(){
 }
 
 /* Get two points, c_a and c_b, that form the straight line connecting two rod elements
- * and compare to expected values
+ * (capsules) and compare to expected values. Rod a is the 'stationary' rod in 
+ * these collision scenarios, whilst b is the 'colliding' rod.
+ *
  */
 int ffea_test::line_connecting_rod_elements(){
+    // Test parameters
+    float radius_a = 0.25;
+    float radius_b = 0.5;
+    float r_a1[3] = {0.0, 0.0, 0.0};  // remain fixed
+    float r_b1[8][3] = {{0.0, radius_a + radius_b, -0.25},
+                        {1.1456, radius_a, 0.25},
+                        {0.75, radius_a + radius_b, -0.5},
+                        {0.0, 0.0, 0.0}, // todo (downwards)
+                        {0.0, 0.0, 0.0},
+                        {0.0, 0.0, 0.0},
+                        {0.0, 0.0, 0.0},
+                        {0.0, 0.0, 0.0}};
+    float r_a2[3] = {1.0, 0.0, 0.0};
+    float r_b2[3] = {0.0, 0.0, 0.0};
+    float p_a[3] = {1.0, 0.0, 0.0};  // point in x direction
+    float p_b[8][3] = {{std::sin(M_PI/4.0), 0.0, std::cos(M_PI/4.0)},  // 45 deg x-z
+                       {std::sin(M_PI/12.0), 0.0, std::cos(M_PI/12.0)},  // 15 deg x-z
+                       {0.0, 0.0, 1.0},
+                       {0.0, 0.0, 1.0}, // todo (downwards)
+                       {0.0, 0.0, 1.0},
+                       {0.0, 0.0, 1.0},
+                       {0.0, 0.0, 1.0},
+                       {0.0, 0.0, 1.0}};
+    float c_a[3] = {1.0, 0.0, 0.0};
+    float c_b[3] = {1.0, 0.0, 0.0};
+    float c_ba[3] = {0.0, 0.0, 0.0};
 
-    // Two perpendicular rod elements separated in z by 2
-    float r_a[3] = {-2, 0, 0};  // p = r2 - r1
-    float r_b[3] = {0, -2, 2};
-    float p_a[3] = {2, 0, 0};
-    float p_b[3] = {0, 2, 0};
-    float c_a[3] = {0, 0, 0};
-    float c_b[3] = {0, 0, 0};
-    
-    // Compute c
-    rod::get_point_on_connecting_line(p_a, p_b, r_a, r_b, c_a);
-    rod::get_point_on_connecting_line(p_b, p_a, r_b, r_a, c_b);
- 
-    std::cout << "Expected c_a: (0, 0, 0)" << std::endl;
-    std::cout << "Expected c_b: (0, 0, 2)" << std::endl;
-    
-    if(rod::absolute(c_a) < 0.01 && rod::absolute(c_a) > -0.01){
-        if(rod::absolute(c_b) < 2.01 && rod::absolute(c_b) > 1.99 && c_b[2] < 2.01 && c_b[2] > 1.99){
-                    return 0;
+    // Expected results
+    float c_a_answer[3] = {0.0, 0.0, 0.0};
+    float c_b_answer[3] = {0.0, 0.0, 0.0};
+
+    float delta_a[3] = {0.0, 0.0, 0.0};
+    float delta_b[3] = {0.0, 0.0, 0.0};
+    int pass_count = 0;  // count number of cases that have passed
+
+    for(int i=0; i<8; i++){
+        vec3d(n){c_a_answer[n] = 0.0;}
+        vec3d(n){c_b_answer[n] = 0.0;}
+
+        // vec3d(n){r_b2[n] = r_b1[i][n] + p_b[i][n];}
+        rod::get_point_on_connecting_line(p_a, p_b[i], r_a1, r_b1[i], c_a);
+        rod::get_point_on_connecting_line(p_b[i], p_a, r_b1[i], r_a1, c_b);
+        vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
+
+        switch(i){
+            case 0:
+                // touching, midsection, at 45 degree angle in x-z plane
+                c_a_answer[0] = 0.25;
+                c_b_answer[0] = 0.25;
+                c_b_answer[1] = radius_a + radius_b;
+                break;     
+            case 1:
+                // touching, end to end, at 15 degree angle x-z plane
+                vec3d(n){c_a_answer[n] = r_a2[n];}
+                vec3d(n){c_b_answer[n] = r_b1[i][n];}
+                break; 
+            case 2:
+                // touching, midsection, perpendicular in x-z plane
+                c_a_answer[0] = 0.75;
+                vec3d(n){c_b_answer[n] = r_b1[i][n] + 0.5*p_b[i][n];}
+                break; 
+            case 3:
+                // intersect, midsection, shallow angle
+                pass_count--;
+                break; 
+            case 4:
+                // intersect, midsection, further along rod, shallow angle
+                pass_count--;
+                break; 
+            case 5:
+                // intersect, end (a) to midsection (b), steep angle
+                pass_count--;
+                break; 
+            case 6:
+                // full overlap, end to end, skew
+                pass_count--;
+                break; 
+            case 7:
+                // full overlap, through midsection and out other side, steep angle
+                pass_count--;
+                break; 
+            default:
+                std::cout << "Default case reached" << std::endl;
+                return 1;
         }
+        vec3d(n){delta_a[n] = c_a[n] - c_a_answer[n];}
+        vec3d(n){delta_b[n] = c_b[n] - c_b_answer[n];}
+        if(rod::absolute(delta_a) < 0.01 and rod::absolute(delta_b) < 0.01){pass_count++;}
+        rod::print_array("c_a", c_a, 3);
+        rod::print_array("c_a expected", c_a_answer, 3);
+        std::cout << "|delta_a| = " << rod::absolute(delta_a) << std::endl;
+        rod::print_array("c_b", c_b, 3);
+        rod::print_array("c_b expected", c_b_answer, 3);
+        std::cout << "|delta_b| = " << rod::absolute(delta_b) << std::endl;
+        std::cout << "case = " << i << ", pass_count = " << pass_count << "\n" << std::endl;
     }
-    
-    return 1;
-
+    if(pass_count == 8){
+        return 0;
+    }
+    else{
+        return 1;
+    }
 }
 
 // Apply a perturbation to the intersection radius of two colliding rod elements 
@@ -1318,8 +1398,8 @@ int ffea_test::two_sphere_volume_intersection(){
     float r_a = 1.0;
     float r_b = 2.0;
     float d[8] = {2.5, 1, 0, 3.5, 2, 1, 0.5, 0};  // distance between sphere centres
-    float volume = 0.0;  // overlap amount
-    float answer = 0.0;
+    float volume = 0.0;  // calculated volume overlap
+    float answer = 0.0;  // expected volume overlap
     int pass_count = 0;  // count number of cases that have passed
 
     for(int i=0; i<8; i++){
@@ -1366,10 +1446,10 @@ int ffea_test::two_sphere_volume_intersection(){
                 break; 
             default:
                 // return negative if no cases are activating
-                answer = -1;
+                std::cout << "Default case reached" << std::endl;
+                return 1;
         }
-        // Add 1 whilst checking, to account for zeroes!
-        if(volume+1 < (answer+1)*1.01 && volume+1 > (answer+1)*0.99){pass_count++;}
+        if(abs(volume - answer) < 0.01){pass_count++;}
         std::cout << "case = " << i << ", expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
     }
     if(pass_count == 8){
