@@ -1262,32 +1262,69 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
     return d;
 }
 
+/** Check that a point, c, lies on the boundaries of a rod element. If it does, return
+/* the same point. If not, return the appropriate rod node.
+/*
+/*    r1 ------ c ---------------------- r2
+/*
+/*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) > 0
+/*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) < \boldsymbol{p}^2
+*/
+void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float c_out[3]){
+    float r1_c[3] = {0.0, 0.0, 0.0};
+    float p_dot_r1_c = 0.0;
+    
+    vec3d(n){r1_c[n] = c[n] - r1[n];}
+    p_dot_r1_c = dot_product_3x1(p, r1_c);
+    
+
+    if (p_dot_r1_c <= 0){
+        vec3d(n){c_out[n] = r1[n];}
+    }
+    else if(p_dot_r1_c >= rod::absolute(p) * rod::absolute(p)){
+        vec3d(n){c_out[n] = r1[n] + p[n];}
+    }
+    else{
+        vec3d(n){c_out[n] = c[n];}
+    }
+
+    if(dbg_print){
+        print_array("c", c, 3);
+        print_array("p", p, 3);
+        print_array("r1", r1, 3);
+        print_array("(c - r1)", r1_c, 3);
+        std::cout << "p * (c - r1) = " << p_dot_r1_c << std::endl;
+        print_array("c_out", c_out, 3);
+        std::cout << std::endl;
+    }
+}
+
+
 /** Compute one of the two points, c_a (or c_b, reversing the a and b indices), that forms the line segment joining two rod elements together, where c_a sits
  * on the element p_a. Element radii are not taken into account.
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
+ * 
+ * cross products are non-commutative and l_a x l_b must remain constant for c_a and c_b, so should be passed in
 */
-void get_point_on_connecting_line(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3]){
-    float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
-    float l_b[3] = {0, 0, 0};
-    float l_a_cross_l_b[3] = {0, 0, 0};  // NOTE: This is already calculated in get_shortest_distance()
-    float n_b[3] = {0, 0, 0};
-    float r_ba[3] = {0, 0, 0};
+void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_b[3], float r_a[3], float r_b[3], OUT float c_a[3]){
+    float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
+    float l_b[3] = {0.0, 0.0, 0.0};
+    float n_b[3] = {0.0, 0.0, 0.0};
+    float r_ba[3] = {0.0, 0.0, 0.0};
     float r_ba_dot_n_b = 0.0;
     float l_a_dot_n_b = 0.0;
-    float inv_l_a_dot_n_b = 0.0;
 
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
-    cross_product(l_a, l_b, l_a_cross_l_b);
-
     cross_product(l_b, l_a_cross_l_b, n_b);
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n];}  // NOTE: This might be the place to insert the radius parameter?
+
+    vec3d(n){r_ba[n] = r_b[n] - r_a[n];}
     r_ba_dot_n_b = dot_product_3x1(r_ba, n_b);
-
     l_a_dot_n_b = dot_product_3x1(l_a, n_b);
-    inv_l_a_dot_n_b = 1.0 / l_a_dot_n_b;  // avoid three divisions
+    vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b / l_a_dot_n_b * l_a[n];}
 
-    vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b * l_a[n] * inv_l_a_dot_n_b;}
+    // Set c to appropriate node if outside element
+    set_point_within_rod_element(c_a, p_a, r_a, c_a);
 
     if(dbg_print){
         print_array("p_a", p_a, 3);
