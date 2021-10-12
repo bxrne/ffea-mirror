@@ -100,6 +100,10 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::shortest_distance_between_rod_elements();
     }
 
+    if (buffer.str().find("point_lies_on_rod_line_element") != std::string::npos ){
+        result = ffea_test::point_lies_on_rod_line_element();
+    }
+    
     if (buffer.str().find("line_connecting_rod_elements") != std::string::npos ){
         result = ffea_test::line_connecting_rod_elements();
     }
@@ -1258,13 +1262,82 @@ int ffea_test::shortest_distance_between_rod_elements(){
 
 }
 
+// When calculating collisions, the closest line segment between two rod elements must
+// be calculated, connected by a pair of points, one on each rod. Such points must lie
+// on the rod element centreline and within the boundaries of its length.
+//
+// In this test, six points are tested against an element pointing in the x-axis. 
+// Beyond the element length, a point should be assigned to the closest node. Otherwise, the
+// point is unchanged.
+
+int ffea_test::point_lies_on_rod_line_element(){
+    float p[3] = {1.0, 0.0, 0.0};
+    float r1[3] = {-0.5, 0.0, 0.0}; 
+    float c[6][3] = {{-5.0, 0.0, 0.0},
+                     {-0.5, 0.0, 0.0},
+                     {-0.1, 0.0, 0.0},
+                     {0.1, 0.0, 0.0},
+                     {0.5, 0.0, 0.0},
+                     {5.0, 0.0, 0.0}};
+    float c_out[3] = {0.0, 0.0, 0.0};
+    float c_answer[3] = {0.0, 0.0, 0.0};
+    float delta[3] = {0.0, 0.0, 0.0};
+    int pass_count = 0;
+
+    for(int i=0; i<6; i++){
+        rod::set_point_within_rod_element(c[i], p, r1, c_out);  // test
+        switch(i){
+            case 0:
+                // c < r1, assign to node
+                vec3d(n){c_answer[n] = r1[n];}
+                break;
+            case 1:
+                // c == r1, assign to node
+                vec3d(n){c_answer[n] = r1[n];}
+                break;
+            case 2:
+                // r1 < c < r2, c is ok
+                vec3d(n){c_answer[n] = c[i][n];}
+                break;
+            case 3:
+                // r1 < c < r2, c is ok
+                vec3d(n){c_answer[n] = c[i][n];}
+                break;
+            case 4:
+                // c == r2, assign to node
+                vec3d(n){c_answer[n] = r1[n] + p[n];}
+                break; 
+            case 5:
+                // c > r2, assign to node
+                vec3d(n){c_answer[n] = r1[n] + p[n];}
+                break;
+            default:
+                return 1;
+        }
+        vec3d(n){delta[n] = c_out[n] - c_answer[n];}
+        if(rod::absolute(delta) < 0.01){pass_count++;}
+        rod::print_array("c initial", c[i], 3);
+        rod::print_array("c computed", c_out, 3);
+        rod::print_array("c expected", c_answer, 3);
+        std::cout << "TEST RESULT: case = " << i << ", pass_count = " << pass_count << std::endl;
+    }
+    
+    if(pass_count == 6){
+        return 0;
+    }
+    else{
+        return 1;
+    }
+}
+
 /* Get two points, c_a and c_b, that form the straight line connecting two rod elements
  * (capsules) and compare to expected values. Rod a is the 'stationary' rod in 
  * these collision scenarios, whilst b is the 'colliding' rod.
  *
  */
+// TODO: How many of the cases in this test function are truly unique?
 int ffea_test::line_connecting_rod_elements(){
-    // Test parameters
+    // Test parameters 1.1456
     float radius_a = 0.25;
     float radius_b = 0.5;
     float r_a1[3] = {0.0, 0.0, 0.0};  // remain fixed
@@ -1287,6 +1360,9 @@ int ffea_test::line_connecting_rod_elements(){
                        {0.0, 0.0, 1.0},
                        {0.0, 0.0, 1.0},
                        {0.0, 0.0, 1.0}};
+    float l_a[3] = {0, 0, 0};
+    float l_b[3] = {0, 0, 0};
+    float l_a_cross_l_b[3] = {0.0, 0.0, 0.0};
     float c_a[3] = {1.0, 0.0, 0.0};
     float c_b[3] = {1.0, 0.0, 0.0};
     float c_ba[3] = {0.0, 0.0, 0.0};
@@ -1303,9 +1379,12 @@ int ffea_test::line_connecting_rod_elements(){
         vec3d(n){c_a_answer[n] = 0.0;}
         vec3d(n){c_b_answer[n] = 0.0;}
 
-        // vec3d(n){r_b2[n] = r_b1[i][n] + p_b[i][n];}
-        rod::get_point_on_connecting_line(p_a, p_b[i], r_a1, r_b1[i], c_a);
-        rod::get_point_on_connecting_line(p_b[i], p_a, r_b1[i], r_a1, c_b);
+        rod::normalize(p_a, l_a);
+        rod::normalize(p_b[i], l_b);
+        rod::cross_product(l_a, l_b, l_a_cross_l_b);
+
+        rod::get_point_on_connecting_line(p_a, p_b[i], l_a_cross_l_b, r_a1, r_b1[i], c_a);  // test
+        rod::get_point_on_connecting_line(p_b[i], p_a, l_a_cross_l_b, r_b1[i], r_a1, c_b);
         vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
 
         switch(i){
@@ -1314,17 +1393,17 @@ int ffea_test::line_connecting_rod_elements(){
                 c_a_answer[0] = 0.25;
                 c_b_answer[0] = 0.25;
                 c_b_answer[1] = radius_a + radius_b;
-                break;     
+                break;
             case 1:
                 // touching, end to end, at 15 degree angle x-z plane
                 vec3d(n){c_a_answer[n] = r_a2[n];}
                 vec3d(n){c_b_answer[n] = r_b1[i][n];}
-                break; 
+                break;
             case 2:
                 // touching, midsection, perpendicular in x-z plane
                 c_a_answer[0] = 0.75;
                 vec3d(n){c_b_answer[n] = r_b1[i][n] + 0.5*p_b[i][n];}
-                break; 
+                break;
             case 3:
                 // intersect, midsection, shallow angle
                 pass_count--;
@@ -1339,10 +1418,13 @@ int ffea_test::line_connecting_rod_elements(){
                 break; 
             case 6:
                 // full overlap, end to end, skew
+                // intersection normal is back along rod element
+                // expect an exception
                 pass_count--;
                 break; 
             case 7:
                 // full overlap, through midsection and out other side, steep angle
+                // expect an exception
                 pass_count--;
                 break; 
             default:
@@ -1352,13 +1434,13 @@ int ffea_test::line_connecting_rod_elements(){
         vec3d(n){delta_a[n] = c_a[n] - c_a_answer[n];}
         vec3d(n){delta_b[n] = c_b[n] - c_b_answer[n];}
         if(rod::absolute(delta_a) < 0.01 and rod::absolute(delta_b) < 0.01){pass_count++;}
-        rod::print_array("c_a", c_a, 3);
+        rod::print_array("c_a computed", c_a, 3);
         rod::print_array("c_a expected", c_a_answer, 3);
         std::cout << "|delta_a| = " << rod::absolute(delta_a) << std::endl;
-        rod::print_array("c_b", c_b, 3);
+        rod::print_array("c_b computed", c_b, 3);
         rod::print_array("c_b expected", c_b_answer, 3);
         std::cout << "|delta_b| = " << rod::absolute(delta_b) << std::endl;
-        std::cout << "case = " << i << ", pass_count = " << pass_count << "\n" << std::endl;
+        std::cout << "TEST RESULT: case = " << i << ", pass_count = " << pass_count << "\n" << std::endl;
     }
     if(pass_count == 8){
         return 0;
@@ -1450,7 +1532,7 @@ int ffea_test::two_sphere_volume_intersection(){
                 return 1;
         }
         if(abs(volume - answer) < 0.01){pass_count++;}
-        std::cout << "case = " << i << ", expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
+        std::cout << "TEST RESULT: case = " << i << ", expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
     }
     if(pass_count == 8){
         return 0;

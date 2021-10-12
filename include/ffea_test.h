@@ -86,6 +86,8 @@ struct ffea_test{
 
     static int shortest_distance_between_rod_elements();
 
+    static int point_lies_on_rod_line_element();
+
     static int line_connecting_rod_elements();
 
     static int perturb_intersection_radius();
