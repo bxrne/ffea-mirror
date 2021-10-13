@@ -1266,26 +1266,26 @@ int ffea_test::shortest_distance_between_rod_elements(){
 // be calculated, connected by a pair of points, one on each rod. Such points must lie
 // on the rod element centreline and within the boundaries of its length.
 //
-// In this test, six points are tested against an element pointing in the x-axis. 
-// Beyond the element length, a point should be assigned to the closest node. Otherwise, the
+// In this test, six points, c, are tested against an arbitrary rod element. Beyond the
+// element length, a point should be assigned to the closest node. Otherwise, the
 // point is unchanged.
+//
+// Define candidates for c with the parametric line equation, c = r1 + p*t, 
+// where c = r2 when t = 1. t is a multiplier.
 
 int ffea_test::point_lies_on_rod_line_element(){
-    float p[3] = {1.0, 0.0, 0.0};
-    float r1[3] = {-0.5, 0.0, 0.0}; 
-    float c[6][3] = {{-5.0, 0.0, 0.0},
-                     {-0.5, 0.0, 0.0},
-                     {-0.1, 0.0, 0.0},
-                     {0.1, 0.0, 0.0},
-                     {0.5, 0.0, 0.0},
-                     {5.0, 0.0, 0.0}};
+    float p[3] = {2, 1, 5};
+    float r1[3] = {-1, 0, -3}; 
+    float t[6] = {-1, 0, 0.3, 0.7, 1, 1.5};
+    float c_init[3] = {0.0, 0.0, 0.0};
     float c_out[3] = {0.0, 0.0, 0.0};
     float c_answer[3] = {0.0, 0.0, 0.0};
     float delta[3] = {0.0, 0.0, 0.0};
     int pass_count = 0;
 
     for(int i=0; i<6; i++){
-        rod::set_point_within_rod_element(c[i], p, r1, c_out);  // test
+        vec3d(n){c_init[n] = r1[n] + p[n] * t[i];}
+        rod::set_point_within_rod_element(c_init, p, r1, c_out);  // test
         switch(i){
             case 0:
                 // c < r1, assign to node
@@ -1297,11 +1297,11 @@ int ffea_test::point_lies_on_rod_line_element(){
                 break;
             case 2:
                 // r1 < c < r2, c is ok
-                vec3d(n){c_answer[n] = c[i][n];}
+                vec3d(n){c_answer[n] = c_init[n];}
                 break;
             case 3:
                 // r1 < c < r2, c is ok
-                vec3d(n){c_answer[n] = c[i][n];}
+                vec3d(n){c_answer[n] = c_init[n];}
                 break;
             case 4:
                 // c == r2, assign to node
@@ -1316,7 +1316,9 @@ int ffea_test::point_lies_on_rod_line_element(){
         }
         vec3d(n){delta[n] = c_out[n] - c_answer[n];}
         if(rod::absolute(delta) < 0.01){pass_count++;}
-        rod::print_array("c initial", c[i], 3);
+
+        std::cout << "t = " << t[i] << std::endl;
+        rod::print_array("c initial", c_init, 3);
         rod::print_array("c computed", c_out, 3);
         rod::print_array("c expected", c_answer, 3);
         std::cout << "TEST RESULT: case = " << i << ", pass_count = " << pass_count << std::endl;

@@ -1277,7 +1277,6 @@ void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float
     vec3d(n){r1_c[n] = c[n] - r1[n];}
     p_dot_r1_c = dot_product_3x1(p, r1_c);
     
-
     if (p_dot_r1_c <= 0){
         vec3d(n){c_out[n] = r1[n];}
     }
@@ -1289,12 +1288,13 @@ void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float
     }
 
     if(dbg_print){
-        print_array("c", c, 3);
-        print_array("p", p, 3);
-        print_array("r1", r1, 3);
-        print_array("(c - r1)", r1_c, 3);
-        std::cout << "p * (c - r1) = " << p_dot_r1_c << std::endl;
-        print_array("c_out", c_out, 3);
+        std::cout << "rod::set_point_within_rod_element()" << std::endl;
+        print_array("  c", c, 3);
+        print_array("  p", p, 3);
+        print_array("  r1", r1, 3);
+        print_array("  (c - r1)", r1_c, 3);
+        std::cout << "  p * (c - r1) = " << p_dot_r1_c << std::endl;
+        print_array("  c_out", c_out, 3);
         std::cout << std::endl;
     }
 }
