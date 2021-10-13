@@ -213,7 +213,7 @@ void get_perturbation_energy(
    
 float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b);
 void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float c_out[3]);
-void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_b[3], float r_a[3], float r_b[3], OUT float c_a[3]);
+void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_b[3], float r_a[3], float r_b[3], OUT float c_a_out[3]);
 float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3], float p_a[3], float p_b[3], float radius_a, float radius_b);
 float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);
 

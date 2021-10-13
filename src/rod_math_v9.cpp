@@ -1246,16 +1246,16 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
     }
 
     if(dbg_print){
-        printf("Radius a: %.3lf\n", radius_a);
-        printf("Radius b: %.3lf\n", radius_b);
+        printf("Radius a : %.3lf\n", radius_a);
+        printf("Radius b : %.3lf\n", radius_b);
         print_array("p_a", p_a, 3);
         print_array("l_a", l_a, 3);
         print_array("p_b", p_b, 3);
         print_array("l_b", l_b, 3);
         print_array("l_a x l_b", l_a_cross_l_b, 3);
         print_array("r_b - r_a - radius_a - radius_b", r_ba, 3);
-        printf("Distance: %.3lf\n", d);
-        printf("Absolute distance: %.3lf\n", abs(d));
+        printf("Distance : %.3lf\n", d);
+        printf("Absolute distance : %.3lf\n", abs(d));
         std::cout << std::endl;
     }
 
@@ -1272,29 +1272,35 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
 */
 void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float c_out[3]){
     float r1_c[3] = {0.0, 0.0, 0.0};
+    float p2 = 0.0;
     float p_dot_r1_c = 0.0;
     
     vec3d(n){r1_c[n] = c[n] - r1[n];}
     p_dot_r1_c = dot_product_3x1(p, r1_c);
-    
+    p2 = rod::absolute(p) * rod::absolute(p);
+
     if (p_dot_r1_c <= 0){
         vec3d(n){c_out[n] = r1[n];}
     }
-    else if(p_dot_r1_c >= rod::absolute(p) * rod::absolute(p)){
+    else if(p_dot_r1_c >= p2){
         vec3d(n){c_out[n] = r1[n] + p[n];}
     }
     else{
+        // 0 < p.(c-r1) < p^2
         vec3d(n){c_out[n] = c[n];}
     }
 
     if(dbg_print){
         std::cout << "rod::set_point_within_rod_element()" << std::endl;
-        print_array("  c", c, 3);
-        print_array("  p", p, 3);
-        print_array("  r1", r1, 3);
-        print_array("  (c - r1)", r1_c, 3);
-        std::cout << "  p * (c - r1) = " << p_dot_r1_c << std::endl;
-        print_array("  c_out", c_out, 3);
+        print_array("\tc", c, 3);
+        print_array("\tp", p, 3);
+        print_array("\tr1", r1, 3);
+
+        print_array("\tc - r1", r1_c, 3);
+        printf("\tp . (c - r1) : %.3lf\n", p_dot_r1_c);
+        printf("\t|p|^2 : %.3lf\n", p2);
+
+        print_array("\tc_out", c_out, 3);
         std::cout << std::endl;
     }
 }
@@ -1306,13 +1312,14 @@ void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float
  * 
  * cross products are non-commutative and l_a x l_b must remain constant for c_a and c_b, so should be passed in
 */
-void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_b[3], float r_a[3], float r_b[3], OUT float c_a[3]){
+void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_b[3], float r_a[3], float r_b[3], OUT float c_a_out[3]){
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
     float n_b[3] = {0.0, 0.0, 0.0};
     float r_ba[3] = {0.0, 0.0, 0.0};
     float r_ba_dot_n_b = 0.0;
     float l_a_dot_n_b = 0.0;
+    float c_a[3] = {0.0, 0.0, 0.0};
 
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
@@ -1323,24 +1330,27 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
     l_a_dot_n_b = dot_product_3x1(l_a, n_b);
     vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b / l_a_dot_n_b * l_a[n];}
 
-    // Set c to appropriate node if outside element
-    set_point_within_rod_element(c_a, p_a, r_a, c_a);
-
     if(dbg_print){
-        print_array("p_a", p_a, 3);
-        print_array("l_a", l_a, 3);
-        print_array("p_b", p_b, 3);
-        print_array("l_b", l_b, 3);
-        print_array("l_a x l_b", l_a_cross_l_b, 3);
-        print_array("n_b", n_b, 3);
-        print_array("r_a", r_a, 3);
-        print_array("r_b", r_b, 3);
-        print_array("r_b - r_a", r_ba, 3);
-        printf("r_ba_dot_n_b: %.3lf\n", r_ba_dot_n_b);
-        printf("l_a_dot_n_b: %.3lf\n", l_a_dot_n_b);
-        print_array("c_a", c_a, 3);
+        std::cout << "rod::get_point_on_connecting_line()" << std::endl;
+        print_array("\tp_a", p_a, 3);
+        print_array("\tl_a", l_a, 3);
+        print_array("\tp_b", p_b, 3);
+        print_array("\tl_b", l_b, 3);
+        print_array("\tl_a x l_b", l_a_cross_l_b, 3);
+        print_array("\tn_b", n_b, 3);
+        print_array("\tr_a", r_a, 3);
+        print_array("\tr_b", r_b, 3);
+        print_array("\tr_b - r_a", r_ba, 3);
+        printf("\tr_ba_dot_n_b : %.3lf\n", r_ba_dot_n_b);
+        printf("\tl_a_dot_n_b : %.3lf\n", l_a_dot_n_b);
+        print_array("\tc_a (initial)", c_a, 3);
         std::cout << std::endl;
     }
+
+    // Set c to appropriate node if outside element
+    set_point_within_rod_element(c_a, p_a, r_a, c_a_out);
+    if(dbg_print){print_array("\tc_a_out", c_a_out, 3);}
+
 }
 
 /** Perturb the intersection radius, d, between two rod elements, a and b. A perturbation is applied 

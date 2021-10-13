@@ -1272,7 +1272,6 @@ int ffea_test::shortest_distance_between_rod_elements(){
 //
 // Define candidates for c with the parametric line equation, c = r1 + p*t, 
 // where c = r2 when t = 1. t is a multiplier.
-
 int ffea_test::point_lies_on_rod_line_element(){
     float p[3] = {2, 1, 5};
     float r1[3] = {-1, 0, -3}; 
@@ -1354,8 +1353,8 @@ int ffea_test::line_connecting_rod_elements(){
     float r_a2[3] = {1.0, 0.0, 0.0};
     float r_b2[3] = {0.0, 0.0, 0.0};
     float p_a[3] = {1.0, 0.0, 0.0};  // point in x direction
-    float p_b[8][3] = {{std::sin(M_PI/4.0), 0.0, std::cos(M_PI/4.0)},  // 45 deg x-z
-                       {std::sin(M_PI/12.0), 0.0, std::cos(M_PI/12.0)},  // 15 deg x-z
+    float p_b[8][3] = {{std::sin(M_PI/4.0), 0.0, std::cos(M_PI/4.0)},   // 45 deg x-z
+                       {std::sin(M_PI/12.0), 0.0, std::cos(M_PI/12.0)}, // 15 deg x-z
                        {0.0, 0.0, 1.0},
                        {0.0, 0.0, 1.0}, // todo (downwards)
                        {0.0, 0.0, 1.0},
@@ -1367,7 +1366,6 @@ int ffea_test::line_connecting_rod_elements(){
     float l_a_cross_l_b[3] = {0.0, 0.0, 0.0};
     float c_a[3] = {1.0, 0.0, 0.0};
     float c_b[3] = {1.0, 0.0, 0.0};
-    float c_ba[3] = {0.0, 0.0, 0.0};
 
     // Expected results
     float c_a_answer[3] = {0.0, 0.0, 0.0};
@@ -1385,9 +1383,15 @@ int ffea_test::line_connecting_rod_elements(){
         rod::normalize(p_b[i], l_b);
         rod::cross_product(l_a, l_b, l_a_cross_l_b);
 
+        std::cout << "before test" << std::endl;
+        rod::print_array("p_a", p_a, 3);
+        rod::print_array("p_b", p_b[i], 3);
+        rod::print_array("r_a1", r_a1, 3);
+        rod::print_array("r_b1", r_b1[i], 3);
+        rod::print_array("l_a x l_b", l_a_cross_l_b, 3);
+      
         rod::get_point_on_connecting_line(p_a, p_b[i], l_a_cross_l_b, r_a1, r_b1[i], c_a);  // test
         rod::get_point_on_connecting_line(p_b[i], p_a, l_a_cross_l_b, r_b1[i], r_a1, c_b);
-        vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
 
         switch(i){
             case 0:
@@ -1405,30 +1409,31 @@ int ffea_test::line_connecting_rod_elements(){
                 // touching, midsection, perpendicular in x-z plane
                 c_a_answer[0] = 0.75;
                 vec3d(n){c_b_answer[n] = r_b1[i][n] + 0.5*p_b[i][n];}
-                break;
+                return 1;
+                //break;
             case 3:
                 // intersect, midsection, shallow angle
                 pass_count--;
-                break; 
+                return 1; 
             case 4:
                 // intersect, midsection, further along rod, shallow angle
                 pass_count--;
-                break; 
+                return 1;  
             case 5:
                 // intersect, end (a) to midsection (b), steep angle
                 pass_count--;
-                break; 
+                return 1;
             case 6:
                 // full overlap, end to end, skew
                 // intersection normal is back along rod element
                 // expect an exception
                 pass_count--;
-                break; 
+                return 1; 
             case 7:
                 // full overlap, through midsection and out other side, steep angle
                 // expect an exception
                 pass_count--;
-                break; 
+                return 1;
             default:
                 std::cout << "Default case reached" << std::endl;
                 return 1;
