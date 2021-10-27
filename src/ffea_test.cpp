@@ -1344,8 +1344,8 @@ int ffea_test::line_connecting_rod_elements(){
     float r_b1[8][3] = {{0.0, radius_a + radius_b, -0.25},
                         {1.1456, radius_a, 0.25},
                         {0.75, radius_a + radius_b, -0.5},
-                        {0.0, 0.0, 0.0},  //
-                        {0.0, 0.0, 0.0},  //
+                        {0.75, radius_b, 0.0},
+                        {0.25, radius_b, 0.0},
                         {0.0, 0.0, 0.0},  //
                         {0.0, 0.0, 0.0},
                         {0.0, 0.5, 0.0}};
@@ -1409,24 +1409,26 @@ int ffea_test::line_connecting_rod_elements(){
                 break;
             case 2:
                 // touching, midsection, perpendicular in x-z plane
-                // NOTE: under construction
                 c_a_answer[0] = 0.75;
                 vec3d(n){c_b_answer[n] = r_b1[i][n] + 0.5*p_b[i][n];}
                 break;
             case 3:
                 // intersect, midsection, shallow angle
-                vec3d(n){c_a_answer[n] = -1;}
-                vec3d(n){c_b_answer[n] = -1;}
+                // UNDER CONSTRUCTION
+                c_a_answer[0] = r_b1[i][0];
+                vec3d(n){c_b_answer[n] = r_b1[i][n];}
                 break;
             case 4:
                 // intersect, midsection, further along rod, shallow angle
-                vec3d(n){c_a_answer[n] = -1;}
-                vec3d(n){c_b_answer[n] = -1;}
+                // UNDER CONSTRUCTION
+                c_a_answer[0] = r_b1[i][0];
+                vec3d(n){c_b_answer[n] = r_b1[i][n];}
                 break;  
             case 5:
                 // intersect, end (a) to midsection (b), steep angle
-                vec3d(n){c_a_answer[n] = -1;}
-                vec3d(n){c_b_answer[n] = -1;}
+                // UNDER CONSTRUCTION
+                vec3d(n){c_a_answer[n] = r_a2[n];}
+                vec3d(n){c_b_answer[n] = -1;}  // some distance along p_b, r1b + t*pb
                 break;
             case 6:
                 // full overlap, end to end, 15 degree angle in x-y plane
