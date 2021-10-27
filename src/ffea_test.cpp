@@ -1338,34 +1338,33 @@ int ffea_test::point_lies_on_rod_line_element(){
  */
 // TODO: How many of the cases in this test function are truly unique?
 int ffea_test::line_connecting_rod_elements(){
-    // Test parameters 1.1456
     float radius_a = 0.25;
     float radius_b = 0.5;
-    float r_a1[3] = {0.0, 0.0, 0.0};  // remain fixed
+    float r_a1[3] = {0.0, 0.0, 0.0};  // fixed
     float r_b1[8][3] = {{0.0, radius_a + radius_b, -0.25},
                         {1.1456, radius_a, 0.25},
                         {0.75, radius_a + radius_b, -0.5},
-                        {0.0, 0.0, 0.0}, // todo (downwards)
+                        {0.0, 0.0, 0.0},  //
+                        {0.0, 0.0, 0.0},  //
+                        {0.0, 0.0, 0.0},  //
                         {0.0, 0.0, 0.0},
-                        {0.0, 0.0, 0.0},
-                        {0.0, 0.0, 0.0},
-                        {0.0, 0.0, 0.0}};
-    float r_a2[3] = {1.0, 0.0, 0.0};
+                        {0.0, 0.5, 0.0}};
+    float r_a2[3] = {1.0, 0.0, 0.0};  // fixed
     float r_b2[3] = {0.0, 0.0, 0.0};
     float p_a[3] = {1.0, 0.0, 0.0};  // point in x direction
     float p_b[8][3] = {{std::sin(M_PI/4.0), 0.0, std::cos(M_PI/4.0)},   // 45 deg x-z
                        {std::sin(M_PI/12.0), 0.0, std::cos(M_PI/12.0)}, // 15 deg x-z
-                       {0.0, 0.0, 1.0},
-                       {0.0, 0.0, 1.0}, // todo (downwards)
-                       {0.0, 0.0, 1.0},
-                       {0.0, 0.0, 1.0},
-                       {0.0, 0.0, 1.0},
-                       {0.0, 0.0, 1.0}};
+                       {0.0, 0.0, 1.0},  //
+                       {0.0, 0.0, 0.0},  // 
+                       {0.0, 0.0, 0.0},  //
+                       {0.0, 0.0, 0.0},  //
+                       {std::cos(M_PI/12.0), std::sin(M_PI/12.0), 0.0},  // 15 deg, x-y
+                       {std::cos(M_PI/3.0), -std::sin(M_PI/3.0), 0.0}};  // -60 deg, x-y
     float l_a[3] = {0, 0, 0};
     float l_b[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0.0, 0.0, 0.0};
-    float c_a[3] = {1.0, 0.0, 0.0};
-    float c_b[3] = {1.0, 0.0, 0.0};
+    float c_a[3] = {0.0, 0.0, 0.0};
+    float c_b[3] = {0.0, 0.0, 0.0};
 
     // Expected results
     float c_a_answer[3] = {0.0, 0.0, 0.0};
@@ -1383,14 +1382,17 @@ int ffea_test::line_connecting_rod_elements(){
         rod::normalize(p_b[i], l_b);
         rod::cross_product(l_a, l_b, l_a_cross_l_b);
 
-        std::cout << "before test" << std::endl;
-        rod::print_array("p_a", p_a, 3);
-        rod::print_array("p_b", p_b[i], 3);
-        rod::print_array("r_a1", r_a1, 3);
-        rod::print_array("r_b1", r_b1[i], 3);
-        rod::print_array("l_a x l_b", l_a_cross_l_b, 3);
+        if(rod::dbg_print == true){
+            std::cout << "before test" << std::endl;
+            rod::print_array("p_a", p_a, 3);
+            rod::print_array("p_b", p_b[i], 3);
+            rod::print_array("r_a1", r_a1, 3);
+            rod::print_array("r_b1", r_b1[i], 3);
+            rod::print_array("l_a x l_b", l_a_cross_l_b, 3);
+        }
       
-        rod::get_point_on_connecting_line(p_a, p_b[i], l_a_cross_l_b, r_a1, r_b1[i], c_a);  // test
+        // test
+        rod::get_point_on_connecting_line(p_a, p_b[i], l_a_cross_l_b, r_a1, r_b1[i], c_a);
         rod::get_point_on_connecting_line(p_b[i], p_a, l_a_cross_l_b, r_b1[i], r_a1, c_b);
 
         switch(i){
@@ -1407,33 +1409,38 @@ int ffea_test::line_connecting_rod_elements(){
                 break;
             case 2:
                 // touching, midsection, perpendicular in x-z plane
+                // NOTE: under construction
                 c_a_answer[0] = 0.75;
                 vec3d(n){c_b_answer[n] = r_b1[i][n] + 0.5*p_b[i][n];}
-                return 1;
-                //break;
+                break;
             case 3:
                 // intersect, midsection, shallow angle
-                pass_count--;
-                return 1; 
+                vec3d(n){c_a_answer[n] = -1;}
+                vec3d(n){c_b_answer[n] = -1;}
+                break;
             case 4:
                 // intersect, midsection, further along rod, shallow angle
-                pass_count--;
-                return 1;  
+                vec3d(n){c_a_answer[n] = -1;}
+                vec3d(n){c_b_answer[n] = -1;}
+                break;  
             case 5:
                 // intersect, end (a) to midsection (b), steep angle
-                pass_count--;
-                return 1;
+                vec3d(n){c_a_answer[n] = -1;}
+                vec3d(n){c_b_answer[n] = -1;}
+                break;
             case 6:
-                // full overlap, end to end, skew
-                // intersection normal is back along rod element
-                // expect an exception
-                pass_count--;
-                return 1; 
+                // full overlap, end to end, 15 degree angle in x-y plane
+                vec3d(n){c_a_answer[n] = r_b1[i][n];}
+                vec3d(n){c_b_answer[n] = c_a_answer[n];}
+                break;
             case 7:
-                // full overlap, through midsection and out other side, steep angle
-                // expect an exception
-                pass_count--;
-                return 1;
+                // full overlap, through midsection and out other side, -60 degree angle in x-y plane
+                vec3d(n){c_a_answer[n] = -1;}
+                c_a_answer[0] = 0.5 * std::tan(M_PI/6);
+                c_a_answer[1] = 0;
+                c_a_answer[2] = 0;
+                vec3d(n){c_b_answer[n] = c_a_answer[n];}
+                break;
             default:
                 std::cout << "Default case reached" << std::endl;
                 return 1;
@@ -1441,13 +1448,16 @@ int ffea_test::line_connecting_rod_elements(){
         vec3d(n){delta_a[n] = c_a[n] - c_a_answer[n];}
         vec3d(n){delta_b[n] = c_b[n] - c_b_answer[n];}
         if(rod::absolute(delta_a) < 0.01 and rod::absolute(delta_b) < 0.01){pass_count++;}
-        rod::print_array("c_a computed", c_a, 3);
-        rod::print_array("c_a expected", c_a_answer, 3);
-        std::cout << "|delta_a| = " << rod::absolute(delta_a) << std::endl;
-        rod::print_array("c_b computed", c_b, 3);
-        rod::print_array("c_b expected", c_b_answer, 3);
-        std::cout << "|delta_b| = " << rod::absolute(delta_b) << std::endl;
-        std::cout << "TEST RESULT: case = " << i << ", pass_count = " << pass_count << "\n" << std::endl;
+        std::cout << "TEST RESULT: case = " << i << ", pass_count = " << pass_count << std::endl;
+        if(rod::dbg_print == true){
+            rod::print_array("c_a computed", c_a, 3);
+            rod::print_array("c_a expected", c_a_answer, 3);
+            std::cout << "|delta_a| = " << rod::absolute(delta_a) << std::endl;
+            rod::print_array("c_b computed", c_b, 3);
+            rod::print_array("c_b expected", c_b_answer, 3);
+            std::cout << "|delta_b| = " << rod::absolute(delta_b) << "\n" << std::endl;
+        }
+        
     }
     if(pass_count == 8){
         return 0;

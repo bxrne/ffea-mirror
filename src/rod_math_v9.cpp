@@ -1228,18 +1228,18 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
     float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
     float l_b[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0, 0, 0};
-    float r_ba[3] = {0, 0, 0};
+    float r_ab[3] = {0, 0, 0};
     float d = 0.0;
 
     // NOTE: Obtain l_a from the rod object instead of re-calculating it here?
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
     cross_product(l_a, l_b, l_a_cross_l_b);
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
+    vec3d(n){r_ab[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
 
     // Rods are skew or perpendicular: use skew line formulae
     if (absolute(l_a_cross_l_b) > 0.0){
-        d = dot_product_3x1(l_a_cross_l_b, r_ba);
+        d = dot_product_3x1(l_a_cross_l_b, r_ab);
     }
     else{
         throw std::domain_error("Rods must not be parallel");
@@ -1253,7 +1253,7 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
         print_array("p_b", p_b, 3);
         print_array("l_b", l_b, 3);
         print_array("l_a x l_b", l_a_cross_l_b, 3);
-        print_array("r_b - r_a - radius_a - radius_b", r_ba, 3);
+        print_array("r_b - r_a - radius_a - radius_b", r_ab, 3);
         printf("Distance : %.3lf\n", d);
         printf("Absolute distance : %.3lf\n", abs(d));
         std::cout << std::endl;
@@ -1316,8 +1316,8 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
     float n_b[3] = {0.0, 0.0, 0.0};
-    float r_ba[3] = {0.0, 0.0, 0.0};
-    float r_ba_dot_n_b = 0.0;
+    float r_ab[3] = {0.0, 0.0, 0.0};
+    float r_ab_dot_n_b = 0.0;
     float l_a_dot_n_b = 0.0;
     float c_a[3] = {0.0, 0.0, 0.0};
 
@@ -1325,10 +1325,10 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
     normalize(p_b,  l_b);
     cross_product(l_b, l_a_cross_l_b, n_b);
 
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n];}
-    r_ba_dot_n_b = dot_product_3x1(r_ba, n_b);
+    vec3d(n){r_ab[n] = r_b[n] - r_a[n];}
+    r_ab_dot_n_b = dot_product_3x1(r_ab, n_b);
     l_a_dot_n_b = dot_product_3x1(l_a, n_b);
-    vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b / l_a_dot_n_b * l_a[n];}
+    vec3d(n){c_a[n] = r_a[n] + r_ab_dot_n_b / l_a_dot_n_b * l_a[n];}
 
     if(dbg_print){
         std::cout << "rod::get_point_on_connecting_line()" << std::endl;
@@ -1340,8 +1340,8 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
         print_array("\tn_b", n_b, 3);
         print_array("\tr_a", r_a, 3);
         print_array("\tr_b", r_b, 3);
-        print_array("\tr_b - r_a", r_ba, 3);
-        printf("\tr_ba_dot_n_b : %.3lf\n", r_ba_dot_n_b);
+        print_array("\tr_b - r_a", r_ab, 3);
+        printf("\tr_ab_dot_n_b : %.3lf\n", r_ab_dot_n_b);
         printf("\tl_a_dot_n_b : %.3lf\n", l_a_dot_n_b);
         print_array("\tc_a (initial)", c_a, 3);
         std::cout << std::endl;
@@ -1398,6 +1398,8 @@ float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3]
 float get_spherical_volume_intersection(float separation, float radius_a, float radius_b){   
     float bracket1 = 0.0;
     float bracket2 = 0.0;
+
+    // NOTE: Rewrite to remove if-statements and use min/max instead
 
     // Spheres intersecting
     if (separation < radius_a + radius_b && separation > std::abs(radius_a - radius_b) && separation > 0){
