@@ -1395,11 +1395,10 @@ float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3]
  *
  * \f[ \frac{\pi}{12d}(r_a+r_b-d)^2 (d^2+2d(r_a+r_b)-3(r_a-r_b)^2) \f]
 */
+// TODO: Rewrite to remove if-statements and use min/max instead
 float get_spherical_volume_intersection(float separation, float radius_a, float radius_b){   
     float bracket1 = 0.0;
     float bracket2 = 0.0;
-
-    // NOTE: Rewrite to remove if-statements and use min/max instead
 
     // Spheres intersecting
     if (separation < radius_a + radius_b && separation > std::abs(radius_a - radius_b) && separation > 0){
@@ -1417,6 +1416,9 @@ float get_spherical_volume_intersection(float separation, float radius_a, float 
     else {
         return 0.0;
     }
+
+    // return std::min(0.0833 * M_PI / separation * bracket1 * bracket2, 1.3333 * M_PI * radius_min * radius_min * radius_min);
+
 }
 
 

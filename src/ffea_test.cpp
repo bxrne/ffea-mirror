@@ -1272,6 +1272,9 @@ int ffea_test::shortest_distance_between_rod_elements(){
 //
 // Define candidates for c with the parametric line equation, c = r1 + p*t, 
 // where c = r2 when t = 1. t is a multiplier.
+//
+// TODO: This function needs more information to 'properly' correct connection points,
+// instead of just assigning them to the node end of a rod element.
 int ffea_test::point_lies_on_rod_line_element(){
     float p[3] = {2, 1, 5};
     float r1[3] = {-1, 0, -3}; 
@@ -1335,29 +1338,29 @@ int ffea_test::point_lies_on_rod_line_element(){
  * (capsules) and compare to expected values. Rod a is the 'stationary' rod in 
  * these collision scenarios, whilst b is the 'colliding' rod.
  *
- */
-// TODO: How many of the cases in this test function are truly unique?
+TODO: I think the function that 'corrects' for when a connection is outside the rod
+element is a bit wrong, e.g. when a connection is actually 1/3 along the rod element, 
+it gets corrected to be at the node end anyway. Becomes more of a problem if using
+long rod elements. May not be a huge issue. */
 int ffea_test::line_connecting_rod_elements(){
     float radius_a = 0.25;
     float radius_b = 0.5;
     float r_a1[3] = {0.0, 0.0, 0.0};  // fixed
-    float r_b1[8][3] = {{0.0, radius_a + radius_b, -0.25},
+    float r_b1[7][3] = {{0.0, radius_a + radius_b, -0.25},
                         {1.1456, radius_a, 0.25},
                         {0.75, radius_a + radius_b, -0.5},
-                        {0.75, radius_b, 0.0},
-                        {0.25, radius_b, 0.0},
-                        {0.0, 0.0, 0.0},  //
+                        {0.1, radius_b, 0.0},
+                        {1, -0.5, 0},
                         {0.0, 0.0, 0.0},
                         {0.0, 0.5, 0.0}};
     float r_a2[3] = {1.0, 0.0, 0.0};  // fixed
     float r_b2[3] = {0.0, 0.0, 0.0};
     float p_a[3] = {1.0, 0.0, 0.0};  // point in x direction
-    float p_b[8][3] = {{std::sin(M_PI/4.0), 0.0, std::cos(M_PI/4.0)},   // 45 deg x-z
+    float p_b[7][3] = {{std::sin(M_PI/4.0), 0.0, std::cos(M_PI/4.0)},   // 45 deg x-z
                        {std::sin(M_PI/12.0), 0.0, std::cos(M_PI/12.0)}, // 15 deg x-z
-                       {0.0, 0.0, 1.0},  //
-                       {0.0, 0.0, 0.0},  // 
-                       {0.0, 0.0, 0.0},  //
-                       {0.0, 0.0, 0.0},  //
+                       {0.0, 0.0, 1.0},
+                       {std::cos(M_PI/12.0), std::sin(M_PI/12.0), 0.0},  // 15 deg, x-y
+                       {std::cos(M_PI/3.0), std::sin(M_PI/3.0), 0.0},  // 60 deg, x-y
                        {std::cos(M_PI/12.0), std::sin(M_PI/12.0), 0.0},  // 15 deg, x-y
                        {std::cos(M_PI/3.0), -std::sin(M_PI/3.0), 0.0}};  // -60 deg, x-y
     float l_a[3] = {0, 0, 0};
@@ -1372,9 +1375,10 @@ int ffea_test::line_connecting_rod_elements(){
 
     float delta_a[3] = {0.0, 0.0, 0.0};
     float delta_b[3] = {0.0, 0.0, 0.0};
+    int num_tests = sizeof(r_b1) / sizeof(r_b1[0]);
     int pass_count = 0;  // count number of cases that have passed
 
-    for(int i=0; i<8; i++){
+    for(int i=0; i<num_tests; i++){
         vec3d(n){c_a_answer[n] = 0.0;}
         vec3d(n){c_b_answer[n] = 0.0;}
 
@@ -1410,32 +1414,28 @@ int ffea_test::line_connecting_rod_elements(){
             case 2:
                 // touching, midsection, perpendicular in x-z plane
                 c_a_answer[0] = 0.75;
-                vec3d(n){c_b_answer[n] = r_b1[i][n] + 0.5*p_b[i][n];}
+                vec3d(n){c_b_answer[n] = r_b1[i][n] + 0.5 * p_b[i][n];}
                 break;
             case 3:
-                // intersect, midsection, shallow angle
-                // UNDER CONSTRUCTION
-                c_a_answer[0] = r_b1[i][0];
+                // intersect, midsection, 15 degrees in x-y plane
+                c_a_answer[0] = r_b1[i][0];          
                 vec3d(n){c_b_answer[n] = r_b1[i][n];}
-                break;
+                // BUG: test gives c_a = (0, 0, 0) = r_a1, which is NOT the shortest connection
+                break; 
             case 4:
-                // intersect, midsection, further along rod, shallow angle
-                // UNDER CONSTRUCTION
-                c_a_answer[0] = r_b1[i][0];
-                vec3d(n){c_b_answer[n] = r_b1[i][n];}
-                break;  
-            case 5:
-                // intersect, end (a) to midsection (b), steep angle
-                // UNDER CONSTRUCTION
+                // intersect, end (a) to midsection (b), 60 degrees in x-y plane
                 vec3d(n){c_a_answer[n] = r_a2[n];}
-                vec3d(n){c_b_answer[n] = -1;}  // some distance along p_b, r1b + t*pb
+                vec3d(n){c_b_answer[n] = r_a2[n];}
+                c_b_answer[0] += 0.2165;
+                c_b_answer[1] -= 0.125;
+                // BUG: test gives c_a = (0.5tan30, 0, 0) in x, which is NOT the shortest connection
                 break;
-            case 6:
+            case 5:
                 // full overlap, end to end, 15 degree angle in x-y plane
                 vec3d(n){c_a_answer[n] = r_b1[i][n];}
                 vec3d(n){c_b_answer[n] = c_a_answer[n];}
                 break;
-            case 7:
+            case 6:
                 // full overlap, through midsection and out other side, -60 degree angle in x-y plane
                 vec3d(n){c_a_answer[n] = -1;}
                 c_a_answer[0] = 0.5 * std::tan(M_PI/6);
@@ -1449,19 +1449,23 @@ int ffea_test::line_connecting_rod_elements(){
         }
         vec3d(n){delta_a[n] = c_a[n] - c_a_answer[n];}
         vec3d(n){delta_b[n] = c_b[n] - c_b_answer[n];}
-        if(rod::absolute(delta_a) < 0.01 and rod::absolute(delta_b) < 0.01){pass_count++;}
-        std::cout << "TEST RESULT: case = " << i << ", pass_count = " << pass_count << std::endl;
+        if(rod::absolute(delta_a) < 0.01 and rod::absolute(delta_b) < 0.01){
+            std::cout << "Case " << i << " passed!" << std::endl;
+            pass_count++;
+        }
+        
         if(rod::dbg_print == true){
             rod::print_array("c_a computed", c_a, 3);
             rod::print_array("c_a expected", c_a_answer, 3);
             std::cout << "|delta_a| = " << rod::absolute(delta_a) << std::endl;
             rod::print_array("c_b computed", c_b, 3);
             rod::print_array("c_b expected", c_b_answer, 3);
-            std::cout << "|delta_b| = " << rod::absolute(delta_b) << "\n" << std::endl;
+            std::cout << "|delta_b| = " << rod::absolute(delta_b) << std::endl;
         }
         
+        std::cout << "CASES PASSED: " << pass_count << "/" << num_tests << "\n" << std::endl;
     }
-    if(pass_count == 8){
+    if(pass_count == num_tests){
         return 0;
     }
     else{
