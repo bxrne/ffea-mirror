@@ -1270,6 +1270,8 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
 /*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) > 0
 /*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) < \boldsymbol{p}^2
 */
+// TODO: This function needs more information to 'properly' correct connection points,
+// instead of just assigning them to the node end of a rod element.
 void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float c_out[3]){
     float r1_c[3] = {0.0, 0.0, 0.0};
     float p2 = 0.0;

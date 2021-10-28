@@ -1272,9 +1272,6 @@ int ffea_test::shortest_distance_between_rod_elements(){
 //
 // Define candidates for c with the parametric line equation, c = r1 + p*t, 
 // where c = r2 when t = 1. t is a multiplier.
-//
-// TODO: This function needs more information to 'properly' correct connection points,
-// instead of just assigning them to the node end of a rod element.
 int ffea_test::point_lies_on_rod_line_element(){
     float p[3] = {2, 1, 5};
     float r1[3] = {-1, 0, -3}; 
