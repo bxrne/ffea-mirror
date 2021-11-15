@@ -23,6 +23,9 @@
 import cProfile
 
 import sys, os, time
+print("Executable: {0}".format(sys.executable))
+os.system("echo PYTHONPATH: $PYTHONPATH")
+
 import numpy as np
 
 from pymol import cmd
@@ -80,6 +83,7 @@ import FFEA_pin, FFEA_vdw, FFEA_lj
 import FFEA_rod
 
 from numpy.random import randint as rint
+from itertools import cycle  # for silly colours
 
 def __init__(self):
     """ 
@@ -134,13 +138,15 @@ class FFEA_viewer_control_window:
         self.show_danger = IntVar(self.root, value=self.display_flags['show_danger'])
         self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
         self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
+        self.show_rod_tangent = IntVar(self.root, value=self.display_flags['show_rod_tangent'])
+        self.rod_colors = StringVar(self.root, value=self.display_flags['rod_colors'])
         self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
         self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
         self.show_mesh = StringVar(self.root, value=self.display_flags['show_mesh'])
         self.show_shortest_edge = IntVar(self.root, value=self.display_flags['show_shortest_edge'])
         self.load_sfa = StringVar(self.root, value=self.display_flags['load_sfa'])
         self.highlight = StringVar(self.root, value=self.display_flags['highlight'])
-
+        
         self.sele_name = StringVar(self.root, value=self.display_flags['sele_name'])
         self.pin_fname = StringVar(self.root, value=self.display_flags['pin_fname'])
         self.mat_fname = StringVar(self.root, value=self.display_flags['mat_fname'])
@@ -179,25 +185,35 @@ class FFEA_viewer_control_window:
         self.random_name_button.grid(row=0, column=2, sticky=W)
 
         label_display = Label(display_flags_frame, text="Display:")
-        label_display.grid(row=2, column=2, sticky=W)
+        label_display.grid(row=1, column=2, sticky=W)
 
 	# show springs: 
         self.check_button_show_springs = Checkbutton(display_flags_frame, text="Springs", variable=self.show_springs, command=lambda:self.update_display_flags("show_springs"))
-        self.check_button_show_springs.grid(row=3, column=2, sticky=W)
+        self.check_button_show_springs.grid(row=2, column=2, sticky=W)
 
 
 	# show pinned_nodes: 
         self.check_button_show_pinned = Checkbutton(display_flags_frame, text="Pinned Nodes", variable=self.show_pinned, command=lambda:self.update_display_flags("show_pinned"))
-        self.check_button_show_pinned.grid(row=4, column=2, sticky=W)
+        self.check_button_show_pinned.grid(row=3, column=2, sticky=W)
 
 
 	# show inverted_elements: 
         self.check_button_show_inverted = Checkbutton(display_flags_frame, text="Inverted Elements", variable=self.show_inverted, command=lambda:self.update_display_flags("show_inverted"))
-        self.check_button_show_inverted.grid(row=5, column=2, sticky=W)
+        self.check_button_show_inverted.grid(row=4, column=2, sticky=W)
 
 	# show danger_elements: 
         self.check_button_show_danger = Checkbutton(display_flags_frame, text="Dangerous Elements", variable=self.show_danger, command=lambda:self.update_display_flags("show_danger"))
-        self.check_button_show_danger.grid(row=6, column=2, sticky=W)
+        self.check_button_show_danger.grid(row=5, column=2, sticky=W)
+        
+    # Show rod material axis (tangent vector)
+        self.check_button_show_rod_tangent = Checkbutton(display_flags_frame, text="Rod Material Axes", variable=self.show_rod_tangent, command=lambda:self.update_display_flags("show_rod_tangent"))
+        self.check_button_show_rod_tangent.grid(row=6, column=2, sticky=W)
+        
+    # Options for fun rod colours
+        label_mesh = Label(display_flags_frame, text="Rod Colours:")
+        label_mesh.grid(row=7, column=2, sticky=W, padx=(0, 95))
+        self.om_rod_colors = OptionMenu(display_flags_frame, self.rod_colors, "Rainbow", "Candy Cane", "Green", command=lambda x:self.update_display_flags("rod_colors", val=self.rod_colors.get()))
+        self.om_rod_colors.grid(row=7, column=2, sticky=E)
 
 	# # show solid:
         label_solid = Label(display_flags_frame, text="Show Solid:")
@@ -248,10 +264,10 @@ class FFEA_viewer_control_window:
         self.om_load_sfa = OptionMenu(display_flags_frame, self.load_sfa, "None", "Onto Linear Nodes", "Onto Nodes", "Onto Faces", "Onto Elements", command=lambda x:self.update_display_flags("load_sfa", val=self.load_sfa.get())) 
         self.om_load_sfa.grid(row=7, column=1, sticky=W)
 	
-	
+
 	## # Finally the Load Button! # #
         self.load_button = Button(display_flags_frame, text="Load ffea file", command=lambda:self.choose_ffea_file_to_load() )
-        self.load_button.grid(row=8, column=0, columnspan=4, sticky=W+E+N+S, pady=20)
+        self.load_button.grid(row=9, column=0, columnspan=4, sticky=W+E+N+S, pady=20)
 	
 
 
@@ -1047,6 +1063,8 @@ class FFEA_viewer_control_window:
         self.check_button_show_pinned.config(state=DISABLED)
         self.check_button_show_inverted.config(state=DISABLED)
         self.check_button_show_danger.config(state=DISABLED)
+        self.check_button_show_rod_tangent.config(state=DISABLED)
+        self.om_rod_colors.config(state=DISABLED)
 
         self.text_button_system_name.config(state=DISABLED)
         self.random_name_button.config(state=DISABLED)
@@ -1135,11 +1153,11 @@ class FFEA_viewer_control_window:
             cmd.load_cgo(sol, self.display_flags['system_name'], frame)
 
     
-    # Each trajectory is composed of several blobs, do it for all blobs
-    # if each blob has several conformations, do it for all of those
-    # skip when 'none' obviously
-    # in each blob->conformation, consult the surface file
-    # for each surf.face.n, grab the points at that index and draw a trinagle with them
+        # Each trajectory is composed of several blobs, do it for all blobs
+        # if each blob has several conformations, do it for all of those
+        # skip when 'none' obviously
+        # in each blob->conformation, consult the surface file
+        # for each surf.face.n, grab the points at that index and draw a trinagle with them
         return
 
     def load_rod(self, rod, rod_num=0):
@@ -1161,15 +1179,15 @@ class FFEA_viewer_control_window:
             return rod
 	   
         def get_avg_lengths(rod):
-	   # Get scale factor for ei
+            # Get scale factor for ei
             avg_pi = 0
             pi = rod.get_p_i(rod.current_r)
             for frame in pi:
                 for p in range(len(frame)):
                     avg_pi += np.linalg.norm(frame[p])
             avg_pi = avg_pi / (( len(pi)*len(pi[0]) ))
-	   
-	   # Get scale factor for m
+    
+            # Get scale factor for m
             avg_m = 0
             for frame in rod.current_m:
                 for m in range(len(frame)-1):
@@ -1179,22 +1197,34 @@ class FFEA_viewer_control_window:
             print(avg_m, avg_pi)
             return avg_m, avg_pi
     
-    #avg_m, avg_p = get_avg_lengths(rod)
+        # avg_m, avg_p = get_avg_lengths(rod)
     
-    # Scale the material frame to be a similar size to the rod elements
-    #rod.current_m *= (avg_m/avg_p)/np.sqrt(2)
+        # Scale the material frame to be a similar size to the rod elements
+        #rod.current_m *= (avg_m/avg_p)/np.sqrt(2)
         rod = rescale_m(rod)
     
-    # units note: radii are arbitrary so far. the *10**10 is to go from SI to angstroms (I should remove this after I add proper scaling)
+        if self.display_flags['rod_colors'] == "Rainbow":
+            rod_color_cycle = cycle([[1, 0, 0], [1, 0.85, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [0.29, 0, 0.51], [0.50, 0, 1]])  # red, white
+        elif self.display_flags['rod_colors'] == "Candy Cane":
+            rod_color_cycle = cycle([[1, 0, 0], [1, 1, 1]])  # red, white
+        else:
+            rod_color_cycle = cycle([[0, 1, 0]])  # green
+        
+        # units note: radii are arbitrary so far. the *10**10 is to go from SI to angstroms (I should remove this after I add proper scaling)
         for i in range(len(rod.current_r)):
             line = []
             for j in range(len(rod.current_r[i])-1):
-                line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, 0, 1, 0, 0, 1, 0 ]
-	   # material frame in center of each element
-                mid_x, mid_y, mid_z = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2, (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2, (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
-                line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 4, 0, 0, 1, 0, 0, 1 ]
-#        print("frame "+str(i)+" element "+str(j)+"= "+str(line))
-#        print(line)
+                print(i, j)
+                color = next(rod_color_cycle)
+                line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, color[0], color[1], color[2], color[0], color[1], color[2] ]  # green: 0 1 0
+                # line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, 0, 1, 0, 0, 1, 0]  # green: 0 1 0
+	            # material frame in center of each element
+                if self.display_flags['show_rod_tangent'] == 1:
+                    mid_x, mid_y, mid_z = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2, (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2, (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
+                    line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 4, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7]
+                # line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 4, 0, 0, 1, 0, 0, 1]
+                # print("frame "+str(i)+" element "+str(j)+"= "+str(line))
+                # print(line)
             cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
 
 
@@ -1518,6 +1548,8 @@ class FFEA_viewer_control_window:
             'show_vdw': 0,
             'show_shortest_edge': 0,
             'show_springs': 0,
+            'show_rod_tangent': 1,
+            'rod_colors': "Green",
             'show_box': "No Box",
             'load_trajectory': "Trajectory", ## PYMOL OK
             'highlight': '',
