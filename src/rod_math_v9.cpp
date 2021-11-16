@@ -273,9 +273,9 @@ void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]){
     not_simulation_destroying(p_i, "Get_p_i is simulation destroying.");
 }
 
-// \f[ p_{mid} = \frac{1}{2}p_i - r_i \f]
+// \f[ p_{mid} = r_i + \frac{1}{2}p_i\f]
 void get_p_midpoint(float p_i[3], float r_i[3], OUT float p_mid[3]){
-    vec3d(n){p_mid[n] = 0.5 * p_i[n] - r_i[3];}
+    vec3d(n){p_mid[n] = r_i[n] + 0.5 * p_i[n];}
     not_simulation_destroying(p_mid, "get_p_midpoint is simulation destroying.");
 }
 
@@ -1420,9 +1420,28 @@ float get_spherical_volume_intersection(float separation, float radius_a, float 
     }
 
     // return std::min(0.0833 * M_PI / separation * bracket1 * bracket2, 1.3333 * M_PI * radius_min * radius_min * radius_min);
-
 }
 
+// See if two rod elements are within some interacting distance, defined by a cutoff radius
+// SLOW method. Use uniform grid for speed.
+// TODO: Use this in World.cpp by looping over rod pairs, then the nodes within those rods
+bool elements_are_interacting(float r_1a[3], float r_2a[3], float r_1b[3], float r_2b[3], float cutoff){
+    float p_a[3] = {0, 0, 0};
+    float mid_p_a[3] = {0, 0, 0};
+    float d1[3] = {0, 0, 0};
+    float d2[3] = {0, 0, 0};
+
+    // Measure from midpoint of p_a to both nodes on p_b
+    get_p_i(r_1a, r_2a, p_a);
+    get_p_midpoint(p_a, r_1a, mid_p_a);
+    vec3d(n){d1[n] = mid_p_a[n] - r_1b[n];}
+    vec3d(n){d2[n] = mid_p_a[n] - r_2b[n];}
+
+    if(rod::absolute(d1) < cutoff || rod::absolute(d2) < cutoff){
+        return true;
+    }
+    return false;
+}
 
 //   _ _
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
