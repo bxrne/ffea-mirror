@@ -210,7 +210,7 @@ class FFEA_viewer_control_window:
         self.check_button_show_rod_tangent.grid(row=6, column=2, sticky=W)
         
     # Options for fun rod colours
-        label_mesh = Label(display_flags_frame, text="Rod Colours:")
+        label_mesh = Label(display_flags_frame, text="Rod Colour:")
         label_mesh.grid(row=7, column=2, sticky=W, padx=(0, 95))
         self.om_rod_color = OptionMenu(display_flags_frame, self.rod_color, "Rainbow", "Candy Cane", "Green", command=lambda x:self.update_display_flags("rod_color", val=self.rod_color.get()))
         self.om_rod_color.grid(row=7, column=2, sticky=E)
