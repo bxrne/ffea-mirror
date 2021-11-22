@@ -139,7 +139,7 @@ class FFEA_viewer_control_window:
         self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
         self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
         self.show_rod_tangent = IntVar(self.root, value=self.display_flags['show_rod_tangent'])
-        self.rod_colors = StringVar(self.root, value=self.display_flags['rod_colors'])
+        self.rod_color = StringVar(self.root, value=self.display_flags['rod_color'])
         self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
         self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
         self.show_mesh = StringVar(self.root, value=self.display_flags['show_mesh'])
@@ -212,8 +212,8 @@ class FFEA_viewer_control_window:
     # Options for fun rod colours
         label_mesh = Label(display_flags_frame, text="Rod Colours:")
         label_mesh.grid(row=7, column=2, sticky=W, padx=(0, 95))
-        self.om_rod_colors = OptionMenu(display_flags_frame, self.rod_colors, "Rainbow", "Candy Cane", "Green", command=lambda x:self.update_display_flags("rod_colors", val=self.rod_colors.get()))
-        self.om_rod_colors.grid(row=7, column=2, sticky=E)
+        self.om_rod_color = OptionMenu(display_flags_frame, self.rod_color, "Rainbow", "Candy Cane", "Green", command=lambda x:self.update_display_flags("rod_color", val=self.rod_color.get()))
+        self.om_rod_color.grid(row=7, column=2, sticky=E)
 
 	# # show solid:
         label_solid = Label(display_flags_frame, text="Show Solid:")
@@ -1064,7 +1064,7 @@ class FFEA_viewer_control_window:
         self.check_button_show_inverted.config(state=DISABLED)
         self.check_button_show_danger.config(state=DISABLED)
         self.check_button_show_rod_tangent.config(state=DISABLED)
-        self.om_rod_colors.config(state=DISABLED)
+        self.om_rod_color.config(state=DISABLED)
 
         self.text_button_system_name.config(state=DISABLED)
         self.random_name_button.config(state=DISABLED)
@@ -1202,21 +1202,16 @@ class FFEA_viewer_control_window:
         # Scale the material frame to be a similar size to the rod elements
         #rod.current_m *= (avg_m/avg_p)/np.sqrt(2)
         rod = rescale_m(rod)
-    
-        if self.display_flags['rod_colors'] == "Rainbow":
-            rod_color_cycle = cycle([[1, 0, 0], [1, 0.85, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [0.29, 0, 0.51], [0.50, 0, 1]])  # red, white
-        elif self.display_flags['rod_colors'] == "Candy Cane":
-            rod_color_cycle = cycle([[1, 0, 0], [1, 1, 1]])  # red, white
-        else:
-            rod_color_cycle = cycle([[0, 1, 0]])  # green
         
         # units note: radii are arbitrary so far. the *10**10 is to go from SI to angstroms (I should remove this after I add proper scaling)
         for i in range(len(rod.current_r)):
-            line = []
+            line = [] 
+            color_cycle = cycle(self.rod_color_dict[self.display_flags['rod_color']])
+
             for j in range(len(rod.current_r[i])-1):
-                print(i, j)
-                color = next(rod_color_cycle)
-                line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, color[0], color[1], color[2], color[0], color[1], color[2] ]  # green: 0 1 0
+                print(len(rod.current_r), len(rod.current_r[i])-1, i, j)
+                color = next(color_cycle)
+                line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, color[0], color[1], color[2], color[0], color[1], color[2] ]
                 # line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, 0, 1, 0, 0, 1, 0]  # green: 0 1 0
 	            # material frame in center of each element
                 if self.display_flags['show_rod_tangent'] == 1:
@@ -1549,7 +1544,7 @@ class FFEA_viewer_control_window:
             'show_shortest_edge': 0,
             'show_springs': 0,
             'show_rod_tangent': 1,
-            'rod_colors': "Green",
+            'rod_color': "Green",
             'show_box': "No Box",
             'load_trajectory': "Trajectory", ## PYMOL OK
             'highlight': '',
@@ -1581,7 +1576,7 @@ class FFEA_viewer_control_window:
   
         self.wontLoadTraj = 0 # if traj was not found or there was an error, we'll remember
 
-	# Assume box exists
+        # Assume box exists
         self.box_exists = True
         self.box = np.array([-1.0,-1.0,-1.0])
         self.springs = None
@@ -1593,6 +1588,12 @@ class FFEA_viewer_control_window:
         self.movie_dir = "__temp__FFEA_viewer_movie_dir__"
 
         self.projection = "perspective"
+
+        self.rod_color_dict = {
+            "Rainbow": [[1, 0, 0], [1, 0.85, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [0.29, 0, 0.51], [0.50, 0, 1]],
+            "Candy Cane": [[1, 0, 0], [1, 1, 1]],
+            "Green": [[0, 1, 0]]
+        }
 
 
     def get_system_centroid(self, frameIndex = -1):
