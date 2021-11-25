@@ -37,7 +37,7 @@ namespace rod {
  *   - num_rods : the total number of rods in the simulation
  *   - rod_array : 1-D array containing pointers to all rod objects
 */
-void get_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
+void rod::get_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
     float r_i[3] = {0, 0, 0};
     float r_j[3] = {0, 0, 0};
     float p_i[3] = {0, 0, 0};

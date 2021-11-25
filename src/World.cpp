@@ -1955,6 +1955,7 @@ int World::run() {
         for (int i=0; i<params.num_rods; i++){
             // rod::get_neighbour_list(i, params.num_rods, rod_array);
             // Only tell the compiler to run this bit if steric interactions have been enabled in the ffea input file!
+            // rods interacting with themselves
             rod_array[i]->do_timestep(rng);
         }
             
