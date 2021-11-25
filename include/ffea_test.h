@@ -94,4 +94,6 @@ struct ffea_test{
 
     static int two_sphere_volume_intersection();
 
+    static int rod_neighbour_list_construction();
+
 };

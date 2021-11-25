@@ -1562,6 +1562,10 @@ int ffea_test::two_sphere_volume_intersection(){
     }
 }
 
+int ffea_test:: rod_neighbour_list_construction(){
+    return 1;
+}
+
 
 //    int ffea_test::numerical_stability(){
     
