@@ -28,23 +28,23 @@
  */
 
 #include "rod_interactions.h"
+
 namespace rod {
 
-/* Construct steric interaction neighbour list using a distance-measuring
- * cutoff method (slower than cell-based bucketing)
+/* Construct steric interaction neighbour list for a rod
  * 
  *   - i : id of the first rod
  *   - num_rods : the total number of rods in the simulation
  *   - rod_array : 1-D array containing pointers to all rod objects
 */
 void get_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
-    float r_i[3] = {0, 0 , 0};
-    float r_j[3] = {0, 0 , 0};
-    float p_i[3] = {0, 0 , 0};
-    float p_j[3] = {0, 0 , 0};
-    float l_i_cross_l_j[3] = {0, 0 , 0};
-    float c_i[3] = {0, 0 , 0};
-    float c_j[3] = {0, 0 , 0};
+    float r_i[3] = {0, 0, 0};
+    float r_j[3] = {0, 0, 0};
+    float p_i[3] = {0, 0, 0};
+    float p_j[3] = {0, 0, 0};
+    float l_i_cross_l_j[3] = {0, 0, 0};
+    float c_i[3] = {0, 0, 0};
+    float c_j[3] = {0, 0, 0};
 
     // neighbour_list = some kind of pointer?
 
@@ -79,4 +79,4 @@ void get_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
 //   `_/      )  SOURCE CODE AND IT WILL BECOME
 //   (_(_/-(_/   A BUG-FREE ZONE. WOOF WOOF!
 
-} //end namespace
+}//end namespace

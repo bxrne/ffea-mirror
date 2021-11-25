@@ -116,6 +116,10 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::two_sphere_volume_intersection();
     }
 
+    if (buffer.str().find("rod_neighbour_list_construction") != std::string::npos ){
+        result = ffea_test::rod_neighbour_list_construction();
+    }
+
     return result;
 }
 
@@ -1562,7 +1566,29 @@ int ffea_test::two_sphere_volume_intersection(){
     }
 }
 
-int ffea_test:: rod_neighbour_list_construction(){
+int ffea_test::rod_neighbour_list_construction(){
+    int num_rods = 3;
+    std::string filename;
+    rod::Rod **rod_array = NULL;
+
+    // Generate rods
+    rod_array = new rod::Rod*[num_rods];
+    for (int i=0; i<num_rods; i++){
+        filename = "collider_" + std::to_string(i) + ".rod";
+        rod_array[i] = new rod::Rod(filename, i);
+        rod_array[i]->load_header(filename);
+        rod_array[i]->load_contents(filename);
+        rod_array[i]->set_units();
+    }
+
+    // Create neighbour list for each rod
+    for (int i=0; i<num_rods; i++){
+        rod::get_neighbour_list(i, num_rods, rod_array);
+    }
+
+    // if number of neighbours = correct number, pass the test
+    // if neighbour list has correct dimensions and data format, pass the test
+
     return 1;
 }
 
