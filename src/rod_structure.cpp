@@ -87,6 +87,18 @@ Rod::Rod(int length, int set_rod_no):
     B_matrix(new float[length+(length/3)]),
     applied_forces(new float[length+(length/3)]),
     pinned_nodes(new bool[length/3])
+    // steric_interaction_vectors(new ???)
+    //     axis 0: size = length (number of nodes)
+    //     axis 1: size = dynamic (depends on the number of interactions a node experiences)
+    //     axis 2: size = 2 (c_a and c_b, forming the interaction vector)
+    // maybe use a pointer here somehow?
+    //
+    // steric_energy_x_positive(new float[length])
+    // steric_energy_y_positive(new float[length])
+    // steric_energy_z_positive(new float[length])
+    // steric_energy_x_negative(new float[length])
+    // steric_energy_y_negative(new float[length])
+    // steric_energy_z_negative(new float[length])
     {}; 
         
 /**
@@ -365,6 +377,28 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         twisted_energy_negative[(node_no*3)+1] = energies[bend_index];
         twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
         
+        // Get steric interaction energies
+        //
+        // Due to how the rod structure file is written, we must perform (minor) duplicate calculations,
+        // which is probably less complicated than devising a 'clever' way.
+        //
+        // Steric interactions are performed between elements, but we are unable to skip over every other node.
+        // Hence, we perturb the same energy twice for a given element, but interpolate it differently based on
+        // the current node. A neighbour list containing the points defining the interaction vector will allow us
+        // to work out the intersection distance/volume, interpolation weighting, and force direction.
+        //
+        // num_neighbours = length of axis 1 of steric_interaction_vectors, i.e.  steric_interaction_vectors[node_no]
+        /* for (int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
+               float steric_energy_x_positive
+               float steric_energy_y_positive
+               float steric_energy_z_positive
+
+               float steric_energy_x_negative
+               float steric_energy_y_negative
+               float steric_energy_z_negative
+        }
+        */
+
     }
         
     //This loop is for the dynamics
@@ -416,7 +450,12 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float z_force = (perturbed_z_energy_negative[node_no*3]+perturbed_z_energy_negative[(node_no*3)+1]+perturbed_z_energy_negative[(node_no*3)+2] - (perturbed_z_energy_positive[node_no*3]+perturbed_z_energy_positive[(node_no*3)+1]+perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float twist_force = (twisted_energy_negative[node_no*3]+twisted_energy_negative[(node_no*3)+1]+twisted_energy_negative[(node_no*3)+2] - (twisted_energy_positive[node_no*3]+twisted_energy_positive[(node_no*3)+1]+twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
 
-        // Get steric interaction forces
+        // Get steric interaction force (by this point the energies have been interpolated onto each node)
+        /*
+        float steric_force_x = (steric_energy_x_positive - steric_energy_x_negative) / steric_perturbation_amount
+        float steric_force_y = (steric_energy_y_positive - steric_energy_y_negative) / steric_perturbation_amount
+        float steric_force_z = (steric_energy_z_positive - steric_energy_z_negative) / steric_perturbation_amount
+        */
 
         // Get applied force, if any
         float applied_force_x = applied_forces[node_no*4];

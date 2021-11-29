@@ -33,7 +33,7 @@
 
 namespace rod {
 
-bool dbg_print = true;
+bool dbg_print = false;
     
      /*---------*/
     /* Utility */
@@ -1422,16 +1422,22 @@ float get_spherical_volume_intersection(float separation, float radius_a, float 
     // return std::min(0.0833 * M_PI / separation * bracket1 * bracket2, 1.3333 * M_PI * radius_min * radius_min * radius_min);
 }
 
-// See if two rod elements are within some interacting distance, defined by a cutoff radius
-// SLOW method. Use uniform grid for speed.
+/* See if two rod elements, p_a and p_b, are within some interacting distance, defined by a cutoff radius.
+ * Measure this cutoff from the midpoint of p_a to both nodes of p_b. Return true if either node is within range.
+ * 
+ * With this method, we get 'possible' interactions by applying a crude distance calculation + if statement to
+ * every rod element in the system, to narrow down the number of elements that will be used in a more intensive force 
+ * calculation later on.
+ * 
+ * SLOW method for detecting possible interactions.
+*/
 // TODO: Use this in World.cpp by looping over rod pairs, then the nodes within those rods
-bool elements_are_interacting(float r_1a[3], float r_2a[3], float r_1b[3], float r_2b[3], float cutoff){
+bool elements_within_cutoff(float r_1a[3], float r_2a[3], float r_1b[3], float r_2b[3], float cutoff){
     float p_a[3] = {0, 0, 0};
     float mid_p_a[3] = {0, 0, 0};
     float d1[3] = {0, 0, 0};
     float d2[3] = {0, 0, 0};
 
-    // Measure from midpoint of p_a to both nodes on p_b
     get_p_i(r_1a, r_2a, p_a);
     get_p_midpoint(p_a, r_1a, mid_p_a);
     vec3d(n){d1[n] = mid_p_a[n] - r_1b[n];}
