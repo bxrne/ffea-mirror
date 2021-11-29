@@ -1209,7 +1209,6 @@ class FFEA_viewer_control_window:
             color_cycle = cycle(self.rod_color_dict[self.display_flags['rod_color']])
 
             for j in range(len(rod.current_r[i])-1):
-                print(len(rod.current_r), len(rod.current_r[i])-1, i, j)
                 color = next(color_cycle)
                 line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, color[0], color[1], color[2], color[0], color[1], color[2] ]
                 # line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, 0, 1, 0, 0, 1, 0]  # green: 0 1 0
