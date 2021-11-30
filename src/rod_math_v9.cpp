@@ -33,7 +33,7 @@
 
 namespace rod {
 
-bool dbg_print = true;
+bool dbg_print = false;
     
      /*---------*/
     /* Utility */
@@ -273,9 +273,9 @@ void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]){
     not_simulation_destroying(p_i, "Get_p_i is simulation destroying.");
 }
 
-// \f[ p_{mid} = \frac{1}{2}p_i - r_i \f]
+// \f[ p_{mid} = r_i + \frac{1}{2}p_i\f]
 void get_p_midpoint(float p_i[3], float r_i[3], OUT float p_mid[3]){
-    vec3d(n){p_mid[n] = 0.5 * p_i[n] - r_i[3];}
+    vec3d(n){p_mid[n] = r_i[n] + 0.5 * p_i[n];}
     not_simulation_destroying(p_mid, "get_p_midpoint is simulation destroying.");
 }
 
@@ -1228,18 +1228,18 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
     float l_a[3] = {0, 0, 0};  // l_a = p_a / |p_a|
     float l_b[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0, 0, 0};
-    float r_ba[3] = {0, 0, 0};
+    float r_ab[3] = {0, 0, 0};
     float d = 0.0;
 
     // NOTE: Obtain l_a from the rod object instead of re-calculating it here?
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
     cross_product(l_a, l_b, l_a_cross_l_b);
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
+    vec3d(n){r_ab[n] = r_b[n] - r_a[n] - radius_a - radius_b;}
 
     // Rods are skew or perpendicular: use skew line formulae
     if (absolute(l_a_cross_l_b) > 0.0){
-        d = dot_product_3x1(l_a_cross_l_b, r_ba);
+        d = dot_product_3x1(l_a_cross_l_b, r_ab);
     }
     else{
         throw std::domain_error("Rods must not be parallel");
@@ -1253,7 +1253,7 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
         print_array("p_b", p_b, 3);
         print_array("l_b", l_b, 3);
         print_array("l_a x l_b", l_a_cross_l_b, 3);
-        print_array("r_b - r_a - radius_a - radius_b", r_ba, 3);
+        print_array("r_b - r_a - radius_a - radius_b", r_ab, 3);
         printf("Distance : %.3lf\n", d);
         printf("Absolute distance : %.3lf\n", abs(d));
         std::cout << std::endl;
@@ -1270,6 +1270,8 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
 /*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) > 0
 /*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) < \boldsymbol{p}^2
 */
+// TODO: This function needs more information to 'properly' correct connection points,
+// instead of just assigning them to the node end of a rod element.
 void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float c_out[3]){
     float r1_c[3] = {0.0, 0.0, 0.0};
     float p2 = 0.0;
@@ -1316,8 +1318,8 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
     float n_b[3] = {0.0, 0.0, 0.0};
-    float r_ba[3] = {0.0, 0.0, 0.0};
-    float r_ba_dot_n_b = 0.0;
+    float r_ab[3] = {0.0, 0.0, 0.0};
+    float r_ab_dot_n_b = 0.0;
     float l_a_dot_n_b = 0.0;
     float c_a[3] = {0.0, 0.0, 0.0};
 
@@ -1325,10 +1327,10 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
     normalize(p_b,  l_b);
     cross_product(l_b, l_a_cross_l_b, n_b);
 
-    vec3d(n){r_ba[n] = r_b[n] - r_a[n];}
-    r_ba_dot_n_b = dot_product_3x1(r_ba, n_b);
+    vec3d(n){r_ab[n] = r_b[n] - r_a[n];}
+    r_ab_dot_n_b = dot_product_3x1(r_ab, n_b);
     l_a_dot_n_b = dot_product_3x1(l_a, n_b);
-    vec3d(n){c_a[n] = r_a[n] + r_ba_dot_n_b / l_a_dot_n_b * l_a[n];}
+    vec3d(n){c_a[n] = r_a[n] + r_ab_dot_n_b / l_a_dot_n_b * l_a[n];}
 
     if(dbg_print){
         std::cout << "rod::get_point_on_connecting_line()" << std::endl;
@@ -1340,8 +1342,8 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
         print_array("\tn_b", n_b, 3);
         print_array("\tr_a", r_a, 3);
         print_array("\tr_b", r_b, 3);
-        print_array("\tr_b - r_a", r_ba, 3);
-        printf("\tr_ba_dot_n_b : %.3lf\n", r_ba_dot_n_b);
+        print_array("\tr_b - r_a", r_ab, 3);
+        printf("\tr_ab_dot_n_b : %.3lf\n", r_ab_dot_n_b);
         printf("\tl_a_dot_n_b : %.3lf\n", l_a_dot_n_b);
         print_array("\tc_a (initial)", c_a, 3);
         std::cout << std::endl;
@@ -1395,6 +1397,7 @@ float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3]
  *
  * \f[ \frac{\pi}{12d}(r_a+r_b-d)^2 (d^2+2d(r_a+r_b)-3(r_a-r_b)^2) \f]
 */
+// TODO: Rewrite to remove if-statements and use min/max instead
 float get_spherical_volume_intersection(float separation, float radius_a, float radius_b){   
     float bracket1 = 0.0;
     float bracket2 = 0.0;
@@ -1415,8 +1418,36 @@ float get_spherical_volume_intersection(float separation, float radius_a, float 
     else {
         return 0.0;
     }
+
+    // return std::min(0.0833 * M_PI / separation * bracket1 * bracket2, 1.3333 * M_PI * radius_min * radius_min * radius_min);
 }
 
+/* See if two rod elements, p_a and p_b, are within some interacting distance, defined by a cutoff radius.
+ * Measure this cutoff from the midpoint of p_a to both nodes of p_b. Return true if either node is within range.
+ * 
+ * With this method, we get 'possible' interactions by applying a crude distance calculation + if statement to
+ * every rod element in the system, to narrow down the number of elements that will be used in a more intensive force 
+ * calculation later on.
+ * 
+ * SLOW method for detecting possible interactions.
+*/
+// TODO: Use this in World.cpp by looping over rod pairs, then the nodes within those rods
+bool elements_within_cutoff(float r_1a[3], float r_2a[3], float r_1b[3], float r_2b[3], float cutoff){
+    float p_a[3] = {0, 0, 0};
+    float mid_p_a[3] = {0, 0, 0};
+    float d1[3] = {0, 0, 0};
+    float d2[3] = {0, 0, 0};
+
+    get_p_i(r_1a, r_2a, p_a);
+    get_p_midpoint(p_a, r_1a, mid_p_a);
+    vec3d(n){d1[n] = mid_p_a[n] - r_1b[n];}
+    vec3d(n){d2[n] = mid_p_a[n] - r_2b[n];}
+
+    if(rod::absolute(d1) < cutoff || rod::absolute(d2) < cutoff){
+        return true;
+    }
+    return false;
+}
 
 //   _ _
 //  (0v0)  I AM DEBUG OWL. PUT ME IN YOUR
