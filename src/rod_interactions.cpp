@@ -37,11 +37,13 @@ namespace rod {
  *   - num_rods : the total number of rods in the simulation
  *   - rod_array : 1-D array containing pointers to all rod objects
 */
-void rod::get_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
+void get_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
     float r_i[3] = {0, 0, 0};
     float r_j[3] = {0, 0, 0};
     float p_i[3] = {0, 0, 0};
     float p_j[3] = {0, 0, 0};
+    float l_i[3] = {0, 0, 0};
+    float l_j[3] = {0, 0, 0};
     float l_i_cross_l_j[3] = {0, 0, 0};
     float c_i[3] = {0, 0, 0};
     float c_j[3] = {0, 0, 0};
@@ -51,16 +53,23 @@ void rod::get_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
     // other rod: j
     for (int j=i+1; j<num_rods; j++){
         // elements of rod i: m
-        for (int m=0, m<rod_array[i]->num_elements; m++){
+        for (int m=0; m<rod_array[i]->num_elements; m++){
             // elements of rod j: n
-            for (int n=0, n<rod_array[j]->num_elements; n++){
-                rod::vec3d(ind){r_i[ind] = rod_array[i]->current_r[m][ind];}
-                rod::vec3d(ind){r_j[ind] = rod_array[i]->current_r[m][ind];}
+            for (int n=0; n<rod_array[j]->num_elements; n++){
+                // current_r is 1D, so need to index with an integer shift
+                vec3d(dim){r_i[dim] = rod_array[i]->current_r[(m*3)+dim];}
+                vec3d(dim){r_j[dim] = rod_array[j]->current_r[(n*3)+dim];}
 
-                rod::get_p_i(r_i, rod_array[i]->current_r[m+1], p_i);
-                rod::get_p_i(r_j, rod_array[j]->current_r[n+1], p_j);
+                rod_array[i]->get_p(m, p_i, false);
+                rod_array[j]->get_p(n, p_j, false);
 
-                rod::cross_product(p_i/rod::absolute(p_i), rod::absolute(p_j), l_i_cross_l_j);
+                //rod::get_p_i(r_i, rod_array[i]->current_r[m+1], p_i);
+                //rod::get_p_i(r_j, rod_array[j]->current_r[n+1], p_j);
+
+                rod::normalize(p_i, l_i);
+                rod::normalize(p_j, l_j);
+                rod::cross_product(l_i, l_j, l_i_cross_l_j);
+
                 rod::get_point_on_connecting_line(p_i, p_j, l_i_cross_l_j, r_i, r_j, c_i);
                 rod::get_point_on_connecting_line(p_j, p_i, l_i_cross_l_j, r_j, r_i, c_j);
 

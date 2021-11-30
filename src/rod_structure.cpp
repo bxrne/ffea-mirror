@@ -937,6 +937,10 @@ Rod Rod::get_min_max(float *r, OUT float min[3], float max[3]){
     return *this;
 }
 
+/**
+ * Get the rod element for the equilibrium or current structure, given
+ * an element index.
+ */
 Rod Rod::get_p(int index, OUT float p[3], bool equil){
     if (equil){
         p[0] =  equil_r[(index*3)+3] - equil_r[index*3];
@@ -947,6 +951,8 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
         if(dbg_print){std::cout << "index = " << index << "\n";}
         if(dbg_print){std::cout << "   r_i = [" << current_r[index*3] << ", " << current_r[(index*3)+1] << ", " << current_r[(index*3)+1] << "]\n";}
         if(dbg_print){std::cout << "   r_ip1 = [" << current_r[(index*3)+3] << ", " << current_r[(index*3)+4] << ", " << current_r[(index*3)+5] << "]\n";}
+        // current_r is 1D, so coordinates for rod nodes that are adjacent in space
+        // are separated in the array by 3 items (x, y, and z)
         p[0] =  current_r[(index*3)+3] - current_r[index*3];
         p[1] =  current_r[(index*3)+4] - current_r[(index*3)+1];
         p[2] =  current_r[(index*3)+5] - current_r[(index*3)+2];

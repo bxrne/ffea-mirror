@@ -32,10 +32,8 @@
 
 #define _USE_MATH_DEFINES ///<  This has to come before including cmath
 
-#include <cmath>
-#include <iostream>
-#include <stdlib.h>
 #include "rod_math_v9.h"
+#include "rod_structure.h"
 
 namespace rod {
 
