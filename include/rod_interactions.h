@@ -37,7 +37,8 @@
 
 namespace rod {
 
-void get_neighbour_list(int i, int num_rods, rod::Rod **rod_array);
+bool elements_within_cutoff(float r_1i[3], float p_i[3], float r_1j[3], float p_j[3], float cutoff);
+void create_neighbour_list(int i, int num_rods, rod::Rod **rod_array);
 
 }
 #endif

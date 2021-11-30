@@ -1584,7 +1584,7 @@ int ffea_test::rod_neighbour_list_construction(){
 
     // Create neighbour list for each rod
     for (int i=0; i<num_rods; i++){
-        rod::get_neighbour_list(i, num_rods, rod_array);
+        rod::create_neighbour_list(i, num_rods, rod_array);
     }
 
     // if number of neighbours = correct number, pass the test
