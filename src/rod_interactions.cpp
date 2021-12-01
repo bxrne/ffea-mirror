@@ -34,7 +34,7 @@ namespace rod {
 /* See if two rod elements, p_i and p_j, are within some interacting distance, defined by a cutoff radius.
  * Measure this cutoff from the midpoint of p_i to both nodes of p_j. Return true if either node is within range.
  * 
- * With this method, we get 'possible' interactions by applying a crude distance calculation + if statement to
+ * With this method, we will get 'possible' interactions by applying a crude distance calculation + if statement to
  * every rod element in the system, to narrow down the number of elements that will be used in a more intensive force 
  * calculation later on.
 */
@@ -46,7 +46,7 @@ bool elements_within_cutoff(float r_1i[3], float p_i[3], float r_1j[3], float p_
 
     rod::get_p_midpoint(p_i, r_1i, p_i_mid);
     vec3d(n){d1[n] = p_i_mid[n] - r_1j[n];}
-    vec3d(n){d2[n] = p_i_mid[n] - p_j[n] + r_1j;}
+    vec3d(n){d2[n] = p_i_mid[n] - p_j[n] + r_1j[n];}
 
     if(rod::absolute(d1) < cutoff || rod::absolute(d2) < cutoff){
         return true;
@@ -54,9 +54,9 @@ bool elements_within_cutoff(float r_1i[3], float p_i[3], float r_1j[3], float p_
     return false;
 }
 
-/* Construct steric interaction neighbour list for a rod
+/* Construct steric interaction neighbour list for each element, m, of a rod, i
  * 
- *   - i : id of the first rod
+ *   - i : id of the rod to construct the neighbour list for
  *   - num_rods : the total number of rods in the simulation
  *   - rod_array : 1-D array containing pointers to all rod objects
 */
@@ -71,15 +71,13 @@ void create_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
     float l_i_cross_l_j[3] = {0, 0, 0};
     float c_i[3] = {0, 0, 0};
     float c_j[3] = {0, 0, 0};
+    std::vector<float> element_neighbour_list;
     std::vector<float> rod_neighbour_list[rod_array[i]->num_elements];
 
     // other rod: j
     for (int j=i+1; j<num_rods; j++){
         // elements of rod i: mt
         for (int m=0; m<rod_array[i]->num_elements; m++){
-            // neighbour list of unknown size for element m
-            std::vector<float> element_neighbour_list;
-
             // elements of rod j: n
             for (int n=0; n<rod_array[j]->num_elements; n++){
 
@@ -120,8 +118,11 @@ void create_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
             // consolidate dynamic neighbour list of element m into a static
             // 2D array that has rows equal to the number of elements, M, in
             // rod i. There will be 6*T*M floats in this array.
+            //
+            // Shouldn't this assign directly to the neighbour list property of 
+            // the Rod class?
             rod_neighbour_list[m] = element_neighbour_list;
-            delete element_neighbour_list;
+            element_neighbour_list.clear();
         }
     }
 }

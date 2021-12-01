@@ -42,7 +42,6 @@
 #include "Face.h"
 #include "Blob.h"
 #include "World.h"
-#include "rod_interactions.h"  // will get moved to World.h later
 
 // ffea_test allows you to build unit tests in FFEA that can be accessed via a .ffeatest script file
 // The reason is that otherwise, you'd have to compile a new binary, and you can't easily separate
