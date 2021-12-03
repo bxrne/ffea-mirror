@@ -86,11 +86,8 @@ Rod::Rod(int length, int set_rod_no):
     material_params(new float[length]),
     B_matrix(new float[length+(length/3)]),
     applied_forces(new float[length+(length/3)]),
-    pinned_nodes(new bool[length/3])
-    // steric_interaction_vectors(new ???)
-    //     axis 0: size = length (number of nodes)
-    //     axis 1: size = dynamic (depends on the number of interactions a node experiences)
-    //     axis 2: size = 2 (c_a and c_b, forming the interaction vector)
+    pinned_nodes(new bool[length/3]),
+    steric_interaction_coordinates(new std::vector<float>[(length/3)-1])
     // maybe use a pointer here somehow?
     //
     // steric_energy_x_positive(new float[length])
@@ -556,9 +553,9 @@ Rod Rod::load_header(std::string filename){
     int n = 0;
     bool length_set = false; /** Use this to prevent rods with bad header info from being initialized **/
     for( std::string line; getline( infile, line ); ){
+        
         if (n == 0){assert(line == "format,ffea_rod");} /** Check that format is valid FFEA_rod */
         if (n > 0 and line != rod_connections){
-            
             /** Extract data from lines and deposit it into object */
             std::vector<std::string> line_vec;
             boost::split(line_vec, line, boost::is_any_of(","));
@@ -575,7 +572,7 @@ Rod Rod::load_header(std::string filename){
         n++;
     }
     
-    assert(length_set == true && "Length of the rod has not been set.");
+    assert(length_set == true && "Length of the rod from file has not been set.");
     
     /** Warn the user if there is a file version mismatch */
     if (fabs(this->rod_version - rod_software_version) > 0.0000001){

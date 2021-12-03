@@ -1568,23 +1568,44 @@ int ffea_test::two_sphere_volume_intersection(){
  
 
 int ffea_test::rod_neighbour_list_construction(){
-    int num_rods = 3;
+    int num_rods = 4;
+    int num_neighbours = 0;
+    int num_element_neighbours[4] = {2, 1, 1, 0};
     std::string filename;
     rod::Rod **rod_array = NULL;
 
-    // Generate rods
+    // Create rods
     rod_array = new rod::Rod*[num_rods];
     for (int i=0; i<num_rods; i++){
         filename = "collider_" + std::to_string(i) + ".rod";
-        rod_array[i] = new rod::Rod(filename, i);
-        rod_array[i]->load_header(filename);
-        rod_array[i]->load_contents(filename);
-        rod_array[i]->set_units();
+        rod::Rod* current_rod = new rod::Rod(filename, i);
+        current_rod->load_header(filename);
+        current_rod->load_contents(filename);
+        current_rod->set_units();
+        std::cout << "Loaded rod from " << filename << std::endl;
+        rod_array[i] = current_rod;
     }
 
     // Create neighbour list for each rod
     for (int i=0; i<num_rods; i++){
         rod::create_neighbour_list(i, num_rods, rod_array);
+    }
+
+    // Let's have a look!
+    // loop over rods
+    for (int i=0; i<num_rods; i++){
+        // loops over elements
+        for(int j=0; j<rod_array[i]->num_elements; j++){
+            std::cout << "rod " << i << ", element " << j << std::endl;
+            num_neighbours = rod_array[i]->steric_interaction_coordinates[j].size()/2;
+            std::cout << "  num_neighbours: " << num_neighbours << std::endl;
+            // now loop over the neighbours of this element
+            for(int k=0; k<num_neighbours; k++){
+                std::cout << rod_array[i]->steric_interaction_coordinates[j].at(k) << " ";
+            }
+            std::cout << std::endl;
+        }
+        
     }
 
     // if number of neighbours = correct number, pass the test
