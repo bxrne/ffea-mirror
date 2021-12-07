@@ -87,15 +87,7 @@ Rod::Rod(int length, int set_rod_no):
     B_matrix(new float[length+(length/3)]),
     applied_forces(new float[length+(length/3)]),
     pinned_nodes(new bool[length/3]),
-    steric_interaction_coordinates(new std::vector<float>[(length/3)-1])
-    // maybe use a pointer here somehow?
-    //
-    // steric_energy_x_positive(new float[length])
-    // steric_energy_y_positive(new float[length])
-    // steric_energy_z_positive(new float[length])
-    // steric_energy_x_negative(new float[length])
-    // steric_energy_y_negative(new float[length])
-    // steric_energy_z_negative(new float[length])
+    steric_interaction_coordinates(new std::vector<float>[(length/3)-1])  // row length equal to num_elements
     {}; 
         
 /**
@@ -138,6 +130,7 @@ Rod Rod::set_units(){
         perturbed_y_energy_negative[i] /= mesoDimensions::Energy;
         perturbed_z_energy_negative[i] /= mesoDimensions::Energy;
         twisted_energy_negative[i] /= mesoDimensions::Energy;
+        // TODO: set units of steric interaction coordinates, if they exist (length)
         
         if (i%3 == 0){
             material_params[i] /= spring_constant_factor;
@@ -597,6 +590,8 @@ Rod Rod::load_header(std::string filename){
     B_matrix = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     applied_forces = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length/3));
+    // steric_interaction_coordinates is of type std::vector, which manages its own memory...
+    // TODO: allocate sizeof(std::vector) * (length/3)-1 ?
     
     for (int i=0; i<length/3; i++){
         pinned_nodes[i] = false;
@@ -698,6 +693,7 @@ Rod Rod::load_contents(std::string filename){
             if (n == line_of_last_frame+12){ for (int i=0; i<length; i++) twisted_energy_negative[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+13){ for (int i=0; i<length; i++) material_params[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+14){ for (int i=0; i<length+(length/3); i++) B_matrix[i] = line_vec_float.data()[i];}
+            // TODO: load steric neighbours from .rod file
 
         }
         n++;
@@ -728,6 +724,7 @@ Rod Rod::write_frame_to_file(){
     write_array(twisted_energy_negative, length, mesoDimensions::Energy);
     write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
     write_array(B_matrix, length+(length/3), bending_response_factor );
+    // TODO: write steric neighbours to a file
     std:fflush(file_ptr);
     return *this;
 }
@@ -956,5 +953,13 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
     }
     return *this;
 }
+
+// /** 
+//  * TODO: Get the pair of coordinates involved in a steric interaction, given
+//  * (what???)
+//  */
+// Rod Rod::get_steric_interaction_coordinate_pair(){
+
+// }
 
 } //end namespace

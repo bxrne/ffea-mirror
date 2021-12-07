@@ -1951,6 +1951,11 @@ int World::run() {
         // Apply springs directly to nodes
         apply_springs();
                         
+        // // Rod neighbour list
+        // for (int i=0; i<params.num_rods; i++){
+        //     rod::get_neighbour_list(i, params.num_rods, rod_array);
+        // }
+
         // Do rods
         for (int i=0; i<params.num_rods; i++){
             // rod::get_neighbour_list(i, params.num_rods, rod_array);

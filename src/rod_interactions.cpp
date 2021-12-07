@@ -61,6 +61,7 @@ bool elements_within_cutoff(float r_1i[3], float p_i[3], float r_1j[3], float p_
  *   - rod_array : 1-D array containing pointers to all rod objects
 */
 // TODO: pass out the neighbour list instead of modifying the rod object directly
+// TODO: write function for a single pair of rods, to make rod pair loop more obvious in World.cpp
 void create_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
     float r_i[3] = {0, 0, 0};
     float r_j[3] = {0, 0, 0};
@@ -112,7 +113,7 @@ void create_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
                     }
 
                     if(dbg_print){
-                        std::cout << "rod::create_neighbour_list" << std::endl;
+                        std::cout << "rod::create_neighbour_list()" << std::endl;
                         std::cout << "  rods - i: " << i << ", j: " << j << std::endl;
                         std::cout << "  elements - m: " << m << ", n: " << n << std::endl;
                         rod::print_array("  r_i", r_i, 3);
@@ -124,14 +125,13 @@ void create_neighbour_list(int i, int num_rods, rod::Rod **rod_array){
                     }
                 }    
             }
-            // place dynamic neighbour list of element m into a static
+            // place std::vector neighbour list of element m into a static
             // 2D array that has rows equal to the number of elements, M, in
             // rod i. There will be 6*T*M floats in this array.
             rod_neighbour_list[m] = element_neighbour_list;
             element_neighbour_list.clear();
         }
     }
-    //TODO: assign neighbour list directly to rod object
     rod_array[i]->steric_interaction_coordinates = rod_neighbour_list;
 }
 
