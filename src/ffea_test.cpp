@@ -1569,12 +1569,13 @@ int ffea_test::two_sphere_volume_intersection(){
 
 int ffea_test::rod_neighbour_list_construction(){
     int num_rods = 4;
-    int num_neighbours = 0;
-    int num_element_neighbours[4] = {2, 1, 1, 0};
+    //int num_neighbours = 0;
+    //int num_element_neighbours[4] = {2, 1, 1, 0};
     std::string filename;
     rod::Rod **rod_array = NULL;
 
     // Create rods
+    std::cout << "ffea_test::rod_neighbour_list_construction() - loading rods" << std::endl;
     rod_array = new rod::Rod*[num_rods];
     for (int i=0; i<num_rods; i++){
         filename = "collider_" + std::to_string(i) + ".rod";
@@ -1586,25 +1587,18 @@ int ffea_test::rod_neighbour_list_construction(){
         rod_array[i] = current_rod;
     }
 
-    // Create neighbour list for each rod
+    // Create neighbour lists
+    std::cout << "ffea_test::rod_neighbour_list_construction() - generating neighbour list" << std::endl;
     for (int i=0; i<num_rods; i++){
-        rod::create_neighbour_list(i, num_rods, rod_array);
+        for (int j=i+1; j<num_rods; j++){
+            rod::create_neighbour_list(rod_array[i], rod_array[j]);
+        }
     }
 
-    // Let's have a look!
-    // loop over rods
+    // Let's see if it worked!
+    std::cout << "ffea_test::rod_neighbour_list_construction() - results" << std::endl;
     for (int i=0; i<num_rods; i++){
-        // loops over elements
-        for(int j=0; j<rod_array[i]->num_elements; j++){
-            std::cout << "rod " << i << ", element " << j << std::endl;
-            num_neighbours = rod_array[i]->steric_interaction_coordinates[j].size()/2;
-            std::cout << "  num_neighbours: " << num_neighbours << std::endl;
-            // now loop over the neighbours of this element
-            for(int k=0; k<num_neighbours; k++){
-                std::cout << rod_array[i]->steric_interaction_coordinates[j].at(k) << " ";
-            }
-            std::cout << std::endl;
-        }
+        std::cout << "  rod " << i << ", sizeof(steric_interaction_coordinates): " << sizeof(rod_array[i]->steric_interaction_coordinates) << std::endl;
         
     }
 

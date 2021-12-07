@@ -33,7 +33,7 @@
 
 namespace rod {
 
-bool dbg_print = false;
+bool dbg_print = true;
     
      /*---------*/
     /* Utility */
