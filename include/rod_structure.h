@@ -86,8 +86,7 @@ struct Rod
   bool interface_at_end = false; /** if this is true, the positioning of the end node is being handled by a rod-blob interface, so its energies will be ignored. **/
   bool restarting = false; /** If this is true, the rod will skip writing a frame of the trajectory (this is normally done so that the trajectory starts with correct box positioning) **/
 
-  /** Nearest neighbour coordinates for steric interactions are stored as a 2D array, with fixed rows and dynamic columns  */
-  std::vector<float> * steric_interaction_coordinates;  /** TODO: description */
+  std::vector<float> * steric_interaction_coordinates;  /** Nearest neighbour coordinates, a 1D array with each element being a std::vector **/
 
   /** Unit conversion factors - the input\output files are in SI, but internally it uses FFEA's units as determined in dimensions.h **/
   float bending_response_factor;

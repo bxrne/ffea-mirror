@@ -1579,7 +1579,7 @@ int ffea_test::rod_neighbour_list_construction(){
     rod_array = new rod::Rod*[num_rods];
     for (int i=0; i<num_rods; i++){
         filename = "collider_" + std::to_string(i) + ".rod";
-        rod::Rod* current_rod = new rod::Rod(filename, i);
+        rod::Rod *current_rod = new rod::Rod(filename, i);
         current_rod->load_header(filename);
         current_rod->load_contents(filename);
         current_rod->set_units();
