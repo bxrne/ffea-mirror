@@ -39,6 +39,7 @@
 #include "dimensions.h" 
 #include <stdlib.h>
 #include <boost/math/special_functions/fpclassify.hpp>
+#include <vector>
 //#include <fenv.h>
 
 
@@ -76,6 +77,7 @@ void rod_abort(std::string message);
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 void print_array(std::string array_name, float array[], int length);
 void print_array(std::string array_name, double array[], int length);
+void print_vector(std::string vector_name, std::vector<float> vec);
 void normalize(float in[3], OUT float out[3]);
 void normalize_unsafe(float in[3], OUT float out[3]);
 float absolute(float in[3]);

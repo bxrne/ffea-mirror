@@ -120,6 +120,17 @@ void print_array(std::string array_name, double array[], int length){
     }
 }
 
+/**
+ Print the contents of a float vector to stdout.
+*/
+void print_vector(std::string vector_name, std::vector<float> vec){
+    std::cout << vector_name << ": ( ";
+    for(auto item : vec)
+    {
+        std::cout << item << ", ";
+    }
+    std::cout << "\b\b )" << std::endl;
+}
 
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point
 
