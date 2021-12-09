@@ -87,7 +87,7 @@ Rod::Rod(int length, int set_rod_no):
     B_matrix(new float[length+(length/3)]),
     applied_forces(new float[length+(length/3)]),
     pinned_nodes(new bool[length/3]),
-    steric_interaction_coordinates(new std::vector<float>[(length/3)-1])  // row length equal to num_elements
+    steric_interaction_coordinates(new std::vector<std::vector<float>> ((length/3)-1))  // row length equal to num_elements
     {}; 
         
 /**
@@ -590,9 +590,7 @@ Rod Rod::load_header(std::string filename){
     B_matrix = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     applied_forces = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length/3));
-    steric_interaction_coordinates = static_cast<std::vector<float> *>(malloc(sizeof(std::vector<float>) * ((length/3) - 1) ));
-    steric_interaction_coordinates->reserve(100);
-    // TODO: allocate sizeof(std::vector) * (length/3)-1 ?
+    //steric_interaction_coordinates = static_cast<std::vector<float> *>(malloc(sizeof(std::vector<float>) * ((length/3) - 1) ));
     
     for (int i=0; i<length/3; i++){
         pinned_nodes[i] = false;
