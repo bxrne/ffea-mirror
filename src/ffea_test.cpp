@@ -1598,8 +1598,11 @@ int ffea_test::rod_neighbour_list_construction(){
     // Let's see if it worked!
     std::cout << "ffea_test::rod_neighbour_list_construction() - results" << std::endl;
     for (int i=0; i<num_rods; i++){
-        std::cout << "  rod " << i << ", sizeof(steric_interaction_coordinates): " << sizeof(rod_array[i]->steric_interaction_coordinates) << std::endl;
-        
+        std::cout << "  rod " << i << std::endl;
+        // std::cout << "  rod " << i << ", sizeof(steric_interaction_coordinates): " << sizeof(rod_array[i]->steric_interaction_coordinates) << std::endl;
+        for (int j=0; j<rod_array[i]->num_elements-1; j++){
+            rod::print_vector("  neighbours, elem " + std::to_string(j), rod_array[i]->steric_interaction_coordinates.at(j));
+        }
     }
 
     // if number of neighbours = correct number, pass the test

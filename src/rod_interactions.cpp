@@ -98,14 +98,11 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
 
             within_cutoff = rod::elements_within_cutoff(r_a, p_a, r_b, p_b, rod::absolute(p_a));
 
-            if(dbg_print){
-                std::cout << "rod::create_neighbour_list()" << std::endl;
-                std::cout << "  (a) rod " << rod_a->rod_no << ", element " << i << std::endl;
-                std::cout << "  (b) rod " << rod_b->rod_no << ", element " << j << std::endl;
-            }
-
             if(within_cutoff == true){
-                if(dbg_print){std::cout << "  interaction!" << std::endl;}
+                if(dbg_print){
+                    std::cout << "rod::create_neighbour_list()" << std::endl;
+                    std::cout << "  INTERACTION between rod " << rod_a->rod_no << ", elem " << i << " and rod " << rod_b->rod_no << ", elem " << j << std::endl;
+                }
 
                 // Shortest distance between two rod elements
                 rod::normalize(p_a, l_a);
@@ -114,29 +111,27 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
                 rod::get_point_on_connecting_line(p_a, p_b, l_a_cross_l_b, r_a, r_b, c_a);
                 rod::get_point_on_connecting_line(p_b, p_a, l_a_cross_l_b, r_b, r_a, c_b);
 
-// =============================================================================
-                std::cout << "\nPOINTER TEST!! Assigning to rod " << rod_a->rod_no << std::endl;
-                std::cout << "Num rod nodes: " << rod_a->num_elements << std::endl;
-                std::cout << "Num rod elements: " << rod_a->num_elements-1 << std::endl;
-                std::cout << "Num array elements in steric_interaction_coordinates: " << (rod_a->length/3)-1 << std::endl;
+                // std::cout << "Type checking" << std::endl;
+                // std::cout << typeid(rod_a->steric_interaction_coordinates).name() << std::endl;
+                // std::cout << typeid(rod_a->steric_interaction_coordinates.at(i)).name() << std::endl;
+                // //std::cout << typeid(rod_a->steric_interaction_coordinates[i][0]).name() << std::endl;
+                
+                // std::cout << "Size checking: full vector" << std::endl;
+                // std::cout << "size " << rod_a->steric_interaction_coordinates.size() << std::endl;
+                // std::cout << "cap " << rod_a->steric_interaction_coordinates.capacity() << std::endl;
+                // std::cout << "Size checking: element " << i << std::endl;
+                // std::cout << "size " << rod_a->steric_interaction_coordinates.at(i).size() << std::endl;
+                // std::cout << "cap " << rod_a->steric_interaction_coordinates.at(i).capacity() << std::endl;
+                
+                // Increase vector capacity by 6 (optional, might help with correct assignment to vector)
+                rod_a->steric_interaction_coordinates.at(i).reserve(rod_a->steric_interaction_coordinates.at(i).size() + 6);
+                rod_b->steric_interaction_coordinates.at(j).reserve(rod_b->steric_interaction_coordinates.at(j).size() + 6);
 
-                for(int ele=0; ele<3; ele++){
-                    vec3d(n){rod_a->steric_interaction_coordinates[ele].push_back(c_a[n]);}
-                    vec3d(n){std::cout << "  element " << ele << ", c[" << n << "]: " << c_a[n] << std::endl;}
-                }
-
-                rod::print_vector("vector " + std::to_string(0), rod_a->steric_interaction_coordinates[0]);
-                rod::print_vector("vector " + std::to_string(1), rod_a->steric_interaction_coordinates[1]);
-                rod::print_vector("vector " + std::to_string(2), rod_a->steric_interaction_coordinates[2]);
-                std::cout << "POINTER TEST OVER" << std::endl;
-// =============================================================================                
-
-                // TODO: seg fault occurs here
                 // Update both rods with the interaction coordinate pair
-                vec3d(n){rod_a->steric_interaction_coordinates[i].push_back(c_a[n]);}
-                vec3d(n){rod_a->steric_interaction_coordinates[i].push_back(c_b[n]);}
-                vec3d(n){rod_b->steric_interaction_coordinates[j].push_back(c_b[n]);}
-                vec3d(n){rod_b->steric_interaction_coordinates[j].push_back(c_a[n]);}
+                vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_a[n]);}
+                vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_b[n]);}
+                vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_b[n]);}
+                vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_a[n]);}
 
                 if(dbg_print){
                     rod::print_array("  c_a", c_a, 3);

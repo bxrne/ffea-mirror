@@ -3,20 +3,16 @@ doinstall=${1:-0}
 dotest=${2:-1}
 restrict_tests=${3:-1}
 
+rm -r $FFEA_BUILD
+mkdir $FFEA_BUILD 
+cd $FFEA_BUILD
+cmake ../ffea -DCMAKE_INSTALL_PREFIX=$FFEA_BUILD -DPYTHON_EXECUTABLE=/home/ryan/Software/anaconda3/envs/py2/bin/python
+make -j2
+	
 if [[ $doinstall -eq 1 ]];
 then
-	echo "MAKE AND INSTALL"
-	rm -r $FFEA_BUILD
-	mkdir $FFEA_BUILD
-	cd $FFEA_BUILD
-	cmake ../ffea -DCMAKE_INSTALL_PREFIX=$FFEA_BUILD -DPYTHON_EXECUTABLE=/home/ryan/Software/anaconda3/envs/py2/bin/python
-	make -j2
+	echo "INSTALL"
 	make install -j2
-elif [[ $doinstall -eq 0 ]];
-then
-	echo "MAKE"
-	cd $FFEA_BUILD
-	make -j2
 fi
 
 if [[ $dotest -eq 1 ]];
