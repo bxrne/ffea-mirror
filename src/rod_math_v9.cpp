@@ -133,7 +133,7 @@ void print_vector(std::string vector_name, std::vector<float> vec){
         if(i != vec.size() && i % 3 == 0){
             std::cout << std::endl;
         }
-        i++
+        i++;
     }
     std::cout << "\b\b )" << std::endl;
 }
