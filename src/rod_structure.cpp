@@ -409,12 +409,13 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             int thread_id = 0;
         #endif
         
+        float hydrodynamic_radius = material_params[(node_no*3)+2];
         // Get friction, needed for delta r and delta theta
-        float translational_friction = get_translational_friction(this->viscosity, material_params[(node_no*3)+2], false);
+        float translational_friction = get_translational_friction(this->viscosity, hydrodynamic_radius, false);
         //float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
         float length_for_friction = 1e-8/mesoDimensions::length;
         
-        float rotational_friction = get_rotational_friction(this->viscosity, material_params[(node_no*3)+2], length_for_friction, true);
+        float rotational_friction = get_rotational_friction(this->viscosity, hydrodynamic_radius, length_for_friction, true);
         
         // Need these again
         float twist_perturbation = 0.006283185; // 2pi/1000
@@ -441,6 +442,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
 
         // Get steric interaction force (by this point the energies have been interpolated onto each node)
         /*
+        float steric_radius = hydrodynamic_radius;
         float steric_force_x = (steric_energy_x_positive - steric_energy_x_negative) / steric_perturbation_amount
         float steric_force_y = (steric_energy_y_positive - steric_energy_y_negative) / steric_perturbation_amount
         float steric_force_z = (steric_energy_z_positive - steric_energy_z_negative) / steric_perturbation_amount
@@ -605,6 +607,7 @@ Rod Rod::load_header(std::string filename){
     this->timestep = 1e-12/mesoDimensions::time;
     this->kT = 0;
     this->perturbation_amount = 0.001*pow(10,-9)/mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
+    this->steric_radius = 0;
     
     return *this;
 }

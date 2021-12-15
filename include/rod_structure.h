@@ -59,7 +59,9 @@ struct Rod
   float timestep = 0.002;
   float kT = 0; /** Boltzmann's constant x temperature. **/
   float perturbation_amount = 0.01; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
-  
+
+  float hydrodynamic_radius;  /** These two are loaded on-the-fly on a per-element basis from material_params inside the dynamics loop. Is a declaration really needed here? **/
+  float steric_radius;
   float translational_friction;
   float rotational_friction; /** these will have to be changed when I end up implementing per-element radius, to be computed on-the-fly instead most likely **/
   
