@@ -1568,11 +1568,12 @@ int ffea_test::two_sphere_volume_intersection(){
  
 
 int ffea_test::rod_neighbour_list_construction(){
-    int num_rods = 4;
+    int num_rods = 2;
     //int num_neighbours = 0;
     //int num_element_neighbours[4] = {2, 1, 1, 0};
     std::string filename;
     rod::Rod **rod_array = NULL;
+    int test_score = 0;
 
     // Create rods
     std::cout << "ffea_test::rod_neighbour_list_construction() - loading rods" << std::endl;
@@ -1596,13 +1597,44 @@ int ffea_test::rod_neighbour_list_construction(){
     }
 
     // Let's see if it worked!
+    float r1[3] = {0, 0, 0};
+    float r2[3] = {0, 0, 0};
+    float distance = 0;
+    std::vector<float> coords(6, 0);
+    float c_a[3] = {0, 0, 0};
+    float c_b[3] = {0, 0, 0};
+    float c_ba[3] = {0, 0, 0};
+
     std::cout << "ffea_test::rod_neighbour_list_construction() - results" << std::endl;
     for (int i=0; i<num_rods; i++){
-        std::cout << "  rod " << i << std::endl;
-        // std::cout << "  rod " << i << ", sizeof(steric_interaction_coordinates): " << sizeof(rod_array[i]->steric_interaction_coordinates) << std::endl;
+        std::cout << "rod " << i << std::endl;
+
         for (int j=0; j<rod_array[i]->num_elements-1; j++){
-            rod::print_vector("  neighbours, elem " + std::to_string(j), rod_array[i]->steric_interaction_coordinates.at(j));
+            vec3d(n){r1[n] = rod_array[i]->current_r[3*j + n];}
+            vec3d(n){r2[n] = rod_array[i]->current_r[3*(j+1) + n];}
+            std::cout << "  element " << j << std::endl;
+            rod::print_array("    r1", r1, 3);
+            rod::print_array("    r2", r2, 3);
+            std::cout << "    num_neighbours: " << rod_array[i]->get_num_neighbours(j) << std::endl;
+            rod::print_vector("    all coords: ", rod_array[i]->steric_interaction_coordinates.at(j));
+
+            for (int k=0; k<rod_array[i]->get_num_neighbours(j); k++){
+                coords = rod_array[i]->get_interaction_coordinate_pair(j, k);
+                vec3d(n){c_a[n] = coords[n];}
+                vec3d(n){c_b[n] = coords[n+3];}
+                vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
+                distance = rod::absolute(c_ba);
+
+                rod::print_array("    c_a", c_a, 3);
+                rod::print_array("    c_b", c_b, 3);
+                std::cout << "    |c_ba|: " << distance << std::endl;
+            }
         }
+        // check length of interaction vector
+        // if within cutoff, OK, increase score
+        // check elements that were detected
+        // if same as expected, OK, increase score
+        // if total number of neighbours expected, OK, increase score
     }
 
     // if number of neighbours = correct number, pass the test
