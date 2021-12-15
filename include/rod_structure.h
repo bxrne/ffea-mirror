@@ -118,6 +118,8 @@ struct Rod
   Rod get_centroid(float *r, float centroid[3]);
   Rod get_min_max(float *r, OUT float min[3], float max[3]);
   Rod get_p(int index, OUT float p[3], bool equil);
+  int get_num_neighbours(int element_index);
+  std::vector<float> get_interaction_coordinate_pair(int element_index, int neighbour_index);
 };
 
 } //end namespace

@@ -122,6 +122,7 @@ void print_array(std::string array_name, double array[], int length){
 
 /**
  Print the contents of a float vector to stdout.
+ TODO: generalise to all vector types
 */
 void print_vector(std::string vector_name, std::vector<float> vec){
     
@@ -136,6 +137,21 @@ void print_vector(std::string vector_name, std::vector<float> vec){
         i++;
     }
     std::cout << "\b\b )" << std::endl;
+}
+
+/**
+ Return a section of a float vector between start_index and end_index (inclusive)
+ TODO: generalise to all vector types
+*/
+std::vector<float> slice_vector(std::vector<float> vec, int start_index, int end_index){
+
+    std::vector<float> slice(end_index - start_index + 1);
+    std::vector<float>::iterator start_iter = vec.begin() + start_index;
+    std::vector<float>::iterator end_iter = vec.begin() + end_index + 1;
+ 
+    std::copy(start_iter, end_iter, slice.begin());
+ 
+    return slice;
 }
 
 // These are just generic vector functions that will be replaced by mat_vec_fns at some point

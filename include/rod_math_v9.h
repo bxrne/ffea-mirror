@@ -78,6 +78,7 @@ void rod_abort(std::string message);
 void print_array(std::string array_name, float array[], int length);
 void print_array(std::string array_name, double array[], int length);
 void print_vector(std::string vector_name, std::vector<float> vec);
+std::vector<float> slice_vector(std::vector<float> vec, int start_index, int end_index);
 void normalize(float in[3], OUT float out[3]);
 void normalize_unsafe(float in[3], OUT float out[3]);
 float absolute(float in[3]);

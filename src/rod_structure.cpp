@@ -589,7 +589,6 @@ Rod Rod::load_header(std::string filename){
     B_matrix = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     applied_forces = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length/3));
-    //steric_interaction_coordinates = static_cast<std::vector<float> *>(malloc(sizeof(std::vector<float>) * ((length/3) - 1) ));
     steric_interaction_coordinates = std::vector< std::vector<float> > ((length/3)-1);
     
     for (int i=0; i<length/3; i++){
@@ -953,12 +952,26 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
     return *this;
 }
 
-// /** 
-//  * TODO: Get the pair of coordinates involved in a steric interaction, given
-//  * (what???)
-//  */
-// Rod Rod::get_steric_interaction_coordinate_pair(){
+/**
+ * Get the number of rod elements involved in steric interactions with a particular
+ * element, given its index
+ */
+int Rod::get_num_neighbours(int element_index){
+    return steric_interaction_coordinates.at(element_index).size() / 6;
+}
 
-// }
+/**
+ * Get the 6-element vector segment containing the coordinate pair defining the interaction vector
+ * between two rod elements.
+ * 
+ * Indices 0, 1, 2 lie on the rod associated with element_index; 3, 4, 5 lie on some other
+ *  rod element.
+ */
+std::vector<float> Rod::get_interaction_coordinate_pair(int element_index, int neighbour_index){
+    if(neighbour_index*6 % 6 != 0){
+        std::cout << "Warning: neighbour_index*6 (" << neighbour_index << ") is not a multiple of 6. Interaction coordinates will be returned incorrectly." << std::endl;
+    }
+    return rod::slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index*6, (neighbour_index*6)+5);
+}
 
 } //end namespace
