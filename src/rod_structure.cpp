@@ -148,6 +148,8 @@ Rod Rod::set_units(){
     for (int i=0; i<length+length/3; i++){
         B_matrix[i] /= bending_response_factor;
     }
+
+    this->steric_radius /= mesoDimensions::length;
     
     return *this; /** Return a pointer to the object itself instead of void. Allows for method chaining! **/
 }
@@ -694,11 +696,14 @@ Rod Rod::load_contents(std::string filename){
             if (n == line_of_last_frame+12){ for (int i=0; i<length; i++) twisted_energy_negative[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+13){ for (int i=0; i<length; i++) material_params[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+14){ for (int i=0; i<length+(length/3); i++) B_matrix[i] = line_vec_float.data()[i];}
-            // TODO: load steric neighbours from .rod file
 
         }
         n++;
     }
+
+    // Apply a constant steric radius to the entire rod
+    // TODO: Add option for ignoring interactions
+    this->steric_radius = material_params[2];
     
     return *this;
 }

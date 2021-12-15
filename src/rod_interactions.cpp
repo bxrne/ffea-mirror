@@ -37,21 +37,31 @@ namespace rod {
  * With this method, we will get 'possible' interactions by applying a crude distance calculation + if statement to
  * every rod element in the system, to narrow down the number of elements that will be used in a more intensive force 
  * calculation later on.
+ * 
+ * NOTE: Not in use.
 */
-// TODO: Use this in World.cpp by looping over rod pairs, then the nodes within those rods
-bool elements_within_cutoff(float r_1i[3], float p_i[3], float r_1j[3], float p_j[3], float cutoff){
-    float p_i_mid[3] = {0, 0, 0};
+bool elements_within_cutoff(float p_i[3], float p_j[3], float r_i[3], float r_j[3], float cutoff){
+    float r_i_mid[3] = {0, 0, 0};
     float d1[3] = {0, 0, 0};
     float d2[3] = {0, 0, 0};
 
-    rod::get_p_midpoint(p_i, r_1i, p_i_mid);
-    vec3d(n){d1[n] = p_i_mid[n] - r_1j[n];}
-    vec3d(n){d2[n] = p_i_mid[n] - p_j[n] + r_1j[n];}
+    rod::get_element_midpoint(p_i, r_i, r_i_mid);
+    vec3d(n){d1[n] = r_i_mid[n] - r_j[n];}
+    vec3d(n){d2[n] = r_i_mid[n] - p_j[n] + r_j[n];}
+
+    if(rod::dbg_print){
+        std::cout << "elements_within_cutoff()" << std::endl;
+        std::cout << "  cutoff: " << cutoff << std::endl;
+        std::cout << "  |d1|: " << rod::absolute(d1) << std::endl;
+        std::cout << "  |d2|: " << rod::absolute(d2) << std::endl;
+    }
 
     if(rod::absolute(d1) < cutoff || rod::absolute(d2) < cutoff){
+        if(rod::dbg_print){std::cout << "  Within cutoff" << std::endl;}
         return true;
     }
     else{
+        if(rod::dbg_print){std::cout << "  Outisde cutoff" << std::endl;}
         return false;
     }
 }
@@ -65,8 +75,9 @@ bool elements_within_cutoff(float r_1i[3], float p_i[3], float r_1j[3], float p_
  *   - rod_a,b->steric_interaction_coordinates[element_index]
  *
  *   Loops over every element of the two rods (O(N**2) loop) and checks if they might interact
- *   using a crude distance calculation. If this passes, then a more precise distance calculation
- *   is performed and the interaction coordinates are saved.
+ *   by calculating the shortest distance between two line elements, then comparing to the sum
+ *   of the radii of both rods. If this passes, the interaction coordinates are appended to
+ *   a vector.
  * 
  *   Each element of the rods will be assigned a std::vector<float> containing the coordinate
  *   pairs describing steric interactions with other rod elements. These are stored in groups
@@ -79,12 +90,12 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
     float r_b[3] = {0, 0, 0};
     float p_a[3] = {0, 0, 0};
     float p_b[3] = {0, 0, 0};
-    bool within_cutoff = false;
     float l_a[3] = {0, 0, 0};
     float l_b[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0, 0, 0};
     float c_a[3] = {0, 0, 0};
     float c_b[3] = {0, 0, 0};
+    float c_ba[3] = {0, 0, 0};
 
     // Rather confusingly, num_elements actually refers to the number of NODES in the rod (8/12/21)
     for (int i=0; i<rod_a->num_elements-1; i++){
@@ -96,33 +107,23 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
             rod_a->get_p(i, p_a, false);
             rod_b->get_p(j, p_b, false);
 
-            within_cutoff = rod::elements_within_cutoff(r_a, p_a, r_b, p_b, rod::absolute(p_a));
+            // Shortest distance between two rod elements
+            rod::normalize(p_a, l_a);
+            rod::normalize(p_b, l_b);
+            rod::cross_product(l_a, l_b, l_a_cross_l_b);
+            rod::get_point_on_connecting_line(p_a, p_b, l_a_cross_l_b, r_a, r_b, c_a);
+            rod::get_point_on_connecting_line(p_b, p_a, l_a_cross_l_b, r_b, r_a, c_b);
+            vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
 
-            if(within_cutoff == true){
-                if(dbg_print){
-                    std::cout << "rod::create_neighbour_list()" << std::endl;
-                    std::cout << "  INTERACTION between rod " << rod_a->rod_no << ", elem " << i << " and rod " << rod_b->rod_no << ", elem " << j << std::endl;
-                }
+            if(rod::dbg_print){
+                std::cout << "rod::create_neighbour_list()" << std::endl;
+                std::cout << "  |c_ba|: " << rod::absolute(c_ba) << std::endl;
+                std::cout << "  radii sum: " << rod_a->steric_radius + rod_b->steric_radius << std::endl;
+            }
 
-                // Shortest distance between two rod elements
-                rod::normalize(p_a, l_a);
-                rod::normalize(p_b, l_b);
-                rod::cross_product(l_a, l_b, l_a_cross_l_b);
-                rod::get_point_on_connecting_line(p_a, p_b, l_a_cross_l_b, r_a, r_b, c_a);
-                rod::get_point_on_connecting_line(p_b, p_a, l_a_cross_l_b, r_b, r_a, c_b);
+            if(rod::absolute(c_ba) < (rod_a->steric_radius + rod_b->steric_radius)){
+                if(rod::dbg_print){std::cout << "  interaction - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}
 
-                // std::cout << "Type checking" << std::endl;
-                // std::cout << typeid(rod_a->steric_interaction_coordinates).name() << std::endl;
-                // std::cout << typeid(rod_a->steric_interaction_coordinates.at(i)).name() << std::endl;
-                // //std::cout << typeid(rod_a->steric_interaction_coordinates[i][0]).name() << std::endl;
-                
-                // std::cout << "Size checking: full vector" << std::endl;
-                // std::cout << "size " << rod_a->steric_interaction_coordinates.size() << std::endl;
-                // std::cout << "cap " << rod_a->steric_interaction_coordinates.capacity() << std::endl;
-                // std::cout << "Size checking: element " << i << std::endl;
-                // std::cout << "size " << rod_a->steric_interaction_coordinates.at(i).size() << std::endl;
-                // std::cout << "cap " << rod_a->steric_interaction_coordinates.at(i).capacity() << std::endl;
-                
                 // Increase vector capacity by 6 (optional, might help with correct assignment to vector)
                 rod_a->steric_interaction_coordinates.at(i).reserve(rod_a->steric_interaction_coordinates.at(i).size() + 6);
                 rod_b->steric_interaction_coordinates.at(j).reserve(rod_b->steric_interaction_coordinates.at(j).size() + 6);
@@ -132,12 +133,10 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
                 vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_b[n]);}
                 vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_b[n]);}
                 vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_a[n]);}
-
-                if(dbg_print){
-                    rod::print_array("  c_a", c_a, 3);
-                    rod::print_array("  c_b", c_b, 3);
-                }
-            }    
+            }
+            else{
+                if(rod::dbg_print){std::cout << "  no interaction detected - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}
+            }  
         }
     }
 }

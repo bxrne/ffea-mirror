@@ -1567,13 +1567,30 @@ int ffea_test::two_sphere_volume_intersection(){
 }
  
 
+/**
+ * As of 15/12/21, this test only finds 6 interaction events when their should be 14. This is due to the distance
+ * calculation being somewhat incorrect (see docstring for get_point_on_connecting_line() ).
+ * 
+ * Load four rods, defined in an accompanying Python script, and generate neighbour lists for them. Count the
+ * total number of neighbours found and compare to the expected result.
+ * 
+ * TODO: More robust testing, e.g. test exactly which elements interact (by comparing indices).
+*/
 int ffea_test::rod_neighbour_list_construction(){
-    int num_rods = 2;
-    //int num_neighbours = 0;
-    //int num_element_neighbours[4] = {2, 1, 1, 0};
+    int num_rods = 4;
     std::string filename;
     rod::Rod **rod_array = NULL;
-    int test_score = 0;
+
+    float r1[3] = {0, 0, 0};
+    float r2[3] = {0, 0, 0};
+    float distance = 0;
+    std::vector<float> coords(6, 0);
+    float c_a[3] = {0, 0, 0};
+    float c_b[3] = {0, 0, 0};
+    float c_ba[3] = {0, 0, 0};
+    int num_neighbours = 0;
+    int num_interactions = 0;
+    int expected_num_interactions = 14;
 
     // Create rods
     std::cout << "ffea_test::rod_neighbour_list_construction() - loading rods" << std::endl;
@@ -1596,15 +1613,7 @@ int ffea_test::rod_neighbour_list_construction(){
         }
     }
 
-    // Let's see if it worked!
-    float r1[3] = {0, 0, 0};
-    float r2[3] = {0, 0, 0};
-    float distance = 0;
-    std::vector<float> coords(6, 0);
-    float c_a[3] = {0, 0, 0};
-    float c_b[3] = {0, 0, 0};
-    float c_ba[3] = {0, 0, 0};
-
+    // Test the results
     std::cout << "ffea_test::rod_neighbour_list_construction() - results" << std::endl;
     for (int i=0; i<num_rods; i++){
         std::cout << "rod " << i << std::endl;
@@ -1629,18 +1638,18 @@ int ffea_test::rod_neighbour_list_construction(){
                 rod::print_array("    c_b", c_b, 3);
                 std::cout << "    |c_ba|: " << distance << std::endl;
             }
+            num_neighbours += rod_array[i]->get_num_neighbours(j);
         }
-        // check length of interaction vector
-        // if within cutoff, OK, increase score
-        // check elements that were detected
-        // if same as expected, OK, increase score
-        // if total number of neighbours expected, OK, increase score
     }
+    // avoid double counting
+    num_interactions = num_neighbours / 2;
 
-    // if number of neighbours = correct number, pass the test
-    // if neighbour list has correct dimensions and data format, pass the test
-
+    std::cout << "test score: " << num_interactions << "/" << expected_num_interactions << std::endl;
+    if(num_interactions == 14){
+        return 0;
+    }
     return 1;
+    
 }
 
 

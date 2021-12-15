@@ -35,7 +35,7 @@ def get_p(index):
 
 num_rods = 4
 num_nodes = 4
-skew_deg = [0, 10, -10 , 5]
+skew_deg = [0, 3, -3 , 10]
 rods = []
 
 # Create rods
@@ -54,6 +54,8 @@ for i in range(num_rods):
         y = my_rod.current_r[0, j, 1]
         my_rod.current_r[0, j, 0] = x*np.cos(theta) - y*np.sin(theta)
         my_rod.current_r[0, j, 1] = x*np.sin(theta) + y*np.cos(theta)
+        
+    # Add another rotation in z to avoid rods being co-planar - small angles suffer from this!
     
     # first element
     p = get_p(0)
