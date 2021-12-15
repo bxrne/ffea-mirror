@@ -18,6 +18,21 @@ def straight(t):
 def zero(t):
     return 0
 
+def circle(cutoff, origin_x, origin_y):
+    theta = np.linspace(0, 2*np.pi, 100)
+    x = origin_x + cutoff*np.cos(theta)
+    y = origin_y + cutoff*np.sin(theta)
+    return x, y
+
+def get_p(index):
+    x0 = my_rod.current_r[0][index][0]
+    x1 = my_rod.current_r[0][index+1][0]
+    y0 = my_rod.current_r[0][index][1]
+    y1 = my_rod.current_r[0][index+1][1]
+    z0 = my_rod.current_r[0][index][2]
+    z1 = my_rod.current_r[0][index+1][2]
+    return np.array([x1 - x0, y1 - y0, z1 - z0])
+
 num_rods = 4
 num_nodes = 4
 skew_deg = [0, 10, -10 , 5]
@@ -41,19 +56,13 @@ for i in range(num_rods):
         my_rod.current_r[0, j, 1] = x*np.sin(theta) + y*np.cos(theta)
     
     # first element
-    x0 = my_rod.current_r[0][0][0]
-    x1 = my_rod.current_r[0][1][0]
-    y0 = my_rod.current_r[0][0][1]
-    y1 = my_rod.current_r[0][1][1]
-    z0 = my_rod.current_r[0][0][2]
-    z1 = my_rod.current_r[0][1][2]
-    p = np.array([x1 - x0, y1 - y0, z1 - z0])
+    p = get_p(0)
     mag_p = abs(np.linalg.norm(p))
     
     print("Rod", i)
     print(skew_deg[i], "deg")
-    print("r0", x0, y0, z0)
-    print("r1", x1, y1, z1)
+    print("r0", my_rod.current_r[0, 0, :])
+    print("r1", my_rod.current_r[0, 1, :])
     print("p", p)
     print("|p| = {0:.3f} nm".format(mag_p/1e-9))
     print("r", my_rod.current_r[0])
@@ -75,9 +84,21 @@ rod_shift = [0, mag_p*0.75, -mag_p*0.5, mag_p*10]
     
 # Shift rods and write to file
 for i, my_rod in enumerate(rods):
-    my_rod.current_r[0, :, 1] += rod_shift[i]
+    my_rod.current_r[0, :, 1] += rod_shift[i]  # shift in y
     plt.plot(my_rod.current_r[0, :, 0], my_rod.current_r[0, :, 1], 'o', label=i)
+    if i==0:
+        for j in range(0, len(my_rod.current_r[0])-1):
+            # r_mid = r1 + 0.5p
+            p = get_p(j)
+            x_mid = my_rod.current_r[0, j, 0] + 0.5 * p[0]
+            y_mid = my_rod.current_r[0, j, 1] + 0.5 * p[1]
+            mag_p = abs(np.linalg.norm(p))
+            cx, cy = circle(mag_p, x_mid, y_mid)
+            plt.plot(cx, cy, color='k', ms=1)
+        
     my_rod.write_rod("collider_{0}.rod".format(i))
     
+plt.xlim(-0.5e-8, 3.5e-8)
+plt.ylim(-0.5e-8, 3.5e-8)
 plt.legend()
 plt.savefig("Rods.png")
