@@ -128,13 +128,8 @@ void print_vector(std::string vector_name, std::vector<float> vec){
     
     std::cout << vector_name;
     std::cout << ": ( ";
-    int i=0;
     for(auto item : vec){
         std::cout << item << ", ";
-        if(i != vec.size() && i % 3 == 0){
-            std::cout << std::endl;
-        }
-        i++;
     }
     std::cout << "\b\b )" << std::endl;
 }
@@ -307,9 +302,9 @@ void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]){
 }
 
 // \f[ p_{mid} = r_i + \frac{1}{2}p_i\f]
-void get_p_midpoint(float p_i[3], float r_i[3], OUT float p_mid[3]){
-    vec3d(n){p_mid[n] = r_i[n] + 0.5 * p_i[n];}
-    not_simulation_destroying(p_mid, "get_p_midpoint is simulation destroying.");
+void get_element_midpoint(float p_i[3], float r_i[3], OUT float r_mid[3]){
+    vec3d(n){r_mid[n] = r_i[n] + 0.5 * p_i[n];}
+    not_simulation_destroying(r_mid, "get_element_midpoint is simulation destroying.");
 }
 
 /**
@@ -1346,6 +1341,28 @@ void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
  * 
  * cross products are non-commutative and l_a x l_b must remain constant for c_a and c_b, so should be passed in
+ * 
+ * TODO: I think the result of this function can be bad in certain cases. The infinite thin line assumption means
+ * that the 'closest' part of the rod is actually further along the rod than we think. The correction function is
+ * supposed to account for this, but it is prone to preferring one node over another for a particular element due to
+ * how far along the rod this incorrect result can be. E.g. for two rods that are close together in the x-y plane with
+ * a small angle (5-10 deg) between them, if an element on the top rod (b) slants to the left, the correction arising 
+ * from the element on the bottom rod (a) is biased to the leftmost node because the initial guess for c_a was quite far 
+ * away, and similarly for the right. If this occurs often, this means that c will often be assumed to lie on rod nodes 
+ * rather than some way along an element. This in turn means that when calculating |c_ba| for the purposes of steric 
+ * interactions, two elements that are clearly intersecting near their tips will be calculated as being safely 
+ * apart, because the wrong nodes are being used in the calculation.
+ * 
+ * I think this amy only be an issue for rods that are co-planar and with a small skew between them, even if they aren't,
+ * parallel such as the example above. For two rods that are not co-planar or parallel, the closest point between them,
+ * even on two infinite thin lines, is likely to be close to the intended point of calculation. Try demonstrating this with two rulers.
+ * For two rods that are co-planar, but with a large skew angle, then the calculation of c is unlikely to extend well beyond
+ * the rods.
+ * 
+ * In an actual FFEA simulation the chance of two elements being exactly co-planar for an extended period of time is quite
+ * rare, so this may only be an issue in the simplified situation I have created in ffea_test::rod_neighbour_list_construction()!
+ * Furthermore, it is extremely unlikely the entire length of a rod will be completely straight, which again exacerbates this
+ * issue in the 'perfect' testing environment. My testing environment is too nice!!
 */
 void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_b[3], float r_a[3], float r_b[3], OUT float c_a_out[3]){
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
