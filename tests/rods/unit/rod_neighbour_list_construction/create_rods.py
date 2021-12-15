@@ -79,26 +79,30 @@ for i in range(num_rods):
     rods.append(my_rod)
     
 
-# 0, 4.3, -2.9, 58 nm
-rod_shift = [0, mag_p*0.75, -mag_p*0.5, mag_p*10]
+# 0, 1, -1, 10 nm
+cutoff = radius
+rod_shift = [0, cutoff*1.25, -cutoff*1.25, cutoff*10]
     
 # Shift rods and write to file
+plt.figure(figsize=(8,8))
+colors = ['blue', 'orange', 'green', 'red']
 for i, my_rod in enumerate(rods):
     my_rod.current_r[0, :, 1] += rod_shift[i]  # shift in y
-    plt.plot(my_rod.current_r[0, :, 0], my_rod.current_r[0, :, 1], 'o', label=i)
-    if i==0:
-        for j in range(0, len(my_rod.current_r[0])-1):
-            # r_mid = r1 + 0.5p
-            p = get_p(j)
-            x_mid = my_rod.current_r[0, j, 0] + 0.5 * p[0]
-            y_mid = my_rod.current_r[0, j, 1] + 0.5 * p[1]
-            mag_p = abs(np.linalg.norm(p))
-            cx, cy = circle(mag_p, x_mid, y_mid)
-            plt.plot(cx, cy, color='k', ms=1)
+    plt.plot(my_rod.current_r[0, :, 0], my_rod.current_r[0, :, 1], 'D', color=colors[i], label=i, ms=1)
+    for j in range(0, len(my_rod.current_r[0])):
+        #p = get_p(j)
+        #x = my_rod.current_r[0, j, 0] + 0.5 * p[0]
+        #y = my_rod.current_r[0, j, 1] + 0.5 * p[1]
+        #cutoff = abs(np.linalg.norm(p))
+        x = my_rod.current_r[0, j, 0]
+        y = my_rod.current_r[0, j, 1]
+        cutoff = 1e-9
+        cx, cy = circle(cutoff, x, y)
+        plt.plot(cx, cy, color=colors[i], ms=0.5, marker='o')
         
     my_rod.write_rod("collider_{0}.rod".format(i))
     
-plt.xlim(-0.5e-8, 3.5e-8)
-plt.ylim(-0.5e-8, 3.5e-8)
+plt.xlim(-0.5e-8, 1.5e-8)
+plt.ylim(-0.5e-8, 1.5e-8)
 plt.legend()
-plt.savefig("Rods.png")
+plt.savefig("Rods.png", dpi=300)
