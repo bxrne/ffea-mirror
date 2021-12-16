@@ -90,8 +90,6 @@ struct ffea_test{
 
     static int line_connecting_rod_elements();
 
-    static int perturb_intersection_radius();
-
     static int two_sphere_volume_intersection();
 
     static int rod_neighbour_list_construction();
