@@ -1364,7 +1364,15 @@ void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float
  * Furthermore, it is extremely unlikely the entire length of a rod will be completely straight, which again exacerbates this
  * issue in the 'perfect' testing environment. My testing environment is too nice!!
 */
-void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_b[3], float r_a[3], float r_b[3], OUT float c_a_out[3]){
+void get_point_on_connecting_line(
+    float p_a[3],
+    float p_b[3],
+    float l_a_cross_l_b[3],
+    float r_a[3],
+    float r_b[3],
+    OUT float c_a_out[3]
+    ){
+
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
     float n_b[3] = {0.0, 0.0, 0.0};
@@ -1405,38 +1413,50 @@ void get_point_on_connecting_line(float p_a[3], float p_b[3], float l_a_cross_l_
 
 }
 
-/** Perturb the intersection radius, d, between two rod elements, a and b. A perturbation is applied 
- * positively and negatively in a given degree of freedom (x, y, z), and we calculate part of a 
- * central difference formula for the current rod element, a:
+/** Perturb the intersection distance between two rod elements, a and b. A perturbation is applied 
+ * positively and negatively in a given degree of freedom (x, y, z) and multiplied by a constant
+ * to get a potential energy.
  * 
- * \f| \partial d = d(x+\Delta x) - d(x-\Delta x) \f|
+ * \f|  U_{dim} = constant * d_{dim}\f|
  * 
- * This will later be used to calculate the steric repulsion force.
- * 
- * a: UNperturbed rod element
- * b: perturbed rod element
- * delta: perturbation amount
- * dim: the dimension of the perturbation (0 = x, 1 = y, 2 = z)
 */
-float get_perturbation_distance(float delta, int dim, float r_a[3], float r_b[3], float p_a[3], float p_b[3], float radius_a, float radius_b){
-    float d_positive = 0.0;
-    float d_negative = 0.0;
-    // p remains the same, so by perturbing the start node the end node
-    // has, implicitly, also been perturbed by the same amount
-    r_b[dim] += delta;
-    d_positive = get_inter_rod_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
+float get_perturbation_energy_steric_overlap(
+    float perturbation_amount,
+    int perturbation_dimension,
+    float force_constant,
+    float r_a[3],
+    float r_b[3],
+    float p_a[3],
+    float p_b[3],
+    float radius_a,
+    float radius_b
+    ){
+    //OUT
+    //float energies[3]
 
-    r_b[dim] -= 2*delta;
-    d_negative = get_inter_rod_distance(p_a, p_b, r_a, r_b, radius_a, radius_b);
+    float l_a = {0, 0, 0};
+    float l_b = {0, 0, 0};
+    float l_a_cross_l_b = {0, 0, 0};
+    float c_a = {0, 0, 0};
+    float c_b = {0, 0, 0};
+    float c_ba = {0, 0, 0};
+    float steric_overlap = 0;
 
-    if(dbg_print){
-        printf("delta: %.3lf\n", delta);
-        std::cout << "dim: " << dim << std::endl;
-        printf("d(r+delta) - d(r-delta): %.3lf\n", d_positive - d_negative);
-        std::cout << std::endl;
-    }
+    // Full rod element is shifted by perturbation amount, maintaining orientation
+    r_b[perturbation_dimension] += perturbation_amount;
 
-    return d_positive - d_negative;
+    rod::normalize(p_a, l_a);
+    rod::normalize(p_b, l_b);
+    rod::cross_product(l_a, l_b, l_a_cross_l_b);
+
+    rod::get_point_on_connecting_line(p_a, p_b, l_a_cross_l_b, r_a, r_b, c_a);
+    rod::get_point_on_connecting_line(p_b, p_a, l_a_cross_l_b, r_b, r_a, c_b);
+    vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
+
+    // A negative overlap is meaningless, so ensure it is always => 0
+    steric_overlap = std::min( std::abs(rod::absolute(c_ba) - radius_a + radius_b), 0 )
+
+    return force_constant * steric_overlap
 }
 
 /** Compute the volume of intersection of two spheres,a and b, whose centres are separated
