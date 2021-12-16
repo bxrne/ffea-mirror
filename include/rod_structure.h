@@ -121,6 +121,7 @@ struct Rod
   Rod get_p(int index, OUT float p[3], bool equil);
   int get_num_neighbours(int element_index);
   std::vector<float> get_interaction_coordinate_pair(int element_index, int neighbour_index);
+  float Rod::get_interaction_rod_radius(int element_index, int neighbour_index);
 };
 
 } //end namespace

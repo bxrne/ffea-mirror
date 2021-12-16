@@ -164,6 +164,7 @@ Rod Rod::set_units(){
  populates the contents of the energy arrays, which int we use to work out
  delta E. The second one uses those energies to compute dynamics and
  applies those dynamics to the position arrays.
+ TODO: neighbours loop
 */
 Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
@@ -214,7 +215,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float p[4][3];
         load_p(p, current_r, node_no);
         
-        float energies[3]; //bend, stretch, twist (temporary variable)
+        float energies[3]; //bend, stretch, twist (temporary variable). TODO: add extra dimensions for other energies (steric, protein-protein, hydrodynamic)
         
         // todo: these can have fewer arguments - maybe perturbation amount and cutoff values
         
@@ -367,30 +368,39 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         twisted_energy_negative[node_no*3] = energies[stretch_index];
         twisted_energy_negative[(node_no*3)+1] = energies[bend_index];
         twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
-        
-        // Get steric interaction energies
-        //
-        // Due to how the rod structure file is written, we must perform (minor) duplicate calculations,
-        // which is probably less complicated than devising a 'clever' way.
-        //
-        // Steric interactions are performed between elements, but we are unable to skip over every other node.
-        // Hence, we perturb the same energy twice for a given element, but interpolate it differently based on
-        // the current node. A neighbour list containing the points defining the interaction vector will allow us
-        // to work out the intersection distance/volume, interpolation weighting, and force direction.
-        //
-        // num_neighbours = length of axis 1 of steric_interaction_vectors, i.e.  steric_interaction_vectors[node_no]
-        /* for (int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
-               float steric_energy_x_positive
-               float steric_energy_y_positive
-               float steric_energy_z_positive
-
-               float steric_energy_x_negative
-               float steric_energy_y_negative
-               float steric_energy_z_negative
-        }
-        */
 
     }
+
+    // // Energies from rod-rod interactions loop
+    // for (int element_no = 0; element_no<end_node-1; element_no++){
+
+    //     // If the node is pinned, there's nothing to do
+    //     if (pinned_nodes[node_no] == true){
+    //         continue;
+    //     }
+        
+    //     if (node_no < node_min){
+    //         continue;
+    //     }
+
+    //     int num_neighbours = this->get_num_neighbours(element_no);
+    //     float steric_perturbation = 0.002;
+    //     float steric_force_constant = 1;
+    //     for (int neighbour_no = 0; neighbour_no<num_neighbours; neighbour_no++){
+
+    //         get_perturbation_energy_steric_overlap(
+    //             steric_perturbation,
+    //             0,
+    //             steric_force_constant,
+    //             float r_a[3],
+    //             float r_b[3],
+    //             float p_a[3],
+    //             float p_b[3],
+    //             )
+
+    //     }
+
+    // }
         
     //This loop is for the dynamics
     for (int node_no = 0; node_no<end_node; node_no++){
@@ -965,7 +975,7 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
  * element, given its index
  */
 int Rod::get_num_neighbours(int element_index){
-    return steric_interaction_coordinates.at(element_index).size() / 6;
+    return steric_interaction_coordinates.at(element_index).size() / 7;
 }
 
 /**
@@ -973,13 +983,24 @@ int Rod::get_num_neighbours(int element_index){
  * between two rod elements.
  * 
  * Indices 0, 1, 2 lie on the rod associated with element_index; 3, 4, 5 lie on some other
- *  rod element.
+ * rod element. Index 6 stores the radius of a rod element (not returned).
  */
 std::vector<float> Rod::get_interaction_coordinate_pair(int element_index, int neighbour_index){
-    if(neighbour_index*6 % 6 != 0){
-        std::cout << "Warning: neighbour_index*6 (" << neighbour_index << ") is not a multiple of 6. Interaction coordinates will be returned incorrectly." << std::endl;
+    if(neighbour_index*7 % 7 != 0){
+        std::cout << "Warning: neighbour_index*7 (" << neighbour_index << ") is not a multiple of 7. Interaction coordinates will be returned incorrectly." << std::endl;
     }
-    return rod::slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index*6, (neighbour_index*6)+5);
+    return rod::slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index*7, (neighbour_index*7)+5);
+}
+
+/**
+ * Get the radius of the 'other' rod involved in a steric interaction. The rod object performing the interaction
+ * calculation will know its own radius.
+ */
+float Rod::get_interaction_rod_radius(int element_index, int neighbour_index){
+    if(neighbour_index*7 % 7 != 0){
+        std::cout << "Warning: neighbour_index*7 (" << neighbour_index << ") is not a multiple of 7. The radius will be returned incorrectly." << std::endl;
+    }
+    return steric_interaction_coordinates.at(element_index).at( (neighbour_index*7)+6 );
 }
 
 } //end namespace
