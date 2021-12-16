@@ -983,24 +983,43 @@ int Rod::get_num_neighbours(int element_index){
  * between two rod elements.
  * 
  * Indices 0, 1, 2 lie on the rod associated with element_index; 3, 4, 5 lie on some other
- * rod element. Index 6 stores the radius of a rod element (not returned).
+ * rod element. Index 6 stores the radius of the other rod element (not returned).
  */
 std::vector<float> Rod::get_interaction_coordinate_pair(int element_index, int neighbour_index){
-    if(neighbour_index*7 % 7 != 0){
-        std::cout << "Warning: neighbour_index*7 (" << neighbour_index << ") is not a multiple of 7. Interaction coordinates will be returned incorrectly." << std::endl;
-    }
     return rod::slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index*7, (neighbour_index*7)+5);
 }
 
 /**
  * Get the radius of the 'other' rod involved in a steric interaction. The rod object performing the interaction
- * calculation will know its own radius.
+ * calculation will know its own radius. This is index 6 in each group of 7 items in the neighbour list.
  */
 float Rod::get_interaction_rod_radius(int element_index, int neighbour_index){
-    if(neighbour_index*7 % 7 != 0){
-        std::cout << "Warning: neighbour_index*7 (" << neighbour_index << ") is not a multiple of 7. The radius will be returned incorrectly." << std::endl;
-    }
     return steric_interaction_coordinates.at(element_index).at( (neighbour_index*7)+6 );
+}
+
+Rod Rod::check_neighbour_list_dimensions(){
+    int num_rows = steric_interaction_coordinates.size();
+    int num_cols = 0;
+    bool dim_ok = true;
+
+    if(num_rows != this->num_elements-1){
+        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->num_elements-1 << ")." << std::endl;
+        dim_ok = false;
+    }
+
+    for (int i=0; i<this->num_elements-1; i++){
+        num_cols = steric_interaction_coordinates.at(i).size();
+        if(num_cols % 7 != 0){
+            std::cout << "Warning: number of items (" << num_cols << ") in row " << i << " of neighbour list should be a multiple of 7." << std::endl;
+            dim_ok = false;
+        }
+    }
+
+    if(dim_ok){
+        std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK." << std::endl;
+    }
+
+    return *this;
 }
 
 } //end namespace

@@ -1614,8 +1614,10 @@ int ffea_test::rod_neighbour_list_construction(){
             }
             num_neighbours += rod_array[i]->get_num_neighbours(j);
         }
+        rod_array[i]->check_neighbour_list_dimensions();
     }
-    // avoid double counting
+
+    // avoid double counting (between two interacting rods, both will have information on the others' elements)
     num_interactions = num_neighbours / 2;
 
     std::cout << "test score: " << num_interactions << "/" << expected_num_interactions << std::endl;

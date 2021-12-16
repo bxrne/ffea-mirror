@@ -129,14 +129,14 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
                 rod_a->steric_interaction_coordinates.at(i).reserve(rod_a->steric_interaction_coordinates.at(i).size() + 7);
                 rod_b->steric_interaction_coordinates.at(j).reserve(rod_b->steric_interaction_coordinates.at(j).size() + 7);
 
-                // Update both rods with the interaction coordinate pair
+                // Update both rods with the interaction coordinate pair and the radius of the other rod
                 vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_a[n]);}
                 vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_b[n]);}
-                vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(rod_b->steric_radius);}
+                rod_a->steric_interaction_coordinates.at(i).push_back(rod_b->steric_radius);
 
                 vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_b[n]);}
                 vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_a[n]);}
-                vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(rod_a->steric_radius);}
+                rod_b->steric_interaction_coordinates.at(j).push_back(rod_a->steric_radius);
             }
             else{
                 if(rod::dbg_print){std::cout << "  no interaction detected - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}

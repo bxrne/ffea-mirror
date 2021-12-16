@@ -1434,12 +1434,12 @@ float get_perturbation_energy_steric_overlap(
     //OUT
     //float energies[3]
 
-    float l_a = {0, 0, 0};
-    float l_b = {0, 0, 0};
-    float l_a_cross_l_b = {0, 0, 0};
-    float c_a = {0, 0, 0};
-    float c_b = {0, 0, 0};
-    float c_ba = {0, 0, 0};
+    float l_a[3] = {0, 0, 0};
+    float l_b[3] = {0, 0, 0};
+    float l_a_cross_l_b[3] = {0, 0, 0};
+    float c_a[3] = {0, 0, 0};
+    float c_b[3] = {0, 0, 0};
+    float c_ba[3] = {0, 0, 0};
     float steric_overlap = 0;
 
     // Full rod element is shifted by perturbation amount, maintaining orientation
@@ -1454,9 +1454,9 @@ float get_perturbation_energy_steric_overlap(
     vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
 
     // A negative overlap is meaningless, so ensure it is always => 0
-    steric_overlap = std::min( std::abs(rod::absolute(c_ba) - radius_a + radius_b), 0 )
+    steric_overlap = std::min( std::abs(rod::absolute(c_ba) - radius_a + radius_b), 0.0f );
 
-    return force_constant * steric_overlap
+    return force_constant * steric_overlap;
 }
 
 /** Compute the volume of intersection of two spheres,a and b, whose centres are separated
