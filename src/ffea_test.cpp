@@ -108,10 +108,6 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::line_connecting_rod_elements();
     }
 
-    if (buffer.str().find("perturb_intersection_radius") != std::string::npos ){
-        result = ffea_test::perturb_intersection_radius();
-    }
-
     if (buffer.str().find("two_sphere_volume_intersection") != std::string::npos ){
         result = ffea_test::two_sphere_volume_intersection();
     }
@@ -1474,28 +1470,6 @@ int ffea_test::line_connecting_rod_elements(){
     }
 }
 
-// Apply a perturbation to the intersection radius of two colliding rod elements 
-// in one dimension, then compare to expected values
-int ffea_test::perturb_intersection_radius(){
-    // Two rods near-ish to each other
-    float r_a[3] = {2, 3, 0};  // p = r2 - r1
-    float r_b[3] = {2, 3, 3};
-    float p_a[3] = {2, 0, 0};
-    float p_b[3] = {1, 0, 1.5};
-    float radius = 1;
-    float delta = 0.02;
-    float diff = 0.0;
-
-    diff = rod::get_perturbation_distance(0.5*delta, 0, r_a, r_b, p_a, p_b, radius, radius);
-    std::cout << "Expected d(y+dy) - d(y-dy): -0.1082" << std::endl;
-
-    if(diff > -0.1082*1.01 && diff < -0.1082*0.99){
-        return 0;
-    }
-    else{
-        return 1;
-    } 
-}
 
 // Compute the overlap of two spheres with equivalent and different radii in
 // the cases they are physically likely to encounter. Compare to volume overlaps
@@ -1584,7 +1558,7 @@ int ffea_test::rod_neighbour_list_construction(){
     float r1[3] = {0, 0, 0};
     float r2[3] = {0, 0, 0};
     float distance = 0;
-    std::vector<float> coords(6, 0);
+    std::vector<float> coords(7, 0);
     float c_a[3] = {0, 0, 0};
     float c_b[3] = {0, 0, 0};
     float c_ba[3] = {0, 0, 0};
