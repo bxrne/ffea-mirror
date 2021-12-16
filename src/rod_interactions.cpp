@@ -82,8 +82,9 @@ bool elements_within_cutoff(float p_i[3], float p_j[3], float r_i[3], float r_j[
  *   Each element of the rods will be assigned a std::vector<float> containing the coordinate
  *   pairs describing steric interactions with other rod elements. These are stored in groups
  *   of 6, such that indices 0, 1, 2 are the coordinate on the current rod, and indices
- *   3, 4, 5 are the coordinate on the other rod, e.g. {ax, ay, az, bx, by, bz ...}. Hence for
- *   one element experiencing 5 interactions, this will create a vector containing 30 floats.
+ *   3, 4, 5 are the coordinate on the other rod, with an additional element 6 to store the radius
+ *   of the other rod, e.g. {ax, ay, az, bx, by, bz, R_b ...}. Hence for one element experiencing 5
+ *   interactions, this will create a vector containing 35 floats.
  */
 void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
     float r_a[3] = {0, 0, 0};
@@ -125,14 +126,17 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
                 if(rod::dbg_print){std::cout << "  interaction - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}
 
                 // Increase vector capacity by 6 (optional, might help with correct assignment to vector)
-                rod_a->steric_interaction_coordinates.at(i).reserve(rod_a->steric_interaction_coordinates.at(i).size() + 6);
-                rod_b->steric_interaction_coordinates.at(j).reserve(rod_b->steric_interaction_coordinates.at(j).size() + 6);
+                rod_a->steric_interaction_coordinates.at(i).reserve(rod_a->steric_interaction_coordinates.at(i).size() + 7);
+                rod_b->steric_interaction_coordinates.at(j).reserve(rod_b->steric_interaction_coordinates.at(j).size() + 7);
 
                 // Update both rods with the interaction coordinate pair
                 vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_a[n]);}
                 vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_b[n]);}
+                vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(rod_b->steric_radius);}
+
                 vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_b[n]);}
                 vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_a[n]);}
+                vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(rod_a->steric_radius);}
             }
             else{
                 if(rod::dbg_print){std::cout << "  no interaction detected - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}
