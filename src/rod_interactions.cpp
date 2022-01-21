@@ -91,12 +91,9 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
     float r_b[3] = {0, 0, 0};
     float p_a[3] = {0, 0, 0};
     float p_b[3] = {0, 0, 0};
-    float l_a[3] = {0, 0, 0};
-    float l_b[3] = {0, 0, 0};
-    float l_a_cross_l_b[3] = {0, 0, 0};
     float c_a[3] = {0, 0, 0};
     float c_b[3] = {0, 0, 0};
-    float c_ba[3] = {0, 0, 0};
+    float c_ab[3] = {0, 0, 0};
 
     // Rather confusingly, num_elements actually refers to the number of NODES in the rod (8/12/21)
     for (int i=0; i<rod_a->num_elements-1; i++){
@@ -109,20 +106,16 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
             rod_b->get_p(j, p_b, false);
 
             // Shortest distance between two rod elements
-            rod::normalize(p_a, l_a);
-            rod::normalize(p_b, l_b);
-            rod::cross_product(l_a, l_b, l_a_cross_l_b);
-            rod::get_point_on_connecting_line(p_a, p_b, l_a_cross_l_b, r_a, r_b, c_a);
-            rod::get_point_on_connecting_line(p_b, p_a, l_a_cross_l_b, r_b, r_a, c_b);
-            vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
+            rod::get_interaction_vector(p_a, p_b, r_a, r_b, c_a, c_b);
+            vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
 
             if(rod::dbg_print){
                 std::cout << "rod::create_neighbour_list()" << std::endl;
-                std::cout << "  |c_ba|: " << rod::absolute(c_ba) << std::endl;
+                std::cout << "  |c_ab|: " << rod::absolute(c_ab) << std::endl;
                 std::cout << "  radii sum: " << rod_a->steric_radius + rod_b->steric_radius << std::endl;
             }
 
-            if(rod::absolute(c_ba) < (rod_a->steric_radius + rod_b->steric_radius)){
+            if(rod::absolute(c_ab) < (rod_a->steric_radius + rod_b->steric_radius)){
                 if(rod::dbg_print){std::cout << "  interaction - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}
 
                 // Increase vector capacity by 6 (optional, might help with correct assignment to vector)

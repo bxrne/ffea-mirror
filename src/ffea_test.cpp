@@ -1266,6 +1266,8 @@ int ffea_test::shortest_distance_between_rod_elements(){
 // be calculated, connected by a pair of points, one on each rod. Such points must lie
 // on the rod element centreline and within the boundaries of its length.
 //
+// TODO: Test needs rewriting for new correction function. 
+//
 // In this test, six points, c, are tested against an arbitrary rod element. Beyond the
 // element length, a point should be assigned to the closest node. Otherwise, the
 // point is unchanged.
@@ -1378,23 +1380,9 @@ int ffea_test::line_connecting_rod_elements(){
     for(int i=0; i<num_tests; i++){
         vec3d(n){c_a_answer[n] = 0.0;}
         vec3d(n){c_b_answer[n] = 0.0;}
-
-        rod::normalize(p_a, l_a);
-        rod::normalize(p_b[i], l_b);
-        rod::cross_product(l_a, l_b, l_a_cross_l_b);
-
-        if(rod::dbg_print == true){
-            std::cout << "before test" << std::endl;
-            rod::print_array("p_a", p_a, 3);
-            rod::print_array("p_b", p_b[i], 3);
-            rod::print_array("r_a1", r_a1, 3);
-            rod::print_array("r_b1", r_b1[i], 3);
-            rod::print_array("l_a x l_b", l_a_cross_l_b, 3);
-        }
       
-        // test
-        rod::get_point_on_connecting_line(p_a, p_b[i], l_a_cross_l_b, r_a1, r_b1[i], c_a);
-        rod::get_point_on_connecting_line(p_b[i], p_a, l_a_cross_l_b, r_b1[i], r_a1, c_b);
+        // Function to test
+        rod::get_interaction_vector(p_a, p_b[i], r_a1, r_b1[i], c_a, float c_b)
 
         switch(i){
             case 0:
@@ -1542,8 +1530,8 @@ int ffea_test::two_sphere_volume_intersection(){
  
 
 /**
- * As of 15/12/21, this test only finds 6 interaction events when their should be 14. This is due to the distance
- * calculation being somewhat incorrect (see docstring for get_point_on_connecting_line() ).
+ * As of 20/01/22, get_interaction_vector() has been made more robust than its predecessor. This
+ * test may still only get 6 out of 14 hits.
  * 
  * Load four rods, defined in an accompanying Python script, and generate neighbour lists for them. Count the
  * total number of neighbours found and compare to the expected result.

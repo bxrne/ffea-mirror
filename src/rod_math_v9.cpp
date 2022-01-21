@@ -1290,126 +1290,187 @@ float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b
     return d;
 }
 
-/** Check that a point, c, lies on the boundaries of a rod element. If it does, return
-/* the same point. If not, return the appropriate rod node.
-/*
-/*    r1 ------ c ---------------------- r2
-/*
-/*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) > 0
-/*    \boldsymbol{p}\cdot(\boldsymbol{c} - \boldsymbol{r}_1) < \boldsymbol{p}^2
+/** 1) Check that the points of the rod interaction vector, c_a and c_b, lie within their respective
+ * rod elements. Certain situations (e.g. almost-parallel rods) will mean this correction can be poor
+ * (e.g. c being corrected to completely the wrong end of the rod), so a secondary correction is required.
+ * 
+ * 2) Compare the rod interaction vector, c_ba, to distances measured from nodes to c_a and c_b:
+ *    d1 = c_b - r_a
+ *    d2 = c_b - r_a2
+ *    d3 = c_a - r_b
+ *    d4 = c_a - r_b2 
+ * Find the smallest vector from these and c_ba, and assign that to be the new interaction vector.
 */
-// TODO: This function needs more information to 'properly' correct connection points,
-// instead of just assigning them to the node end of a rod element.
-void set_point_within_rod_element(float c[3], float p[3], float r1[3], OUT float c_out[3]){
-    float r1_c[3] = {0.0, 0.0, 0.0};
-    float p2 = 0.0;
-    float p_dot_r1_c = 0.0;
-    
-    vec3d(n){r1_c[n] = c[n] - r1[n];}
-    p_dot_r1_c = dot_product_3x1(p, r1_c);
-    p2 = rod::absolute(p) * rod::absolute(p);
+void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]){  
+    float r_a2[3] = {0, 0, 0};
+    float r_b2[3] = {0, 0, 0};
+    float rc_a[3] = {0, 0, 0};
+    float rc_b[3] = {0, 0, 0};
+    float dot_a = 0;
+    float dot_b = 0;
+    float p_a_sq = 0;
+    float p_b_sq = 0;
 
-    if (p_dot_r1_c <= 0){
-        vec3d(n){c_out[n] = r1[n];}
+    float c_ab[3] = {0, 0, 0};
+    float d1[3] = {0, 0, 0};
+    float d2[3] = {0, 0, 0};
+    float d3[3] = {0, 0, 0};
+    float d4[3] = {0, 0, 0};
+    float d1_mag = 0;
+    float d2_mag = 0;
+    float d3_mag = 0;
+    float d4_mag = 0;
+
+    vec3d(n){r_a2[n] = r_a[n] + p_a[n];}
+    vec3d(n){r_b2[n] = r_b[n] + p_b[n];}
+
+    // Ensure the points defining the vector lie on their respective finite rods.
+    // This part can mis-correct if rods are almost parallel with some tiny angle
+    // between them.
+    vec3d(n){rc_a[n] = c_a[n] - r_a[n];}
+    vec3d(n){rc_b[n] = c_b[n] - r_b[n];}
+
+    dot_a = dot_product_3x1(p_a, rc_a);
+    dot_b = dot_product_3x1(p_b, rc_b);
+
+    p_a_sq = rod::absolute(p_a) * rod::absolute(p_a);
+    p_b_sq = rod::absolute(p_b) * rod::absolute(p_b);
+
+    if (dot_a <= 0){
+        vec3d(n){c_a[n] = r_a[n];}
     }
-    else if(p_dot_r1_c >= p2){
-        vec3d(n){c_out[n] = r1[n] + p[n];}
+    else if (dot_a >= p_a_sq){
+        vec3d(n){c_a[n] = r_a2[n];}
     }
-    else{
-        // 0 < p.(c-r1) < p^2
-        vec3d(n){c_out[n] = c[n];}
+
+    if (dot_b <= 0){
+        vec3d(n){c_b[n] = r_b[n];}
     }
+    else if (dot_a >= p_a_sq){
+        vec3d(n){c_b[n] = r_b2[n];}
+    }
+
+    // Compare c_ba to vectors pointing from the nodes on one rod to the 
+    // interaction point on the opposing rod.
+    // This part accounts for the mis-correction of the previous section by
+    // explicitly working out the shortest distance between the two rods.
+    vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
+    vec3d(n){d1[n] = c_b[n] - r_a[n];}
+    vec3d(n){d2[n] = c_b[n] - r_a2[n];}
+    vec3d(n){d3[n] = c_a[n] - r_b[n];}
+    vec3d(n){d4[n] = c_a[n] - r_b2[n];}
+
+    d1_mag = rod::absolute(d1);
+    d2_mag = rod::absolute(d2);
+    d3_mag = rod::absolute(d3);
+    d4_mag = rod::absolute(d4);
+
+    // Replace c_ba with the smallest vector. Do nothing if c_ba is already
+    // the smallest.
+    if (rod::absolute(c_ab) > 0.99*std::min({d1_mag, d2_mag, d3_mag, d4_mag})){
+        if (d1_mag <= std::min({d2_mag, d3_mag, d4_mag})){
+            vec3d(n){c_a[n] = r_a[n];}
+        }
+        else if (d2_mag <= std::min(d3_mag, d4_mag)){
+            vec3d(n){c_a[n] = r_a2[n];}
+        }
+        else if (d3_mag <= d4_mag){
+            vec3d(n){c_b[n] = r_b[n];}
+        }
+        else{
+            vec3d(n){c_b[n] = r_b2[n];}
+        }
+    }
+
+    vec3d(n){c_a_out[n] = c_a[n];}
+    vec3d(n){c_b_out[n] = c_b[n];}
 
     if(dbg_print){
-        std::cout << "rod::set_point_within_rod_element()" << std::endl;
-        print_array("\tc", c, 3);
-        print_array("\tp", p, 3);
-        print_array("\tr1", r1, 3);
-
-        print_array("\tc - r1", r1_c, 3);
-        printf("\tp . (c - r1) : %.3lf\n", p_dot_r1_c);
-        printf("\t|p|^2 : %.3lf\n", p2);
-
-        print_array("\tc_out", c_out, 3);
+        std::cout << "rod::interaction_vector_correction()" << std::endl;
+        printf("\tp_a.(c_a - r_a) : %.3e\n", dot_a);
+        printf("\tp_b.(c_b - r_b) : %.3e\n", dot_b);
+        printf("\t|c_ab| : %.3e\n", rod::absolute(c_ab));
+        printf("\t|d1| : %.3e\n", d1_mag);
+        printf("\t|d2| : %.3e\n", d2_mag);
+        printf("\t|d3| : %.3e\n", d3_mag);
+        printf("\t|d4| : %.3e\n", d4_mag);
+        print_array("\tc_a (corrected)", c_a_out, 3);
+        print_array("\tc_b (corrected)", c_b_out, 3);
         std::cout << std::endl;
     }
 }
 
 
-/** Compute one of the two points, c_a (or c_b, reversing the a and b indices), that forms the line segment joining two rod elements together, where c_a sits
- * on the element p_a. Element radii are not taken into account.
+/** Compute one of the two points, c_a and c_b, that form the interaction vector joining two rod elements together, where c_a sits
+ * on the element p_a. Element radii are not considered at this stage.
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
- * 
- * cross products are non-commutative and l_a x l_b must remain constant for c_a and c_b, so should be passed in
- * 
- * TODO: I think the result of this function can be bad in certain cases. The infinite thin line assumption means
- * that the 'closest' part of the rod is actually further along the rod than we think. The correction function is
- * supposed to account for this, but it is prone to preferring one node over another for a particular element due to
- * how far along the rod this incorrect result can be. E.g. for two rods that are close together in the x-y plane with
- * a small angle (5-10 deg) between them, if an element on the top rod (b) slants to the left, the correction arising 
- * from the element on the bottom rod (a) is biased to the leftmost node because the initial guess for c_a was quite far 
- * away, and similarly for the right. If this occurs often, this means that c will often be assumed to lie on rod nodes 
- * rather than some way along an element. This in turn means that when calculating |c_ba| for the purposes of steric 
- * interactions, two elements that are clearly intersecting near their tips will be calculated as being safely 
- * apart, because the wrong nodes are being used in the calculation.
- * 
- * I think this amy only be an issue for rods that are co-planar and with a small skew between them, even if they aren't,
- * parallel such as the example above. For two rods that are not co-planar or parallel, the closest point between them,
- * even on two infinite thin lines, is likely to be close to the intended point of calculation. Try demonstrating this with two rulers.
- * For two rods that are co-planar, but with a large skew angle, then the calculation of c is unlikely to extend well beyond
- * the rods.
- * 
- * In an actual FFEA simulation the chance of two elements being exactly co-planar for an extended period of time is quite
- * rare, so this may only be an issue in the simplified situation I have created in ffea_test::rod_neighbour_list_construction()!
- * Furthermore, it is extremely unlikely the entire length of a rod will be completely straight, which again exacerbates this
- * issue in the 'perfect' testing environment. My testing environment is too nice!!
+ * To account for some bad behaviour arising from the infinite line assumption of this equation, a correction function is also called.
 */
-void get_point_on_connecting_line(
-    float p_a[3],
-    float p_b[3],
-    float l_a_cross_l_b[3],
-    float r_a[3],
-    float r_b[3],
-    OUT float c_a_out[3]
-    ){
-
+void get_interaction_vector(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]){
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
+    float l_a_cross_l_b[3] = {0.0, 0.0, 0.0};
+    float n_a[3] = {0.0, 0.0, 0.0};
     float n_b[3] = {0.0, 0.0, 0.0};
     float r_ab[3] = {0.0, 0.0, 0.0};
-    float r_ab_dot_n_b = 0.0;
-    float l_a_dot_n_b = 0.0;
-    float c_a[3] = {0.0, 0.0, 0.0};
+    float r_ba[3] = {0.0, 0.0, 0.0};
 
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
+
+    cross_product(l_a, l_b, l_a_cross_l_b);
+
+    cross_product(l_a, l_a_cross_l_b, n_a);
     cross_product(l_b, l_a_cross_l_b, n_b);
 
     vec3d(n){r_ab[n] = r_b[n] - r_a[n];}
-    r_ab_dot_n_b = dot_product_3x1(r_ab, n_b);
-    l_a_dot_n_b = dot_product_3x1(l_a, n_b);
-    vec3d(n){c_a[n] = r_a[n] + r_ab_dot_n_b / l_a_dot_n_b * l_a[n];}
+    vec3d(n){r_ba[n] = r_a[n] - r_b[n];}
+
+    vec3d(n){c_a[n] = r_a[n] + dot_product_3x1(r_ab, n_b) / dot_product_3x1(l_a, n_b) * l_a[n];}
+    vec3d(n){c_b[n] = r_b[n] + dot_product_3x1(r_ba, n_a) / dot_product_3x1(l_b, n_a) * l_b[n];}
 
     if(dbg_print){
-        std::cout << "rod::get_point_on_connecting_line()" << std::endl;
+        std::cout << "rod::get_interaction_vector()" << std::endl;
         print_array("\tp_a", p_a, 3);
-        print_array("\tl_a", l_a, 3);
         print_array("\tp_b", p_b, 3);
+        print_array("\tl_a", l_a, 3);
         print_array("\tl_b", l_b, 3);
         print_array("\tl_a x l_b", l_a_cross_l_b, 3);
+        print_array("\tn_b", n_a, 3);
         print_array("\tn_b", n_b, 3);
         print_array("\tr_a", r_a, 3);
         print_array("\tr_b", r_b, 3);
-        print_array("\tr_b - r_a", r_ab, 3);
-        printf("\tr_ab_dot_n_b : %.3lf\n", r_ab_dot_n_b);
-        printf("\tl_a_dot_n_b : %.3lf\n", l_a_dot_n_b);
+        print_array("\tr_ab", r_ab, 3);
+        print_array("\tr_ba", r_ba, 3);
         print_array("\tc_a (initial)", c_a, 3);
+        print_array("\tc_b (initial)", c_b, 3);
         std::cout << std::endl;
     }
 
-    // Set c to appropriate node if outside element
-    set_point_within_rod_element(c_a, p_a, r_a, c_a_out);
-    if(dbg_print){print_array("\tc_a_out", c_a_out, 3);}
+    // Apply corrections to c_a and/or c_b if appropriate
+    interaction_vector_correction(c_a, c_b, r_a, r_b, p_a, p_b, c_a, c_b);
+}
+
+/** Updated function for computing the minimum distance between two finite rod elements.
+ * 
+ * An arbitrary point, r, along either of two infinite lines is given by the equations:
+ *  \f| \boldsymbol{r}_1 &= \boldsymbol{a} + s \boldsymbol{p} \f|
+ *  \f| \boldsymbol{r}_2 &= \boldsymbol{b} + t \boldsymbol{q} \f|
+ * where a and b are points on their respective lines, and s and t are distances along the
+ * the lines, defined by the displacement vectors, p and q.
+ * 
+ * If we imagine a and b as the midpoints of two separate rod elements, with the nodes on a
+ * defined as a-p and a+p, then the minimum distance from these nodes to any given point on the
+ * other rod element is given by
+ * \f| d = |\boldsymbol{a} \pm \boldsymbol{p} - \boldsymbol{r}_2| = \bigg|\frac{(\boldsymbol{a}-\boldsymbol{b}\pm \boldsymbol{p})\times \boldsymbol{q}}{|\boldsymbol{q}|}\bigg| \f|
+ * 
+ * If the distance, d, is greater than the rod element length, then no intersection occurs.
+ * 
+ * ! see Reading(local)/Misc/Notes on home desktop for a diagram of the problem and associated algebra (21_12_16_OGH_RodCorrection.doxc).
+ * TODO: include Oliver's diagram in online/developer documentation.
+ * 
+ */
+void get_minimum_line_between_rods(){
 
 }
 
@@ -1434,9 +1495,6 @@ float get_perturbation_energy_steric_overlap(
     //OUT
     //float energies[3]
 
-    float l_a[3] = {0, 0, 0};
-    float l_b[3] = {0, 0, 0};
-    float l_a_cross_l_b[3] = {0, 0, 0};
     float c_a[3] = {0, 0, 0};
     float c_b[3] = {0, 0, 0};
     float c_ba[3] = {0, 0, 0};
@@ -1445,16 +1503,11 @@ float get_perturbation_energy_steric_overlap(
     // Full rod element is shifted by perturbation amount, maintaining orientation
     r_b[perturbation_dimension] += perturbation_amount;
 
-    rod::normalize(p_a, l_a);
-    rod::normalize(p_b, l_b);
-    rod::cross_product(l_a, l_b, l_a_cross_l_b);
-
-    rod::get_point_on_connecting_line(p_a, p_b, l_a_cross_l_b, r_a, r_b, c_a);
-    rod::get_point_on_connecting_line(p_b, p_a, l_a_cross_l_b, r_b, r_a, c_b);
+    rod::get_interaction_vector(p_a, p_b, r_a, r_b, c_a, c_b);
     vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
 
     // A negative overlap is meaningless, so ensure it is always => 0
-    steric_overlap = std::min( std::abs(rod::absolute(c_ba) - radius_a + radius_b), 0.0f );
+    steric_overlap = std::min(std::abs(rod::absolute(c_ba) - radius_a + radius_b), 0.0f);
 
     return force_constant * steric_overlap;
 }
