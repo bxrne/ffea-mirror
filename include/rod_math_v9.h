@@ -213,26 +213,5 @@ void get_perturbation_energy(
         float energies[3]
 );
 
-     /*-----------------------*/
-    /* Rod-rod interactions  */
-   /*-----------------------*/
-   
-float get_inter_rod_distance(float p_a[3], float p_b[3], float r_a[3], float r_b[3], float radius_a, float radius_b);
-void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]);
-void get_interaction_vector(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]);
-void get_minimum_line_between_rods();
-float get_perturbation_energy_steric_overlap(
-   float perturbation_amount,
-   int perturbation_dimension,
-   float force_constant,
-   float r_a[3],
-   float r_b[3],
-   float p_a[3],
-   float p_b[3],
-   float radius_a,
-   float radius_b
-   );
-float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);
-
 }
 #endif

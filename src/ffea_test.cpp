@@ -1254,7 +1254,7 @@ int ffea_test::shortest_distance_between_rod_elements(){
     float radius = 0.0;  // line elements
     float d = 0.0;
     
-    d = rod::get_inter_rod_distance(p_a, p_b, r_a, r_b, radius, radius);
+    d = // insert correct function here
     cout << "Expected distance: 1" << endl;
     
     if (abs(d) < 1.01 && abs(d) > 0.99){
