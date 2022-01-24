@@ -25,6 +25,9 @@
  *      rod_blob_interface.cpp
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
+
+ *	Author: Ryan Cocking, University of Leeds
+ *	Email: bsrctb@leeds.ac.uk
  */
 
 #include <iostream>

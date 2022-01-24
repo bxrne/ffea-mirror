@@ -25,6 +25,9 @@
  *      rod_structure.cpp
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
+
+ *	Author: Ryan Cocking, University of Leeds
+ *	Email: bsrctb@leeds.ac.uk
  */
 #include "rod_structure.h"  
 
@@ -704,8 +707,10 @@ Rod Rod::load_contents(std::string filename){
             if (n == line_of_last_frame+10){ for (int i=0; i<length; i++) perturbed_y_energy_negative[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+11){ for (int i=0; i<length; i++) perturbed_z_energy_negative[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+12){ for (int i=0; i<length; i++) twisted_energy_negative[i] = line_vec_float.data()[i];}
+            // TODO frame+13 through 18, node steric energies (6 rows, num_nodes) [E0x, E1x, ....ENx]...
             if (n == line_of_last_frame+13){ for (int i=0; i<length; i++) material_params[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+14){ for (int i=0; i<length+(length/3); i++) B_matrix[i] = line_vec_float.data()[i];}
+            
 
         }
         n++;
@@ -738,9 +743,9 @@ Rod Rod::write_frame_to_file(){
     write_array(perturbed_y_energy_negative, length, mesoDimensions::Energy);
     write_array(perturbed_z_energy_negative, length, mesoDimensions::Energy);
     write_array(twisted_energy_negative, length, mesoDimensions::Energy);
+    //TODO write steric energies (6 rows)
     write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
     write_array(B_matrix, length+(length/3), bending_response_factor );
-    // TODO: write steric neighbours to a file
     std:fflush(file_ptr);
     return *this;
 }

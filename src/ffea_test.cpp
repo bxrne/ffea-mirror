@@ -25,6 +25,9 @@
  *      ffea_test.cpp
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
+
+ *	Author: Ryan Cocking, University of Leeds
+ *	Email: bsrctb@leeds.ac.uk
  */
 
 #include "ffea_test.h"

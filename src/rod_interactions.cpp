@@ -25,6 +25,9 @@
  *      rod_interactions.h
  *	Author: Ryan Cocking, University of Leeds
  *	Email: bsrctb@leeds.ac.uk
+
+ *	Author: Ryan Cocking, University of Leeds
+ *	Email: bsrctb@leeds.ac.uk
  */
 
 #include "rod_interactions.h"

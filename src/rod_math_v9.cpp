@@ -26,6 +26,8 @@
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
  *
+ *  Author: Ryan Cocking, University of Leeds
+ *	Email: bsrctb@leeds.ac.uk
  */
 
 
@@ -1346,7 +1348,7 @@ void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], flo
     if (dot_b <= 0){
         vec3d(n){c_b[n] = r_b[n];}
     }
-    else if (dot_a >= p_a_sq){
+    else if (dot_a >= p_b_sq){
         vec3d(n){c_b[n] = r_b2[n];}
     }
 
@@ -1365,6 +1367,7 @@ void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], flo
     d3_mag = rod::absolute(d3);
     d4_mag = rod::absolute(d4);
 
+    // TODO: use std::map here to bypass if statements
     // Replace c_ba with the smallest vector. Do nothing if c_ba is already
     // the smallest.
     if (rod::absolute(c_ab) > 0.99*std::min({d1_mag, d2_mag, d3_mag, d4_mag})){

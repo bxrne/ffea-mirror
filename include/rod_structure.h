@@ -25,6 +25,9 @@
  *      rod_structure.h
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
+
+ *	Author: Ryan Cocking, University of Leeds
+ *	Email: bsrctb@leeds.ac.uk
  */
 #ifndef ROD_STRUCTURE
 #define ROD_STRUCTURE
