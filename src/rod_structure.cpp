@@ -78,16 +78,18 @@ Rod::Rod(int length, int set_rod_no):
     equil_m(new float[length]),
     current_r(new float[length]),
     current_m(new float[length]),
-    perturbed_x_energy_positive(new float[length]),
-    perturbed_y_energy_positive(new float[length]),
-    perturbed_z_energy_positive(new float[length]),
-    twisted_energy_positive(new float[length]),
-    perturbed_x_energy_negative(new float[length]),
-    perturbed_y_energy_negative(new float[length]),
-    perturbed_z_energy_negative(new float[length]),
-    twisted_energy_negative(new float[length]),
+    internal_perturbed_x_energy_positive(new float[length]),
+    internal_perturbed_y_energy_positive(new float[length]),
+    internal_perturbed_z_energy_positive(new float[length]),
+    internal_twisted_energy_positive(new float[length]),
+    internal_perturbed_x_energy_negative(new float[length]),
+    internal_perturbed_y_energy_negative(new float[length]),
+    internal_perturbed_z_energy_negative(new float[length]),
+    internal_twisted_energy_negative(new float[length]),
     material_params(new float[length]),
     B_matrix(new float[length+(length/3)]),
+    steric_perturbed_energy_positive(new float[length]),
+    steric_perturbed_energy_negative(new float[length]),
     applied_forces(new float[length+(length/3)]),
     pinned_nodes(new bool[length/3])
     {}; 
@@ -124,15 +126,14 @@ Rod Rod::set_units(){
         equil_m[i] /= mesoDimensions::length;
         current_m[i] /= mesoDimensions::length;
         current_r[i] /= mesoDimensions::length;
-        perturbed_x_energy_positive[i] /= mesoDimensions::Energy;
-        perturbed_y_energy_positive[i] /= mesoDimensions::Energy;
-        perturbed_z_energy_positive[i] /= mesoDimensions::Energy;
-        twisted_energy_positive[i] /= mesoDimensions::Energy;
-        perturbed_x_energy_negative[i] /= mesoDimensions::Energy;
-        perturbed_y_energy_negative[i] /= mesoDimensions::Energy;
-        perturbed_z_energy_negative[i] /= mesoDimensions::Energy;
-        twisted_energy_negative[i] /= mesoDimensions::Energy;
-        // TODO: set units of steric interaction coordinates, if they exist (length)
+        internal_perturbed_x_energy_positive[i] /= mesoDimensions::Energy;
+        internal_perturbed_y_energy_positive[i] /= mesoDimensions::Energy;
+        internal_perturbed_z_energy_positive[i] /= mesoDimensions::Energy;
+        internal_twisted_energy_positive[i] /= mesoDimensions::Energy;
+        internal_perturbed_x_energy_negative[i] /= mesoDimensions::Energy;
+        internal_perturbed_y_energy_negative[i] /= mesoDimensions::Energy;
+        internal_perturbed_z_energy_negative[i] /= mesoDimensions::Energy;
+        internal_twisted_energy_negative[i] /= mesoDimensions::Energy;
         
         if (i%3 == 0){
             material_params[i] /= spring_constant_factor;
@@ -151,6 +152,9 @@ Rod Rod::set_units(){
     for (int i=0; i<length+length/3; i++){
         B_matrix[i] /= bending_response_factor;
     }
+
+    steric_perturbed_energy_positive[i] /= mesoDimensions::Energy;
+    steric_perturbed_energy_negative[i] /= mesoDimensions::Energy;
 
     this->steric_radius /= mesoDimensions::length;
     
@@ -240,9 +244,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             energies); // this is a void function with energies as the output
 
         // transfer them from the temporary variable to the real thing
-        perturbed_x_energy_positive[node_no*3] = energies[stretch_index];
-        perturbed_x_energy_positive[(node_no*3)+1] = energies[bend_index];
-        perturbed_x_energy_positive[(node_no*3)+2] = energies[twist_index];   
+        internal_perturbed_x_energy_positive[node_no*3] = energies[stretch_index];
+        internal_perturbed_x_energy_positive[(node_no*3)+1] = energies[bend_index];
+        internal_perturbed_x_energy_positive[(node_no*3)+2] = energies[twist_index];   
         
         if(dbg_print){std::cout << "getting perturbation energy 2...\n";} //temp
         get_perturbation_energy( //from rod_math
@@ -259,9 +263,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             equil_m,
             energies);
   
-        perturbed_y_energy_positive[node_no*3] = energies[stretch_index];
-        perturbed_y_energy_positive[(node_no*3)+1] = energies[bend_index];
-        perturbed_y_energy_positive[(node_no*3)+2] = energies[twist_index];
+        internal_perturbed_y_energy_positive[node_no*3] = energies[stretch_index];
+        internal_perturbed_y_energy_positive[(node_no*3)+1] = energies[bend_index];
+        internal_perturbed_y_energy_positive[(node_no*3)+2] = energies[twist_index];
 
         get_perturbation_energy( //from rod_math
             perturbation_amount*0.5,
@@ -277,9 +281,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             equil_m,
             energies);
   
-        perturbed_z_energy_positive[node_no*3] = energies[stretch_index];
-        perturbed_z_energy_positive[(node_no*3)+1] = energies[bend_index];
-        perturbed_z_energy_positive[(node_no*3)+2] = energies[twist_index];
+        internal_perturbed_z_energy_positive[node_no*3] = energies[stretch_index];
+        internal_perturbed_z_energy_positive[(node_no*3)+1] = energies[bend_index];
+        internal_perturbed_z_energy_positive[(node_no*3)+2] = energies[twist_index];
 
         float twist_perturbation = 0.006283185; // 2pi/1000
         get_perturbation_energy( //from rod_math
@@ -296,9 +300,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             equil_m,
             energies);
 
-        twisted_energy_positive[node_no*3] = energies[stretch_index];
-        twisted_energy_positive[(node_no*3)+1] = energies[bend_index];
-        twisted_energy_positive[(node_no*3)+2] = energies[twist_index];
+        internal_twisted_energy_positive[node_no*3] = energies[stretch_index];
+        internal_twisted_energy_positive[(node_no*3)+1] = energies[bend_index];
+        internal_twisted_energy_positive[(node_no*3)+2] = energies[twist_index];
         
         get_perturbation_energy( 
             perturbation_amount*-0.5,
@@ -314,9 +318,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             equil_m,
             energies);
 
-        perturbed_x_energy_negative[node_no*3] = energies[stretch_index];
-        perturbed_x_energy_negative[(node_no*3)+1] = energies[bend_index];
-        perturbed_x_energy_negative[(node_no*3)+2] = energies[twist_index];   
+        internal_perturbed_x_energy_negative[node_no*3] = energies[stretch_index];
+        internal_perturbed_x_energy_negative[(node_no*3)+1] = energies[bend_index];
+        internal_perturbed_x_energy_negative[(node_no*3)+2] = energies[twist_index];   
                    
         get_perturbation_energy( //from rod_math
             perturbation_amount*-0.5,
@@ -332,9 +336,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             equil_m,
             energies);
             
-        perturbed_y_energy_negative[node_no*3] = energies[stretch_index];
-        perturbed_y_energy_negative[(node_no*3)+1] = energies[bend_index];
-        perturbed_y_energy_negative[(node_no*3)+2] = energies[twist_index];
+        internal_perturbed_y_energy_negative[node_no*3] = energies[stretch_index];
+        internal_perturbed_y_energy_negative[(node_no*3)+1] = energies[bend_index];
+        internal_perturbed_y_energy_negative[(node_no*3)+2] = energies[twist_index];
 
         get_perturbation_energy( //from rod_math
             perturbation_amount*-0.5,
@@ -350,9 +354,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             equil_m,
             energies);
         
-        perturbed_z_energy_negative[node_no*3] = energies[stretch_index];
-        perturbed_z_energy_negative[(node_no*3)+1] = energies[bend_index];
-        perturbed_z_energy_negative[(node_no*3)+2] = energies[twist_index];
+        internal_perturbed_z_energy_negative[node_no*3] = energies[stretch_index];
+        internal_perturbed_z_energy_negative[(node_no*3)+1] = energies[bend_index];
+        internal_perturbed_z_energy_negative[(node_no*3)+2] = energies[twist_index];
 
         get_perturbation_energy( //from rod_math
             twist_perturbation*-0.5,
@@ -368,42 +372,21 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             equil_m,
             energies);
             
-        twisted_energy_negative[node_no*3] = energies[stretch_index];
-        twisted_energy_negative[(node_no*3)+1] = energies[bend_index];
-        twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
+        internal_twisted_energy_negative[node_no*3] = energies[stretch_index];
+        internal_twisted_energy_negative[(node_no*3)+1] = energies[bend_index];
+        internal_twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
 
     }
 
-    // // Energies from rod-rod interactions loop
-    // for (int element_no = 0; element_no<end_node-1; element_no++){
+    // TODO rod-rod interaction energies loop
+    // steric_perturbed_energy_positive[node_no*3] // x
+    // steric_perturbed_energy_positive[(node_no*3)+1] // y
+    // steric_perturbed_energy_positive[(node_no*3)+2] // z
 
-    //     // If the node is pinned, there's nothing to do
-    //     if (pinned_nodes[node_no] == true){
-    //         continue;
-    //     }
-        
-    //     if (node_no < node_min){
-    //         continue;
-    //     }
+    // steric_perturbed_energy_negative[node_no*3]
+    // steric_perturbed_energy_negative[(node_no*3)+1]
+    // steric_perturbed_energy_negative[(node_no*3)+2]
 
-    //     int num_neighbours = this->get_num_neighbours(element_no);
-    //     float steric_perturbation = 0.002;
-    //     float steric_force_constant = 1;
-    //     for (int neighbour_no = 0; neighbour_no<num_neighbours; neighbour_no++){
-
-    //         get_perturbation_energy_steric_overlap(
-    //             steric_perturbation,
-    //             0,
-    //             steric_force_constant,
-    //             float r_a[3],
-    //             float r_b[3],
-    //             float p_a[3],
-    //             float p_b[3],
-    //             )
-
-    //     }
-
-    // }
         
     //This loop is for the dynamics
     for (int node_no = 0; node_no<end_node; node_no++){
@@ -424,13 +407,12 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             int thread_id = 0;
         #endif
         
-        float hydrodynamic_radius = material_params[(node_no*3)+2];
         // Get friction, needed for delta r and delta theta
-        float translational_friction = get_translational_friction(this->viscosity, hydrodynamic_radius, false);
+        float translational_friction = get_translational_friction(this->viscosity, steric_radius, false);
         //float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
         float length_for_friction = 1e-8/mesoDimensions::length;
         
-        float rotational_friction = get_rotational_friction(this->viscosity, hydrodynamic_radius, length_for_friction, true);
+        float rotational_friction = get_rotational_friction(this->viscosity, steric_radius, length_for_friction, true);
         
         // Need these again
         float twist_perturbation = 0.006283185; // 2pi/1000
@@ -450,18 +432,15 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float twist_noise = get_noise(timestep, kT, rotational_friction, random_number(-0.5, 0.5, rng, thread_id));            
 
         // Sum our energies and use them to compute the force            
-        float x_force = (perturbed_x_energy_negative[node_no*3]+perturbed_x_energy_negative[(node_no*3)+1]+perturbed_x_energy_negative[(node_no*3)+2] - (perturbed_x_energy_positive[node_no*3]+perturbed_x_energy_positive[(node_no*3)+1]+perturbed_x_energy_positive[(node_no*3)+2] ))/perturbation_amount;
-        float y_force = (perturbed_y_energy_negative[node_no*3]+perturbed_y_energy_negative[(node_no*3)+1]+perturbed_y_energy_negative[(node_no*3)+2] - (perturbed_y_energy_positive[node_no*3]+perturbed_y_energy_positive[(node_no*3)+1]+perturbed_y_energy_positive[(node_no*3)+2] ))/perturbation_amount;
-        float z_force = (perturbed_z_energy_negative[node_no*3]+perturbed_z_energy_negative[(node_no*3)+1]+perturbed_z_energy_negative[(node_no*3)+2] - (perturbed_z_energy_positive[node_no*3]+perturbed_z_energy_positive[(node_no*3)+1]+perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
-        float twist_force = (twisted_energy_negative[node_no*3]+twisted_energy_negative[(node_no*3)+1]+twisted_energy_negative[(node_no*3)+2] - (twisted_energy_positive[node_no*3]+twisted_energy_positive[(node_no*3)+1]+twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
+        float x_force = (internal_perturbed_x_energy_negative[node_no*3]+internal_perturbed_x_energy_negative[(node_no*3)+1]+internal_perturbed_x_energy_negative[(node_no*3)+2] - (internal_perturbed_x_energy_positive[node_no*3]+internal_perturbed_x_energy_positive[(node_no*3)+1]+internal_perturbed_x_energy_positive[(node_no*3)+2] ))/perturbation_amount;
+        float y_force = (internal_perturbed_y_energy_negative[node_no*3]+internal_perturbed_y_energy_negative[(node_no*3)+1]+internal_perturbed_y_energy_negative[(node_no*3)+2] - (internal_perturbed_y_energy_positive[node_no*3]+internal_perturbed_y_energy_positive[(node_no*3)+1]+internal_perturbed_y_energy_positive[(node_no*3)+2] ))/perturbation_amount;
+        float z_force = (internal_perturbed_z_energy_negative[node_no*3]+internal_perturbed_z_energy_negative[(node_no*3)+1]+internal_perturbed_z_energy_negative[(node_no*3)+2] - (internal_perturbed_z_energy_positive[node_no*3]+internal_perturbed_z_energy_positive[(node_no*3)+1]+internal_perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
+        float twist_force = (internal_twisted_energy_negative[node_no*3]+internal_twisted_energy_negative[(node_no*3)+1]+internal_twisted_energy_negative[(node_no*3)+2] - (internal_twisted_energy_positive[node_no*3]+internal_twisted_energy_positive[(node_no*3)+1]+internal_twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
 
-        // Get steric interaction force (by this point the energies have been interpolated onto each node)
-        /*
-        float steric_radius = hydrodynamic_radius;
-        float steric_force_x = (steric_energy_x_positive - steric_energy_x_negative) / steric_perturbation_amount
-        float steric_force_y = (steric_energy_y_positive - steric_energy_y_negative) / steric_perturbation_amount
-        float steric_force_z = (steric_energy_z_positive - steric_energy_z_negative) / steric_perturbation_amount
-        */
+        // TODO: have separate perturbation_amount for rod-rod interactions?
+        x_force += (steric_perturbed_energy_positive[node_no*3] - steric_perturbed_energy_negative[node_no*3]) / perturbation_amount;
+        y_force += (steric_perturbed_energy_positive[(node_no*3)+1] - steric_perturbed_energy_negative[(node_no*3)+1]) / perturbation_amount;
+        x_force += (steric_perturbed_energy_positive[(node_no*3)+2] - steric_perturbed_energy_negative[(node_no*3)+2]) / perturbation_amount;
 
         // Get applied force, if any
         float applied_force_x = applied_forces[node_no*4];
@@ -594,16 +573,18 @@ Rod Rod::load_header(std::string filename){
     equil_m = static_cast<float *>(malloc(sizeof(float) * length));
     current_r = static_cast<float *>(malloc(sizeof(float) * length));
     current_m = static_cast<float *>(malloc(sizeof(float) * length));
-    perturbed_x_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
-    perturbed_y_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
-    perturbed_z_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
-    twisted_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
-    perturbed_x_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
-    perturbed_y_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
-    perturbed_z_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
-    twisted_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_perturbed_x_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_perturbed_y_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_perturbed_z_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_twisted_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_perturbed_x_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_perturbed_y_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_perturbed_z_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
+    internal_twisted_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
     material_params = static_cast<float *>(malloc(sizeof(float) * length));
     B_matrix = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
+    steric_perturbed_energy_positive = static_cast<float *>(malloc(sizeof(float) * length));
+    steric_perturbed_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
     applied_forces = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length/3));
     steric_interaction_coordinates = std::vector< std::vector<float> > ((length/3)-1);
@@ -699,18 +680,18 @@ Rod Rod::load_contents(std::string filename){
             if (n == line_of_last_frame+2){ for (int i=0; i<length; i++) equil_m[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+3){ for (int i=0; i<length; i++) current_r[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+4){ for (int i=0; i<length; i++) current_m[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+5){ for (int i=0; i<length; i++) perturbed_x_energy_positive[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+6){ for (int i=0; i<length; i++) perturbed_y_energy_positive[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+7){ for (int i=0; i<length; i++) perturbed_z_energy_positive[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+8){ for (int i=0; i<length; i++) twisted_energy_positive[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+9){ for (int i=0; i<length; i++) perturbed_x_energy_negative[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+10){ for (int i=0; i<length; i++) perturbed_y_energy_negative[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+11){ for (int i=0; i<length; i++) perturbed_z_energy_negative[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+12){ for (int i=0; i<length; i++) twisted_energy_negative[i] = line_vec_float.data()[i];}
-            // TODO frame+13 through 18, node steric energies (6 rows, num_nodes) [E0x, E1x, ....ENx]...
+            if (n == line_of_last_frame+5){ for (int i=0; i<length; i++) internal_perturbed_x_energy_positive[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+6){ for (int i=0; i<length; i++) internal_perturbed_y_energy_positive[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+7){ for (int i=0; i<length; i++) internal_perturbed_z_energy_positive[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+8){ for (int i=0; i<length; i++) internal_twisted_energy_positive[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+9){ for (int i=0; i<length; i++) internal_perturbed_x_energy_negative[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+10){ for (int i=0; i<length; i++) internal_perturbed_y_energy_negative[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+11){ for (int i=0; i<length; i++) internal_perturbed_z_energy_negative[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+12){ for (int i=0; i<length; i++) internal_twisted_energy_negative[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+13){ for (int i=0; i<length; i++) material_params[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+14){ for (int i=0; i<length+(length/3); i++) B_matrix[i] = line_vec_float.data()[i];}
-            
+            if (n == line_of_last_frame+15){ for (int i=0; i<length; i++) steric_perturbed_energy_positive[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+16){ for (int i=0; i<length; i++) steric_perturbed_energy_negative[i] = line_vec_float.data()[i];}
 
         }
         n++;
@@ -735,17 +716,18 @@ Rod Rod::write_frame_to_file(){
     write_array(equil_m, length, mesoDimensions::length);
     write_array(current_r, length, mesoDimensions::length);
     write_array(current_m, length, mesoDimensions::length);
-    write_array(perturbed_x_energy_positive, length, mesoDimensions::Energy);
-    write_array(perturbed_y_energy_positive, length, mesoDimensions::Energy);
-    write_array(perturbed_z_energy_positive, length, mesoDimensions::Energy);
-    write_array(twisted_energy_positive, length, mesoDimensions::Energy);
-    write_array(perturbed_x_energy_negative, length, mesoDimensions::Energy);
-    write_array(perturbed_y_energy_negative, length, mesoDimensions::Energy);
-    write_array(perturbed_z_energy_negative, length, mesoDimensions::Energy);
-    write_array(twisted_energy_negative, length, mesoDimensions::Energy);
-    //TODO write steric energies (6 rows)
+    write_array(internal_perturbed_x_energy_positive, length, mesoDimensions::Energy);
+    write_array(internal_perturbed_y_energy_positive, length, mesoDimensions::Energy);
+    write_array(internal_perturbed_z_energy_positive, length, mesoDimensions::Energy);
+    write_array(internal_twisted_energy_positive, length, mesoDimensions::Energy);
+    write_array(internal_perturbed_x_energy_negative, length, mesoDimensions::Energy);
+    write_array(internal_perturbed_y_energy_negative, length, mesoDimensions::Energy);
+    write_array(internal_perturbed_z_energy_negative, length, mesoDimensions::Energy);
+    write_array(internal_twisted_energy_negative, length, mesoDimensions::Energy);
     write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
     write_array(B_matrix, length+(length/3), bending_response_factor );
+    write_array(steric_perturbed_energy_positive, length, mesoDimensions::Energy);
+    write_array(steric_perturbed_energy_negative, length, mesoDimensions::Energy);
     std:fflush(file_ptr);
     return *this;
 }

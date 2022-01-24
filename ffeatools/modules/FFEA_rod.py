@@ -130,16 +130,18 @@ class FFEA_rod:
             self.equil_m = np.zeros([self.num_frames, self.num_elements, 3])
             self.current_r = np.zeros([self.num_frames, self.num_elements, 3])
             self.current_m  = np.zeros([self.num_frames, self.num_elements, 3])
-            self.perturbed_x_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
-            self.perturbed_y_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
-            self.perturbed_z_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
+            self.internal_perturbed_x_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
+            self.internal_perturbed_y_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
+            self.internal_perturbed_z_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
             self.twisted_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
-            self.perturbed_x_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
-            self.perturbed_y_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
-            self.perturbed_z_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
+            self.internal_perturbed_x_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
+            self.internal_perturbed_y_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
+            self.internal_perturbed_z_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
             self.twisted_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
             self.material_params = np.zeros([self.num_frames, self.num_elements, 3])
             self.B_matrix = np.zeros([self.num_frames, self.num_elements, 4])
+            self.steric_perturbed_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
+            self.steric_perturbed_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
 
         return
     
@@ -191,16 +193,18 @@ class FFEA_rod:
         self.equil_m = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(2)])
         self.current_r = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(3)])
         self.current_m  = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(4)])
-        self.perturbed_x_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(5)])
-        self.perturbed_y_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(6)])
-        self.perturbed_z_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(7)])
+        self.internal_perturbed_x_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(5)])
+        self.internal_perturbed_y_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(6)])
+        self.internal_perturbed_z_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(7)])
         self.twisted_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(8)])
-        self.perturbed_x_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(9)])
-        self.perturbed_y_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(10)])
-        self.perturbed_z_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(11)])
+        self.internal_perturbed_x_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(9)])
+        self.internal_perturbed_y_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(10)])
+        self.internal_perturbed_z_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(11)])
         self.twisted_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(12)])
         self.material_params = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(13)])
         self.B_matrix = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(14)])
+        self.steric_perturbed_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(15)])
+        self.steric_perturbed_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(16)])
 
         # look, this is not pretty but it is really fast
 
@@ -221,25 +225,29 @@ class FFEA_rod:
                     line = rod_file.readline()
                     self.current_m[frame_no] = np.fromstring(line, sep=",").reshape(self.current_m[frame_no].shape)
                     line = rod_file.readline()
-                    self.perturbed_x_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.perturbed_x_energy_positive[frame_no].shape)
+                    self.internal_perturbed_x_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.internal_perturbed_x_energy_positive[frame_no].shape)
                     line = rod_file.readline()
-                    self.perturbed_y_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.perturbed_y_energy_positive[frame_no].shape)
+                    self.internal_perturbed_y_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.internal_perturbed_y_energy_positive[frame_no].shape)
                     line = rod_file.readline()
-                    self.perturbed_z_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.perturbed_z_energy_positive[frame_no].shape)
+                    self.internal_perturbed_z_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.internal_perturbed_z_energy_positive[frame_no].shape)
                     line = rod_file.readline()
                     self.twisted_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.twisted_energy_positive[frame_no].shape)
                     line = rod_file.readline()
-                    self.perturbed_x_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.perturbed_x_energy_negative[frame_no].shape)
+                    self.internal_perturbed_x_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.internal_perturbed_x_energy_negative[frame_no].shape)
                     line = rod_file.readline()
-                    self.perturbed_y_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.perturbed_y_energy_negative[frame_no].shape)
+                    self.internal_perturbed_y_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.internal_perturbed_y_energy_negative[frame_no].shape)
                     line = rod_file.readline()
-                    self.perturbed_z_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.perturbed_z_energy_negative[frame_no].shape)
+                    self.internal_perturbed_z_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.internal_perturbed_z_energy_negative[frame_no].shape)
                     line = rod_file.readline()
                     self.twisted_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.twisted_energy_negative[frame_no].shape)
                     line = rod_file.readline()
                     self.material_params[frame_no] = np.fromstring(line, sep=",").reshape(self.material_params[frame_no].shape)
                     line = rod_file.readline()
                     self.B_matrix[frame_no] = np.fromstring(line, sep=",").reshape(self.B_matrix[frame_no].shape)
+                    line = rod_file.readline()
+                    self.steric_perturbed_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.steric_perturbed_energy_positive[frame_no].shape)
+                    line = rod_file.readline()
+                    self.steric_perturbed_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.steric_perturbed_energy_negative[frame_no].shape)
                     frame_no += 1
                 except ValueError as e:
                     raise ValueError(str(e)+"\nError loading frame "+str(frame_no)+"\nProblem line: "+str(line))
@@ -265,16 +273,18 @@ class FFEA_rod:
         rod_file.write("row2,equil_m\n")
         rod_file.write("row3,current_r\n")
         rod_file.write("row4,current_m\n")
-        rod_file.write("row5,perturbed_x_energy_positive\n")
-        rod_file.write("row6,perturbed_y_energy_positive\n")
-        rod_file.write("row7,perturbed_z_energy_positive\n")
+        rod_file.write("row5,internal_perturbed_x_energy_positive\n")
+        rod_file.write("row6,internal_perturbed_y_energy_positive\n")
+        rod_file.write("row7,internal_perturbed_z_energy_positive\n")
         rod_file.write("row8,twisted_energy_positive\n")
-        rod_file.write("row9,perturbed_x_energy_negative\n")
-        rod_file.write("row10,perturbed_y_energy_negative\n")
-        rod_file.write("row11,perturbed_z_energy_negative\n")
+        rod_file.write("row9,internal_perturbed_x_energy_negative\n")
+        rod_file.write("row10,internal_perturbed_y_energy_negative\n")
+        rod_file.write("row11,internal_perturbed_z_energy_negative\n")
         rod_file.write("row12,twisted_energy_negative\n")
         rod_file.write("row13,material_params\n")
         rod_file.write("row14,B_matrix\n")
+        rod_file.write("row15,perturbed_steric_energy_positive\n")
+        rod_file.write("row16,perturbed_steric_energy_negative\n")
         
         # Connections (note: this is temporary, it might end up in the .ffea file)
         rod_file.write("CONNECTIONS,ROD,0\n")
@@ -304,17 +314,18 @@ class FFEA_rod:
             write_array(self.equil_m[frame].flatten(), rod_file)
             write_array(self.current_r[frame].flatten(), rod_file)
             write_array(self.current_m[frame].flatten(), rod_file)
-            write_array(self.perturbed_x_energy_positive[frame].flatten(), rod_file)
-            write_array(self.perturbed_y_energy_positive[frame].flatten(), rod_file)
-            write_array(self.perturbed_z_energy_positive[frame].flatten(), rod_file)
+            write_array(self.internal_perturbed_x_energy_positive[frame].flatten(), rod_file)
+            write_array(self.internal_perturbed_y_energy_positive[frame].flatten(), rod_file)
+            write_array(self.internal_perturbed_z_energy_positive[frame].flatten(), rod_file)
             write_array(self.twisted_energy_positive[frame].flatten(), rod_file)
-            write_array(self.perturbed_x_energy_negative[frame].flatten(), rod_file)
-            write_array(self.perturbed_y_energy_negative[frame].flatten(), rod_file)
-            write_array(self.perturbed_z_energy_negative[frame].flatten(), rod_file)
+            write_array(self.internal_perturbed_x_energy_negative[frame].flatten(), rod_file)
+            write_array(self.internal_perturbed_y_energy_negative[frame].flatten(), rod_file)
+            write_array(self.internal_perturbed_z_energy_negative[frame].flatten(), rod_file)
             write_array(self.twisted_energy_negative[frame].flatten(), rod_file)
             write_array(self.material_params[frame].flatten(), rod_file)
             write_array(self.B_matrix[frame].flatten(), rod_file)
-            
+            write_array(self.perturbed_steric_energy_positive[frame].flatten(), rod_file)
+            write_array(self.perturbed_steric_energy_negative[frame].flatten(), rod_file)
             
         rod_file.close()
             
@@ -359,12 +370,12 @@ class FFEA_rod:
         #this is dragons, do not use
         self.unperturbed_energy_type = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(5)])
         self.unperturbed_energy_dof = np.empty([self.num_frames, self.num_elements, 4])
-        for frame in range(len(self.perturbed_x_energy_positive)):
-            for node in range(len(self.perturbed_x_energy_positive[frame])):
-                self.unperturbed_energy_type[frame][node] = (self.perturbed_x_energy_positive[frame][node]+self.perturbed_x_energy_negative[frame][node]+self.perturbed_y_energy_positive[frame][node]+self.perturbed_y_energy_negative[frame][node]+self.perturbed_z_energy_positive[frame][node]+self.perturbed_z_energy_negative[frame][node]+self.twisted_energy_positive[frame][node]+self.twisted_energy_negative[frame][node])/8
-                self.unperturbed_energy_dof[frame][node][0] = (np.sum(self.perturbed_x_energy_positive[frame][node])+np.sum(self.perturbed_x_energy_negative[frame][node]))/2
-                self.unperturbed_energy_dof[frame][node][1] = (np.sum(self.perturbed_y_energy_positive[frame][node])+np.sum(self.perturbed_y_energy_negative[frame][node]))/2
-                self.unperturbed_energy_dof[frame][node][2] = (np.sum(self.perturbed_z_energy_positive[frame][node])+np.sum(self.perturbed_z_energy_negative[frame][node]))/2
+        for frame in range(len(self.internal_perturbed_x_energy_positive)):
+            for node in range(len(self.internal_perturbed_x_energy_positive[frame])):
+                self.unperturbed_energy_type[frame][node] = (self.internal_perturbed_x_energy_positive[frame][node]+self.internal_perturbed_x_energy_negative[frame][node]+self.internal_perturbed_y_energy_positive[frame][node]+self.internal_perturbed_y_energy_negative[frame][node]+self.internal_perturbed_z_energy_positive[frame][node]+self.internal_perturbed_z_energy_negative[frame][node]+self.twisted_energy_positive[frame][node]+self.twisted_energy_negative[frame][node])/8
+                self.unperturbed_energy_dof[frame][node][0] = (np.sum(self.internal_perturbed_x_energy_positive[frame][node])+np.sum(self.internal_perturbed_x_energy_negative[frame][node]))/2
+                self.unperturbed_energy_dof[frame][node][1] = (np.sum(self.internal_perturbed_y_energy_positive[frame][node])+np.sum(self.internal_perturbed_y_energy_negative[frame][node]))/2
+                self.unperturbed_energy_dof[frame][node][2] = (np.sum(self.internal_perturbed_z_energy_positive[frame][node])+np.sum(self.internal_perturbed_z_energy_negative[frame][node]))/2
                 self.unperturbed_energy_dof[frame][node][3] = (np.sum(self.twisted_energy_positive[frame][node])+np.sum(self.twisted_energy_negative[frame][node]))/2
         self.unperturbed_energy = np.sum( self.unperturbed_energy_type, axis=2)
 
@@ -1288,16 +1299,18 @@ class anal_rod:
         self.rod.equil_m = self.rod.equil_m[::interval]
         self.rod.current_r = self.rod.current_r[::interval]
         self.rod.current_m  = self.rod.current_m[::interval]
-        self.rod.perturbed_x_energy_positive = self.rod.perturbed_x_energy_positive[::interval]
-        self.rod.perturbed_y_energy_positive = self.rod.perturbed_y_energy_positive[::interval]
-        self.rod.perturbed_z_energy_positive = self.rod.perturbed_z_energy_positive[::interval]
+        self.rod.internal_perturbed_x_energy_positive = self.rod.internal_perturbed_x_energy_positive[::interval]
+        self.rod.internal_perturbed_y_energy_positive = self.rod.internal_perturbed_y_energy_positive[::interval]
+        self.rod.internal_perturbed_z_energy_positive = self.rod.internal_perturbed_z_energy_positive[::interval]
         self.rod.twisted_energy_positive = self.rod.twisted_energy_positive[::interval]
-        self.rod.perturbed_x_energy_negative = self.rod.perturbed_x_energy_negative[::interval]
-        self.rod.perturbed_y_energy_negative = self.rod.perturbed_y_energy_negative[::interval]
-        self.rod.perturbed_z_energy_negative = self.rod.perturbed_z_energy_negative[::interval]
+        self.rod.internal_perturbed_x_energy_negative = self.rod.internal_perturbed_x_energy_negative[::interval]
+        self.rod.internal_perturbed_y_energy_negative = self.rod.internal_perturbed_y_energy_negative[::interval]
+        self.rod.internal_perturbed_z_energy_negative = self.rod.internal_perturbed_z_energy_negative[::interval]
         self.rod.twisted_energy_negative = self.rod.twisted_energy_negative[::interval]
         self.rod.material_params = self.rod.material_params[::interval]
         self.rod.B_matrix = self.rod.B_matrix[::interval]
+        self.rod.steric_perturbed_energy_positive = self.rod.steric_perturbed_energy_positive[::interval]
+        self.rod.steric_perturbed_energy_negative = self.rod.steric_perturbed_energy_negative[::interval]
         self.rod.num_frames = len(self.rod.current_r)
 
         try:
@@ -1420,16 +1433,18 @@ class anal_rod:
                 self.rod.equil_m = np.array([np.insert(self.rod.equil_m[0], element, interp_r(self.rod.equil_m[0][element], self.rod.equil_m[0][element-1]), axis=0)])
                 self.rod.current_r = np.array([np.insert(self.rod.current_r[0], element, interp_r(self.rod.current_r[0][element], self.rod.current_r[0][element-1]), axis=0)])
                 self.rod.current_m = np.array([np.insert(self.rod.current_m[0], element, interp_r(self.rod.current_m[0][element], self.rod.current_m[0][element-1]), axis=0)])
-                self.rod.perturbed_x_energy_positive = np.array([np.insert(self.rod.perturbed_x_energy_positive[0], element, 0, axis=0)])
-                self.rod.perturbed_y_energy_positive = np.array([np.insert(self.rod.perturbed_y_energy_positive[0], element, 0, axis=0)])
-                self.rod.perturbed_z_energy_positive = np.array([np.insert(self.rod.perturbed_z_energy_positive[0], element, 0, axis=0)])
+                self.rod.internal_perturbed_x_energy_positive = np.array([np.insert(self.rod.internal_perturbed_x_energy_positive[0], element, 0, axis=0)])
+                self.rod.internal_perturbed_y_energy_positive = np.array([np.insert(self.rod.internal_perturbed_y_energy_positive[0], element, 0, axis=0)])
+                self.rod.internal_perturbed_z_energy_positive = np.array([np.insert(self.rod.internal_perturbed_z_energy_positive[0], element, 0, axis=0)])
                 self.rod.twisted_energy_positive = np.array([np.insert(self.rod.twisted_energy_positive[0], element, 0, axis=0)])
-                self.rod.perturbed_x_energy_negative = np.array([np.insert(self.rod.perturbed_x_energy_negative[0], element, 0, axis=0)])
-                self.rod.perturbed_y_energy_negative = np.array([np.insert(self.rod.perturbed_y_energy_negative[0], element, 0, axis=0)])
-                self.rod.perturbed_z_energy_negative = np.array([np.insert(self.rod.perturbed_z_energy_negative[0], element, 0, axis=0)])
+                self.rod.internal_perturbed_x_energy_negative = np.array([np.insert(self.rod.internal_perturbed_x_energy_negative[0], element, 0, axis=0)])
+                self.rod.internal_perturbed_y_energy_negative = np.array([np.insert(self.rod.internal_perturbed_y_energy_negative[0], element, 0, axis=0)])
+                self.rod.internal_perturbed_z_energy_negative = np.array([np.insert(self.rod.internal_perturbed_z_energy_negative[0], element, 0, axis=0)])
                 self.rod.twisted_energy_negative = np.array([np.insert(self.rod.twisted_energy_negative[0], element, 0, axis=0)])
                 self.rod.material_params = np.array([np.insert(self.rod.material_params[0], element, interp_r(self.rod.material_params[0][element], self.rod.material_params[0][element-1]), axis=0)])
                 self.rod.B_matrix = np.array([np.insert(self.rod.B_matrix[0], element, interp_r(self.rod.B_matrix[0][element], self.rod.B_matrix[0][element-1]), axis=0)])
+                self.rod.steric_perturbed_energy_positive = np.array([np.insert(self.rod.steric_perturbed_energy_positive[0], element, 0, axis=0)])
+                self.rod.steric_perturbed_energy_negative = np.array([np.insert(self.rod.steric_perturbed_energy_negative[0], element, 0, axis=0)])
             self.rod.num_elements = len(self.rod.equil_r[0])
             self.rod.length=3*self.rod.num_elements
         return
@@ -1454,16 +1469,18 @@ class anal_rod:
         self.rod.equil_m = determine_simplification_func(self.rod.equil_m, target_length, margin)
         self.rod.current_r = determine_simplification_func(self.rod.current_r, target_length, margin)
         self.rod.current_m = determine_simplification_func(self.rod.current_m, target_length, margin)
-        self.rod.perturbed_x_energy_positive = determine_simplification_func(self.rod.perturbed_x_energy_positive, target_length, margin)
-        self.rod.perturbed_y_energy_positive = determine_simplification_func(self.rod.perturbed_y_energy_positive, target_length, margin)
-        self.rod.perturbed_z_energy_positive = determine_simplification_func(self.rod.perturbed_z_energy_positive, target_length, margin)
+        self.rod.internal_perturbed_x_energy_positive = determine_simplification_func(self.rod.internal_perturbed_x_energy_positive, target_length, margin)
+        self.rod.internal_perturbed_y_energy_positive = determine_simplification_func(self.rod.internal_perturbed_y_energy_positive, target_length, margin)
+        self.rod.internal_perturbed_z_energy_positive = determine_simplification_func(self.rod.internal_perturbed_z_energy_positive, target_length, margin)
         self.rod.twisted_energy_positive = determine_simplification_func(self.rod.twisted_energy_positive, target_length, margin)
-        self.rod.perturbed_x_energy_negative = determine_simplification_func(self.rod.perturbed_x_energy_negative, target_length, margin)
-        self.rod.perturbed_y_energy_negative = determine_simplification_func(self.rod.perturbed_y_energy_negative, target_length, margin)
-        self.rod.perturbed_z_energy_negative = determine_simplification_func(self.rod.perturbed_z_energy_negative, target_length, margin)
+        self.rod.internal_perturbed_x_energy_negative = determine_simplification_func(self.rod.internal_perturbed_x_energy_negative, target_length, margin)
+        self.rod.internal_perturbed_y_energy_negative = determine_simplification_func(self.rod.internal_perturbed_y_energy_negative, target_length, margin)
+        self.rod.internal_perturbed_z_energy_negative = determine_simplification_func(self.rod.internal_perturbed_z_energy_negative, target_length, margin)
         self.rod.twisted_energy_negative = determine_simplification_func(self.rod.twisted_energy_negative, target_length, margin)
         self.rod.material_params = determine_simplification_func(self.rod.material_params, target_length, margin)
         self.rod.B_matrix = determine_simplification_func(self.rod.B_matrix, target_length, margin)
+        self.rod.steric_perturbed_energy_positive = determine_simplification_func(self.rod.steric_perturbed_energy_positive, target_length, margin)
+        self.rod.steric_perturbed_energy_negative = determine_simplification_func(self.rod.steric_perturbed_energy_negative, target_length, margin)
         self.rod.num_elements = len(self.rod.equil_r[0])
         self.rod.length=3*self.rod.num_elements
 

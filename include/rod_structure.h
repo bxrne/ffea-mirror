@@ -73,16 +73,18 @@ struct Rod
   float * equil_m; /** Equilibrium configuration of the material frame. */
   float * current_r; /** Current configuration of the rod nodes. */
   float * current_m; /** Current configuration of the material frame. */
-  float * perturbed_x_energy_positive; /** Energies associated with the perturbations we do in order to get dE. Given as [stretch, bend, twist, stretch, bend, twist...]**/
-  float * perturbed_y_energy_positive;
-  float * perturbed_z_energy_positive;
-  float * twisted_energy_positive;
-  float * perturbed_x_energy_negative; /** Stretch, bend, twist, stretch, bend, twist... */
-  float * perturbed_y_energy_negative;
-  float * perturbed_z_energy_negative;
-  float * twisted_energy_negative;
+  float * internal_perturbed_x_energy_positive; /** Energies associated with the perturbations we do in order to get dE. Given as [stretch, bend, twist, stretch, bend, twist...]**/
+  float * internal_perturbed_y_energy_positive;
+  float * internal_perturbed_z_energy_positive;
+  float * internal_twisted_energy_positive;
+  float * internal_perturbed_x_energy_negative; /** Stretch, bend, twist, stretch, bend, twist... */
+  float * internal_perturbed_y_energy_negative;
+  float * internal_perturbed_z_energy_negative;
+  float * internal_twisted_energy_negative;
   float * material_params; /** Stretch, twist, radius, stretch, twist, radius... **/
   float * B_matrix; /** Contents of the bending modulus matrix for each node, as a 1-d array. Given as [a_1_1, a_1_2, a_2,1, a_2_2, a_1_1...]. **/
+  float * steric_perturbed_energy_positive;  /** Energies from steric interactions at each rod node. Given as [x0, y0, z0, x1, y1, z1 ...]**/
+  float * steric_perturbed_energy_negative;
 
   float * applied_forces; /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
   bool * pinned_nodes; /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
