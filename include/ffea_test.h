@@ -87,13 +87,9 @@ struct ffea_test{
     
     static int lower_sphere();
 
-    static int shortest_distance_between_rod_elements();
-
-    static int point_lies_on_rod_line_element();
+    static int point_lies_within_rod_element();
 
     static int line_connecting_rod_elements();
-
-    static int two_sphere_volume_intersection();
 
     static int rod_neighbour_list_construction();
 

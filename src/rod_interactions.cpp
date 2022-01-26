@@ -45,7 +45,7 @@ namespace rod {
  *    d4 = c_a - r_b2 
  * Find the smallest vector from these and c_ba, and assign that to be the new interaction vector.
 */
-void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]){  
+void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]){  
     float r_a2[3] = {0, 0, 0};
     float r_b2[3] = {0, 0, 0};
     float rc_a[3] = {0, 0, 0};
@@ -131,7 +131,7 @@ void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], flo
     vec3d(n){c_b_out[n] = c_b[n];}
 
     if(dbg_print){
-        std::cout << "rod::interaction_vector_correction()" << std::endl;
+        std::cout << "correction to rod-rod distance" << std::endl;
         printf("\tp_a.(c_a - r_a) : %.3e\n", dot_a);
         printf("\tp_b.(c_b - r_b) : %.3e\n", dot_b);
         printf("\t|c_ab| : %.3e\n", rod::absolute(c_ab));
@@ -151,7 +151,7 @@ void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], flo
  \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b - \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p} \ \boldsymbol{l}_a \f|
  * To account for some bad behaviour arising from the infinite line assumption of this equation, a correction function is also called.
 */
-void get_interaction_vector(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]){
+void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]){
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
     float l_a_cross_l_b[3] = {0.0, 0.0, 0.0};
@@ -175,7 +175,7 @@ void get_interaction_vector(float p_a[3], float p_b[3], float r_a[3], float r_b[
     vec3d(n){c_b[n] = r_b[n] + dot_product_3x1(r_ba, n_a) / dot_product_3x1(l_b, n_a) * l_b[n];}
 
     if(dbg_print){
-        std::cout << "rod::get_interaction_vector()" << std::endl;
+        std::cout << "shortest rod-rod distance" << std::endl;
         print_array("\tp_a", p_a, 3);
         print_array("\tp_b", p_b, 3);
         print_array("\tl_a", l_a, 3);
@@ -193,7 +193,7 @@ void get_interaction_vector(float p_a[3], float p_b[3], float r_a[3], float r_b[
     }
 
     // Apply corrections to c_a and/or c_b if appropriate
-    interaction_vector_correction(c_a, c_b, r_a, r_b, p_a, p_b, c_a, c_b);
+    rod_distance_correction(c_a, c_b, r_a, r_b, p_a, p_b, c_a, c_b);
 }
 
 
@@ -235,7 +235,7 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
             rod_b->get_p(j, p_b, false);
 
             // Shortest distance between two rod elements
-            rod::get_interaction_vector(p_a, p_b, r_a, r_b, c_a, c_b);
+            rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
             vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
 
             if(rod::dbg_print){

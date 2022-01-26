@@ -1003,7 +1003,7 @@ Rod Rod::check_neighbour_list_dimensions(){
     }
 
     if(dim_ok){
-        std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK." << std::endl;
+        std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK (" << num_rows << ", " << num_cols << ")." << std::endl;
     }
 
     return *this;

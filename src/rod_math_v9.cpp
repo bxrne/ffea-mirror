@@ -133,7 +133,9 @@ void print_vector(std::string vector_name, std::vector<float> vec){
     for(auto item : vec){
         std::cout << item << ", ";
     }
-    std::cout << "\b\b )" << std::endl;
+    if(vec.size() > 1){std::cout << "\b\b )" << std::endl;}
+    else{std::cout << ")" << std::endl;}
+    
 }
 
 /**

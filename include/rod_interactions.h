@@ -40,10 +40,10 @@
 
 namespace rod {
 
-void interaction_vector_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]);
-void get_interaction_vector(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]);
+void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]);
+void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]);
 void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b);
-float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);  // Not in use
+// float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);  // Not in use
 
 }
 #endif

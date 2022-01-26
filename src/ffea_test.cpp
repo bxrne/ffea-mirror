@@ -99,20 +99,12 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::lower_sphere();
     }
 
-    if (buffer.str().find("shortest_distance_between_rod_elements") != std::string::npos ){
-        result = ffea_test::shortest_distance_between_rod_elements();
-    }
-
-    if (buffer.str().find("point_lies_on_rod_line_element") != std::string::npos ){
-        result = ffea_test::point_lies_on_rod_line_element();
-    }
+    // if (buffer.str().find("point_lies_within_rod_element") != std::string::npos ){
+    //     result = ffea_test::point_lies_within_rod_element();
+    // }
     
     if (buffer.str().find("line_connecting_rod_elements") != std::string::npos ){
         result = ffea_test::line_connecting_rod_elements();
-    }
-
-    if (buffer.str().find("two_sphere_volume_intersection") != std::string::npos ){
-        result = ffea_test::two_sphere_volume_intersection();
     }
 
     if (buffer.str().find("rod_neighbour_list_construction") != std::string::npos ){
@@ -1243,27 +1235,6 @@ int ffea_test::lower_sphere(){
 
 }
 
-// Compute the shortest distance between two skew (non-parallel) rod elements and compare to an expected value
-int ffea_test::shortest_distance_between_rod_elements(){
-
-    // Two perpendicular rod elements separated in z by 1
-    float r_a[3] = {-1, 0, 0};  // p = r2 - r1
-    float r_b[3] = {0, -1, 1};
-    float p_a[3] = {1, 0, 0};
-    float p_b[3] = {0, 1, 0};
-    float radius = 0.0;  // line elements
-    float d = 0.0;
-    
-    d = // insert correct function here
-    cout << "Expected distance: 1" << endl;
-    
-    if (abs(d) < 1.01 && abs(d) > 0.99){
-        return 0;
-    }
-
-    return 1;
-
-}
 
 // When calculating collisions, the closest line segment between two rod elements must
 // be calculated, connected by a pair of points, one on each rod. Such points must lie
@@ -1277,7 +1248,7 @@ int ffea_test::shortest_distance_between_rod_elements(){
 //
 // Define candidates for c with the parametric line equation, c = r1 + p*t, 
 // where c = r2 when t = 1. t is a multiplier.
-int ffea_test::point_lies_on_rod_line_element(){
+int ffea_test::point_lies_within_rod_element(){
     float p[3] = {2, 1, 5};
     float r1[3] = {-1, 0, -3}; 
     float t[6] = {-1, 0, 0.3, 0.7, 1, 1.5};
@@ -1289,7 +1260,8 @@ int ffea_test::point_lies_on_rod_line_element(){
 
     for(int i=0; i<6; i++){
         vec3d(n){c_init[n] = r1[n] + p[n] * t[i];}
-        rod::set_point_within_rod_element(c_init, p, r1, c_out);  // test
+        // rod::get_shortest_distance_to_rod(c_init, p, r1, c_out);  // test
+        //rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b)
         switch(i){
             case 0:
                 // c < r1, assign to node
@@ -1385,7 +1357,7 @@ int ffea_test::line_connecting_rod_elements(){
         vec3d(n){c_b_answer[n] = 0.0;}
       
         // Function to test
-        rod::get_interaction_vector(p_a, p_b[i], r_a1, r_b1[i], c_a, float c_b)
+        rod::get_shortest_distance_to_rod(p_a, p_b[i], r_a1, r_b1[i], c_a, c_b);
 
         switch(i){
             case 0:
@@ -1460,82 +1432,9 @@ int ffea_test::line_connecting_rod_elements(){
         return 1;
     }
 }
-
-
-// Compute the overlap of two spheres with equivalent and different radii in
-// the cases they are physically likely to encounter. Compare to volume overlaps
-// calculated by hand.
-int ffea_test::two_sphere_volume_intersection(){
-    float r_a = 1.0;
-    float r_b = 2.0;
-    float d[8] = {2.5, 1, 0, 3.5, 2, 1, 0.5, 0};  // distance between sphere centres
-    float volume = 0.0;  // calculated volume overlap
-    float answer = 0.0;  // expected volume overlap
-    int pass_count = 0;  // count number of cases that have passed
-
-    for(int i=0; i<8; i++){
-        if(i < 3){
-            // r_a = r_b = 1
-            volume = rod::get_spherical_volume_intersection(d[i], r_a, r_a);
-        }
-        else{
-            // r_a < r_b
-            volume = rod::get_spherical_volume_intersection(d[i], r_a, r_b);
-        }
-        switch(i){
-            case 0:
-                // d>r_a+r_b, d>|r_a-r_b|
-                answer = 0.0;         
-                break;     
-            case 1:
-                // d<r_a+r_b, d>|r_a-r_b|
-                answer = 5.0/12.0*M_PI;
-                break; 
-            case 2:
-                // d=|r_a-r_b|=0
-                answer = 4.0/3.0*M_PI;
-                break; 
-            case 3:
-                // d>r_a+r_b, d>|r_a-r_b|
-                answer = 0.0;
-                break; 
-            case 4:
-                // d<r_a+r_b, d>|r_a-r_b|
-                answer = 13.0/24.0*M_PI;
-                break; 
-            case 5:
-                // d=|r_a-r_b|, d>0
-                answer = 4.0/3.0*M_PI;
-                break; 
-            case 6:
-                // d<|r_a-r_b|, d>0
-                answer = 4.0/3.0*M_PI;
-                break; 
-            case 7:
-                // d=0
-                answer = 4.0/3.0*M_PI;
-                break; 
-            default:
-                // return negative if no cases are activating
-                std::cout << "Default case reached" << std::endl;
-                return 1;
-        }
-        if(abs(volume - answer) < 0.01){pass_count++;}
-        std::cout << "TEST RESULT: case = " << i << ", expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
-    }
-    if(pass_count == 8){
-        return 0;
-    }
-    else{
-        return 1;
-    }
-}
  
 
 /**
- * As of 20/01/22, get_interaction_vector() has been made more robust than its predecessor. This
- * test may still only get 6 out of 14 hits.
- * 
  * Load four rods, defined in an accompanying Python script, and generate neighbour lists for them. Count the
  * total number of neighbours found and compare to the expected result.
  * 
@@ -1619,6 +1518,76 @@ int ffea_test::rod_neighbour_list_construction(){
     
 }
 
+
+// NOT USED, BUT MIGHT BE LATER
+// // Compute the overlap of two spheres with equivalent and different radii in
+// // the cases they are physically likely to encounter. Compare to volume overlaps
+// // calculated by hand.
+// int ffea_test::two_sphere_volume_intersection(){
+//     float r_a = 1.0;
+//     float r_b = 2.0;
+//     float d[8] = {2.5, 1, 0, 3.5, 2, 1, 0.5, 0};  // distance between sphere centres
+//     float volume = 0.0;  // calculated volume overlap
+//     float answer = 0.0;  // expected volume overlap
+//     int pass_count = 0;  // count number of cases that have passed
+
+//     for(int i=0; i<8; i++){
+//         if(i < 3){
+//             // r_a = r_b = 1
+//             volume = rod::get_spherical_volume_intersection(d[i], r_a, r_a);
+//         }
+//         else{
+//             // r_a < r_b
+//             volume = rod::get_spherical_volume_intersection(d[i], r_a, r_b);
+//         }
+//         switch(i){
+//             case 0:
+//                 // d>r_a+r_b, d>|r_a-r_b|
+//                 answer = 0.0;         
+//                 break;     
+//             case 1:
+//                 // d<r_a+r_b, d>|r_a-r_b|
+//                 answer = 5.0/12.0*M_PI;
+//                 break; 
+//             case 2:
+//                 // d=|r_a-r_b|=0
+//                 answer = 4.0/3.0*M_PI;
+//                 break; 
+//             case 3:
+//                 // d>r_a+r_b, d>|r_a-r_b|
+//                 answer = 0.0;
+//                 break; 
+//             case 4:
+//                 // d<r_a+r_b, d>|r_a-r_b|
+//                 answer = 13.0/24.0*M_PI;
+//                 break; 
+//             case 5:
+//                 // d=|r_a-r_b|, d>0
+//                 answer = 4.0/3.0*M_PI;
+//                 break; 
+//             case 6:
+//                 // d<|r_a-r_b|, d>0
+//                 answer = 4.0/3.0*M_PI;
+//                 break; 
+//             case 7:
+//                 // d=0
+//                 answer = 4.0/3.0*M_PI;
+//                 break; 
+//             default:
+//                 // return negative if no cases are activating
+//                 std::cout << "Default case reached" << std::endl;
+//                 return 1;
+//         }
+//         if(abs(volume - answer) < 0.01){pass_count++;}
+//         std::cout << "TEST RESULT: case = " << i << ", expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
+//     }
+//     if(pass_count == 8){
+//         return 0;
+//     }
+//     else{
+//         return 1;
+//     }
+// }
 
 //    int ffea_test::numerical_stability(){
     
