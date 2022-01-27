@@ -155,8 +155,6 @@ Rod Rod::set_units(){
 
     steric_perturbed_energy_positive[i] /= mesoDimensions::Energy;
     steric_perturbed_energy_negative[i] /= mesoDimensions::Energy;
-
-    this->steric_radius /= mesoDimensions::length;
     
     return *this; /** Return a pointer to the object itself instead of void. Allows for method chaining! **/
 }
@@ -171,7 +169,6 @@ Rod Rod::set_units(){
  populates the contents of the energy arrays, which int we use to work out
  delta E. The second one uses those energies to compute dynamics and
  applies those dynamics to the position arrays.
- TODO: neighbours loop
 */
 Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
@@ -376,17 +373,121 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         internal_twisted_energy_negative[(node_no*3)+1] = energies[bend_index];
         internal_twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
 
-    }
+        // Rod-rod interactions
+        float r_a[3] = {0, 0, 0};
+        float p_a[3] = {0, 0, 0};
+        get_r(node_no, r_a, false);
+        get_p(node_no, p_a, false);
 
-    // TODO rod-rod interaction energies loop
-    // steric_perturbed_energy_positive[node_no*3] // x
-    // steric_perturbed_energy_positive[(node_no*3)+1] // y
-    // steric_perturbed_energy_positive[(node_no*3)+2] // z
+        // Access steric interactions that occur with a given element on the current rod
+        for(int neighbour_no = 0; neighbour_no < this->get_num_steric_neighbours(node_no); neighbour_no++){
+            float c_a[3] = {0, 0, 0};
+            float c_b[3] = {0, 0, 0};
+            float radius_b = 0;
+            this->get_steric_interaction_data(node_no, neighbour_no, c_a, c_b, radius_b);
 
-    // steric_perturbed_energy_negative[node_no*3]
-    // steric_perturbed_energy_negative[(node_no*3)+1]
-    // steric_perturbed_energy_negative[(node_no*3)+2]
+            float energies[2];
+            // positive x
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*0.5,
+                x,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                material_params[(node_no*3)+2],
+                radius_b, 
+                energies);
 
+            // We must interpolate interaction energies onto the next node
+            // ! how will this affect rod-blob attachments?
+            steric_perturbed_energy_positive[node_no*3] = energies[0];  // r1
+            steric_perturbed_energy_positive[(node_no*3)+3] = energies[1];  // r2
+
+            // positive y
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*0.5,
+                y,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                material_params[(node_no*3)+2],
+                radius_b, 
+                energies);
+
+            steric_perturbed_energy_positive[(node_no*3)+1] = energies[0];
+            steric_perturbed_energy_positive[(node_no*3)+1+3] = energies[1];
+
+            // positive z
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*0.5,
+                z,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                material_params[(node_no*3)+2],
+                radius_b, 
+                energies);
+
+            steric_perturbed_energy_positive[(node_no*3)+2] = energies[0];
+            steric_perturbed_energy_positive[(node_no*3)+2+3] = energies[1];
+
+            // negative x
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*-0.5,
+                x,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                material_params[(node_no*3)+2],
+                radius_b, 
+                energies);
+
+            steric_perturbed_energy_negative[(node_no*3)] = energies[0];
+            steric_perturbed_energy_negative[(node_no*3)+3] = energies[1];
+
+            // negative y
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*-0.5,
+                y,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                material_params[(node_no*3)+2],
+                radius_b, 
+                energies);
+
+            steric_perturbed_energy_negative[(node_no*3)+1] = energies[0];
+            steric_perturbed_energy_negative[(node_no*3)+1+3] = energies[1];
+
+            // negative z
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*-0.5,
+                z,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                material_params[(node_no*3)+2],
+                radius_b, 
+                energies);
+
+            steric_perturbed_energy_negative[(node_no*3)+2] = energies[0];
+            steric_perturbed_energy_negative[(node_no*3)+2+3] = energies[1];
+
+        }// exit neighbour loop  
+  
+    }// exit energy loop
         
     //This loop is for the dynamics
     for (int node_no = 0; node_no<end_node; node_no++){
@@ -408,11 +509,11 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         #endif
         
         // Get friction, needed for delta r and delta theta
-        float translational_friction = get_translational_friction(this->viscosity, steric_radius, false);
+        float translational_friction = get_translational_friction(this->viscosity, material_params[(node_no*3)+2], false);
         //float length_for_friction = (get_absolute_length_from_array(equil_r, node_no, this->length) + get_absolute_length_from_array(equil_r, node_no-1, this->length))/2;
         float length_for_friction = 1e-8/mesoDimensions::length;
         
-        float rotational_friction = get_rotational_friction(this->viscosity, steric_radius, length_for_friction, true);
+        float rotational_friction = get_rotational_friction(this->viscosity, material_params[(node_no*3)+2], length_for_friction, true);
         
         // Need these again
         float twist_perturbation = 0.006283185; // 2pi/1000
@@ -437,7 +538,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float z_force = (internal_perturbed_z_energy_negative[node_no*3]+internal_perturbed_z_energy_negative[(node_no*3)+1]+internal_perturbed_z_energy_negative[(node_no*3)+2] - (internal_perturbed_z_energy_positive[node_no*3]+internal_perturbed_z_energy_positive[(node_no*3)+1]+internal_perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float twist_force = (internal_twisted_energy_negative[node_no*3]+internal_twisted_energy_negative[(node_no*3)+1]+internal_twisted_energy_negative[(node_no*3)+2] - (internal_twisted_energy_positive[node_no*3]+internal_twisted_energy_positive[(node_no*3)+1]+internal_twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
 
-        // TODO: have separate perturbation_amount for rod-rod interactions?
+        // Rod-rod steric interactions
         x_force += (steric_perturbed_energy_positive[node_no*3] - steric_perturbed_energy_negative[node_no*3]) / perturbation_amount;
         y_force += (steric_perturbed_energy_positive[(node_no*3)+1] - steric_perturbed_energy_negative[(node_no*3)+1]) / perturbation_amount;
         x_force += (steric_perturbed_energy_positive[(node_no*3)+2] - steric_perturbed_energy_negative[(node_no*3)+2]) / perturbation_amount;
@@ -603,7 +704,6 @@ Rod Rod::load_header(std::string filename){
     this->timestep = 1e-12/mesoDimensions::time;
     this->kT = 0;
     this->perturbation_amount = 0.001*pow(10,-9)/mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
-    this->steric_radius = 0;
     
     return *this;
 }
@@ -696,10 +796,6 @@ Rod Rod::load_contents(std::string filename){
         }
         n++;
     }
-
-    // Apply a constant steric radius to the entire rod
-    // TODO: Add option for ignoring interactions
-    this->steric_radius = material_params[2];
     
     return *this;
 }
@@ -958,33 +1054,47 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
 }
 
 /**
- * Get the number of rod elements involved in steric interactions with a particular
- * element, given its index
+ * Get the rod node position for the equilibrium or current structure, given
+ * a node index.
  */
-int Rod::get_num_neighbours(int element_index){
+Rod Rod::get_r(int node_index, OUT float r[3], bool equil){
+    if (equil) {
+        r[0] = equil_r[node_index*3];
+        r[1] = equil_r[(node_index*3)+1];
+        r[2] = equil_r[(node_index*3)+2];
+    }
+    else{
+        r[0] = current_r[node_index*3];
+        r[1] = current_r[(node_index*3)+1];
+        r[2] = current_r[(node_index*3)+2];
+    }
+    return *this;
+}
+
+int Rod::get_num_steric_neighbours(int element_index){
     return steric_interaction_coordinates.at(element_index).size() / 7;
 }
 
 /**
- * Get the 6-element vector segment containing the coordinate pair defining the interaction vector
- * between two rod elements.
- * 
- * Indices 0, 1, 2 lie on the rod associated with element_index; 3, 4, 5 lie on some other
- * rod element. Index 6 stores the radius of the other rod element (not returned).
+ * Return data from the 7-element vector segment defining a steric
+   interaction between two rods, a and b.
+
+   Returns:
+     c_a: point lying on rod a (0-2)
+     c_b: point lying on rod b (3-5)
+     radius_b (6)
  */
-std::vector<float> Rod::get_interaction_coordinate_pair(int element_index, int neighbour_index){
-    return rod::slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index*7, (neighbour_index*7)+5);
+void Rod::get_steric_interaction_data(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b){
+    std::vector<float> slice;
+
+    slice = rod::slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index*7, (neighbour_index*7)+6);
+
+    vec3d(n){c_a[n] = slice.at(n);}
+    vec3d(n){c_b[n] = slice.at(n+3);}
+    radius_b = slice.at(6);
 }
 
-/**
- * Get the radius of the 'other' rod involved in a steric interaction. The rod object performing the interaction
- * calculation will know its own radius. This is index 6 in each group of 7 items in the neighbour list.
- */
-float Rod::get_interaction_rod_radius(int element_index, int neighbour_index){
-    return steric_interaction_coordinates.at(element_index).at( (neighbour_index*7)+6 );
-}
-
-Rod Rod::check_neighbour_list_dimensions(){
+void Rod::check_neighbour_list_dimensions(){
     int num_rows = steric_interaction_coordinates.size();
     int num_cols = 0;
     bool dim_ok = true;
@@ -1006,7 +1116,6 @@ Rod Rod::check_neighbour_list_dimensions(){
         std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK (" << num_rows << ", " << num_cols << ")." << std::endl;
     }
 
-    return *this;
 }
 
 } //end namespace

@@ -66,7 +66,7 @@ void get_steric_perturbation_energy(
     int perturbation_dimension, 
     float force_constant,
     float r_a[3],
-    float p_a[3]
+    float p_a[3],
     float c_a[3],
     float c_b[3], 
     float radius_a, 

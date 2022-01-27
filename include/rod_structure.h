@@ -38,10 +38,11 @@
 #include <boost/algorithm/string.hpp>
 #include <string>
 #include <vector>
-#include "rod_math_v9.h"
 #include <omp.h>
 #include "RngStream.h"
 #include <stdio.h>
+#include "rod_math_v9.h"
+//#include "rod_interactions.h"
 
 namespace rod {
 
@@ -62,7 +63,6 @@ struct Rod
   float timestep = 0.002;
   float kT = 0; /** Boltzmann's constant x temperature. **/
   float perturbation_amount = 0.01; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
-  float steric_radius = 0;
 
   float translational_friction;
   float rotational_friction; /** these will have to be changed when I end up implementing per-element radius, to be computed on-the-fly instead most likely **/
@@ -124,10 +124,10 @@ struct Rod
   Rod get_centroid(float *r, float centroid[3]);
   Rod get_min_max(float *r, OUT float min[3], float max[3]);
   Rod get_p(int index, OUT float p[3], bool equil);
-  int get_num_neighbours(int element_index);
-  std::vector<float> get_interaction_coordinate_pair(int element_index, int neighbour_index);
-  float get_interaction_rod_radius(int element_index, int neighbour_index);
-  Rod check_neighbour_list_dimensions();
+  Rod get_r(int node_index, OUT float r[3], bool equil);
+  int get_num_steric_neighbours(int element_index);
+  void get_steric_interaction_data(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
+  void check_neighbour_list_dimensions();
 };
 
 } //end namespace
