@@ -25,9 +25,6 @@
  *      rod_interactions.h
  *	Author: Ryan Cocking, University of Leeds
  *	Email: bsrctb@leeds.ac.uk
-
- *	Author: Ryan Cocking, University of Leeds
- *	Email: bsrctb@leeds.ac.uk
  */
 
 #ifndef ROD_INTERACTIONS
@@ -40,9 +37,40 @@
 
 namespace rod {
 
-void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]);
-void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]);
+void rod_distance_correction(
+    float c_a[3], 
+    float c_b[3], 
+    float r_a[3], 
+    float r_b[3], 
+    float p_a[3], 
+    float p_b[3], 
+    OUT 
+    float c_a_out[3], 
+    float c_b_out[3]
+    );
+
+void get_shortest_distance_to_rod(
+    float p_a[3], 
+    float p_b[3], 
+    float r_a[3], 
+    float r_b[3], 
+    OUT 
+    float c_a[3], 
+    float c_b[3]
+    );
+
 void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b);
+
+float get_steric_perturbation_energy(
+    float perturbation_amount, 
+    int perturbation_dimension, 
+    float force_constant, 
+    float point_on_a[3],
+    float point_on_b[3], 
+    float radius_a, 
+    float radius_b
+    );
+
 // float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);  // Not in use
 
 }

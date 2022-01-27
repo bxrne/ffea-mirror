@@ -267,6 +267,39 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
     }
 }
 
+/* Perturb the separation between two rods in a specifie degree of freedom to 
+   get the potential energy associated with steric interaction. The gradient
+   of the potential is linear.
+
+   \f| U_{int} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)] \f|
+    
+   Args:
+   - perturbation_amount - the amount of perturbation to do in the numerical differentiation.
+   - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
+   - force_constant - arbitrary coefficient used to scale the severity of the steric repulsion [force units]
+   - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
+*/
+float get_steric_perturbation_energy(
+    float perturbation_amount, 
+    int perturbation_dimension, 
+    float force_constant, 
+    float point_on_a[3],
+    float point_on_b[3], 
+    float radius_a, 
+    float radius_b
+    ){
+
+    float separation_vector[3] = {0, 0, 0};
+    float intersection_amount = 0;
+
+    vec3d(n){separation_vector[n] = point_on_b[n] - point_on_a[n];}
+    separation_vector[perturbation_dimension] += perturbation_amount;
+    intersection_amount = rod::absolute(separation_vector) - (radius_a + radius_b);
+
+    return force_constant * intersection_amount;
+
+}
+
 
 /** NOT IN USE
  * 
