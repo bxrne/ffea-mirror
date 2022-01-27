@@ -279,6 +279,8 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
    - node_a - the 'start' node of the current element on rod a
    - element_a -
    - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
+   Returns:
+   - energies - a 2-element array for energies interpolated onto the start [0] and end [1] nodes of element_a
 */
 void get_steric_perturbation_energy(
     float perturbation_amount, 
@@ -291,8 +293,7 @@ void get_steric_perturbation_energy(
     float radius_a, 
     float radius_b,
     OUT
-    float energy_node_1,
-    float energy_node_2
+    float energies[2]
     ){
 
     float c_ab[3] = {0, 0, 0};
@@ -311,8 +312,8 @@ void get_steric_perturbation_energy(
     weight_node_2 = rod::absolute(displacement) / rod::absolute(p_a)
     weight_node_1 = 1 - weight_node_2
     
-    energy_node_1 = weight_node_1 * energy
-    energy_node_2 = weight_node_2 * energy
+    energies[0] = weight_node_1 * energy
+    energies[1] = weight_node_2 * energy
 
 }
 
