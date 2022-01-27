@@ -267,36 +267,52 @@ void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
     }
 }
 
-/* Perturb the separation between two rods in a specifie degree of freedom to 
-   get the potential energy associated with steric interaction. The gradient
-   of the potential is linear.
+/* Perturb the separation between two sterically interacting rod elements in a
+   specific degree of freedom to get the potential energy associated with rod a. 
 
-   \f| U_{int} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)] \f|
+   \f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)] \f|
     
    Args:
    - perturbation_amount - the amount of perturbation to do in the numerical differentiation.
    - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
    - force_constant - arbitrary coefficient used to scale the severity of the steric repulsion [force units]
+   - node_a - the 'start' node of the current element on rod a
+   - element_a -
    - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
 */
-float get_steric_perturbation_energy(
+void get_steric_perturbation_energy(
     float perturbation_amount, 
     int perturbation_dimension, 
-    float force_constant, 
-    float point_on_a[3],
-    float point_on_b[3], 
+    float force_constant,
+    float r_a[3],
+    float p_a[3]
+    float c_a[3],
+    float c_b[3], 
     float radius_a, 
-    float radius_b
+    float radius_b,
+    OUT
+    float energy_node_1,
+    float energy_node_2
     ){
 
-    float separation_vector[3] = {0, 0, 0};
-    float intersection_amount = 0;
+    float c_ab[3] = {0, 0, 0};
+    float energy = 0;
+    float displacement[3] = {0, 0, 0};  // along rod a
+    float weight_node_1 = 0;
+    float weight_node_2 = 0;
 
-    vec3d(n){separation_vector[n] = point_on_b[n] - point_on_a[n];}
-    separation_vector[perturbation_dimension] += perturbation_amount;
-    intersection_amount = rod::absolute(separation_vector) - (radius_a + radius_b);
+    c_b[perturbation_dimension] += perturbation_amount;
+    vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
+    energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
 
-    return force_constant * intersection_amount;
+    // Energy must be interpolated onto nodes of rod a.
+    // e.g. if c_a = r_a, all energy goes onto node 1
+    vec3d(n){displacement[n] = c_a[n] - r_a[n];}
+    weight_node_2 = rod::absolute(displacement) / rod::absolute(p_a)
+    weight_node_1 = 1 - weight_node_2
+    
+    energy_node_1 = weight_node_1 * energy
+    energy_node_2 = weight_node_2 * energy
 
 }
 

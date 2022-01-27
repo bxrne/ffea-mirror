@@ -61,14 +61,19 @@ void get_shortest_distance_to_rod(
 
 void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b);
 
-float get_steric_perturbation_energy(
+void get_steric_perturbation_energy(
     float perturbation_amount, 
     int perturbation_dimension, 
-    float force_constant, 
-    float point_on_a[3],
-    float point_on_b[3], 
+    float force_constant,
+    float r_a[3],
+    float p_a[3]
+    float c_a[3],
+    float c_b[3], 
     float radius_a, 
-    float radius_b
+    float radius_b,
+    OUT
+    float energy_node_1,
+    float energy_node_2
     );
 
 // float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);  // Not in use
