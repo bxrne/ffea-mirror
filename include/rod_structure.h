@@ -42,7 +42,7 @@
 #include "RngStream.h"
 #include <stdio.h>
 #include "rod_math_v9.h"
-//#include "rod_interactions.h"
+#include "rod_interactions.h"
 
 namespace rod {
 
@@ -125,10 +125,13 @@ struct Rod
   Rod get_min_max(float *r, OUT float min[3], float max[3]);
   Rod get_p(int index, OUT float p[3], bool equil);
   Rod get_r(int node_index, OUT float r[3], bool equil);
+  float get_radius(int node_index);
   int get_num_steric_neighbours(int element_index);
-  void get_steric_interaction_data(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
+  void get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
   void check_neighbour_list_dimensions();
 };
+
+void update_neighbour_lists(Rod *rod_a, Rod *rod_b);
 
 } //end namespace
 #endif

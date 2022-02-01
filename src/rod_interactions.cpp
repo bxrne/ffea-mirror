@@ -30,9 +30,61 @@
  *	Email: bsrctb@leeds.ac.uk
  */
 
+
 #include "rod_interactions.h"
 
 namespace rod {
+
+/* Perturb the separation between two sterically interacting rod elements in a
+   specific degree of freedom to get the potential energy associated with rod a. 
+
+   \f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)] \f|
+    
+   Args:
+   - perturbation_amount - the amount of perturbation to do in the numerical differentiation.
+   - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
+   - force_constant - arbitrary coefficient used to scale the severity of the steric repulsion [force units]
+   - node_a - the 'start' node of the current element on rod a
+   - element_a -
+   - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
+   Returns:
+   - energies - a 2-element array for energies interpolated onto the start [0] and end [1] nodes of element_a
+*/
+void get_steric_perturbation_energy(
+    float perturbation_amount, 
+    int perturbation_dimension, 
+    float force_constant,
+    float r_a[3],
+    float p_a[3],
+    float c_a[3],
+    float c_b[3], 
+    float radius_a, 
+    float radius_b,
+    OUT
+    float energies[2]
+    ){
+
+    float c_ab[3] = {0, 0, 0};
+    float energy = 0;
+    float displacement[3] = {0, 0, 0};  // along rod a
+    float weight_node_1 = 0;
+    float weight_node_2 = 0;
+
+    c_b[perturbation_dimension] += perturbation_amount;
+    vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
+    energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
+
+    // Energy must be interpolated onto nodes of rod a.
+    // e.g. if c_a = r_a, all energy goes onto node 1
+    vec3d(n){displacement[n] = c_a[n] - r_a[n];}
+    weight_node_2 = rod::absolute(displacement) / rod::absolute(p_a);
+    weight_node_1 = 1 - weight_node_2;
+    
+    energies[0] = weight_node_1 * energy;
+    energies[1] = weight_node_2 * energy;
+
+}
+
 
 /** 1) Check that the points of the rod interaction vector, c_a and c_b, lie within their respective
  * rod elements. Certain situations (e.g. almost-parallel rods) will mean this correction can be poor
@@ -196,162 +248,97 @@ void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3], floa
     rod_distance_correction(c_a, c_b, r_a, r_b, p_a, p_b, c_a, c_b);
 }
 
+/* 
+ Check if two rod elements interact by calculating the shortest distance between them
+ and comparing to the sum of their radii. If this passes, the interaction
+ vector and radius are appended to both elements' neighbour lists.
 
-/* Construct steric interaction neighbour lists for two rods, a and b
- *   Arguments:
- *   - *rod_a, *rod_b : pointers to rod objects
- *   Affects:
- *   - rod_a,b->steric_interaction_coordinates[element_index]
- *
- *   Loops over every element of the two rods (O(N**2) loop) and checks if they might interact
- *   by calculating the shortest distance between two line elements, then comparing to the sum
- *   of the radii of both rods. If this passes, the interaction coordinates are appended to
- *   a vector.
- * 
- *   Each element of the rods will be assigned a std::vector<float> containing the coordinate
- *   pairs describing steric interactions with other rod elements. These are stored in groups
- *   of 6, such that indices 0, 1, 2 are the coordinate on the current rod, and indices
- *   3, 4, 5 are the coordinate on the other rod, with an additional element 6 to store the radius
- *   of the other rod, e.g. {ax, ay, az, bx, by, bz, R_b ...}. Hence for one element experiencing 5
- *   interactions, this will create a vector containing 35 floats.
- */
-void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b){
-    float r_a[3] = {0, 0, 0};
-    float r_b[3] = {0, 0, 0};
-    float p_a[3] = {0, 0, 0};
-    float p_b[3] = {0, 0, 0};
+ Each interaction with a single neighbour takes up 7 places in std::vector<float> associated
+ with a given element in a rod's neighbour list. Indices 0-2 and 3-5 are the points located
+ on itself and the other rod, respectively, that describe the interaction vector, c_ab.
+ Index 6 is the radius of the other element.
+*/
+void assign_neighbours_to_elements(
+    float p_a[3], 
+    float p_b[3], 
+    float r_a[3], 
+    float r_b[3], 
+    float radius_a, 
+    float radius_b, 
+    OUT 
+    std::vector<float> element_a_neighbours, 
+    std::vector<float> element_b_neighbours,  
+    bool in_range
+    ){
+
     float c_a[3] = {0, 0, 0};
     float c_b[3] = {0, 0, 0};
     float c_ab[3] = {0, 0, 0};
 
-    // Rather confusingly, num_elements actually refers to the number of NODES in the rod (8/12/21)
-    for (int i=0; i<rod_a->num_elements-1; i++){
-        for (int j=0; j<rod_b->num_elements-1; j++){
-
-            // shift by i*3 and j*3 due to current_r being 1D
-            vec3d(n){r_a[n] = rod_a->current_r[(i*3)+n];}
-            vec3d(n){r_b[n] = rod_b->current_r[(j*3)+n];}
-            rod_a->get_p(i, p_a, false);
-            rod_b->get_p(j, p_b, false);
-
-            // Shortest distance between two rod elements
-            rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
-            vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
-
-            if(rod::dbg_print){
-                std::cout << "rod::create_neighbour_list()" << std::endl;
-                std::cout << "  |c_ab|: " << rod::absolute(c_ab) << std::endl;
-                std::cout << "  radii sum: " << rod_a->steric_radius + rod_b->steric_radius << std::endl;
-            }
-
-            if(rod::absolute(c_ab) < (rod_a->steric_radius + rod_b->steric_radius)){
-                if(rod::dbg_print){std::cout << "  interaction - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}
-
-                // Increase vector capacity by 6 (optional, might help with correct assignment to vector)
-                rod_a->steric_interaction_coordinates.at(i).reserve(rod_a->steric_interaction_coordinates.at(i).size() + 7);
-                rod_b->steric_interaction_coordinates.at(j).reserve(rod_b->steric_interaction_coordinates.at(j).size() + 7);
-
-                // Update both rods with the interaction coordinate pair and the radius of the other rod
-                vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_a[n]);}
-                vec3d(n){rod_a->steric_interaction_coordinates.at(i).push_back(c_b[n]);}
-                rod_a->steric_interaction_coordinates.at(i).push_back(rod_b->steric_radius);
-
-                vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_b[n]);}
-                vec3d(n){rod_b->steric_interaction_coordinates.at(j).push_back(c_a[n]);}
-                rod_b->steric_interaction_coordinates.at(j).push_back(rod_a->steric_radius);
-            }
-            else{
-                if(rod::dbg_print){std::cout << "  no interaction detected - rod " << rod_a->rod_no << ", elem " << i << " | rod " << rod_b->rod_no << ", elem " << j << std::endl;}
-            }  
-        }
-    }
-}
-
-/* Perturb the separation between two sterically interacting rod elements in a
-   specific degree of freedom to get the potential energy associated with rod a. 
-
-   \f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)] \f|
-    
-   Args:
-   - perturbation_amount - the amount of perturbation to do in the numerical differentiation.
-   - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
-   - force_constant - arbitrary coefficient used to scale the severity of the steric repulsion [force units]
-   - node_a - the 'start' node of the current element on rod a
-   - element_a -
-   - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
-   Returns:
-   - energies - a 2-element array for energies interpolated onto the start [0] and end [1] nodes of element_a
-*/
-void get_steric_perturbation_energy(
-    float perturbation_amount, 
-    int perturbation_dimension, 
-    float force_constant,
-    float r_a[3],
-    float p_a[3]
-    float c_a[3],
-    float c_b[3], 
-    float radius_a, 
-    float radius_b,
-    OUT
-    float energies[2]
-    ){
-
-    float c_ab[3] = {0, 0, 0};
-    float energy = 0;
-    float displacement[3] = {0, 0, 0};  // along rod a
-    float weight_node_1 = 0;
-    float weight_node_2 = 0;
-
-    c_b[perturbation_dimension] += perturbation_amount;
+    rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
-    energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
 
-    // Energy must be interpolated onto nodes of rod a.
-    // e.g. if c_a = r_a, all energy goes onto node 1
-    vec3d(n){displacement[n] = c_a[n] - r_a[n];}
-    weight_node_2 = rod::absolute(displacement) / rod::absolute(p_a)
-    weight_node_1 = 1 - weight_node_2
-    
-    energies[0] = weight_node_1 * energy
-    energies[1] = weight_node_2 * energy
+    in_range = false;
+    if(rod::absolute(c_ab) < (radius_a + radius_b)){
+        in_range = true;
 
+        // Increase vector capacity before assignment (optional, might help with memory stuff)
+        element_a_neighbours.reserve(element_a_neighbours.size() + 7);
+        element_b_neighbours.reserve(element_b_neighbours.size() + 7);
+
+        // Update both neighbour lists with the interaction vector and the radius of the 'other' element
+        vec3d(n){element_a_neighbours.push_back(c_a[n]);}
+        vec3d(n){element_a_neighbours.push_back(c_b[n]);}
+        element_a_neighbours.push_back(radius_b);
+
+        vec3d(n){element_b_neighbours.push_back(c_b[n]);}
+        vec3d(n){element_b_neighbours.push_back(c_a[n]);}
+        element_b_neighbours.push_back(radius_a);
+    }
+
+    if(rod::dbg_print){
+        std::cout << "rod element neighbour list assignment:" << std::endl;
+        std::cout << "  |c_ab|: " << rod::absolute(c_ab) << std::endl;
+        std::cout << "  radii sum: " << radius_a + radius_b << std::endl;
+        std::cout << "  in_range: " << in_range << std::endl;
+    }
 }
 
 
-/** NOT IN USE
- * 
- * Compute the volume of intersection of two spheres,a and b, whose centres are separated
- * by a straight line of length d. This is equal to the sum of the volumes of the two spherical
- * caps comprising the intersection.
- *
- * https://en.wikipedia.org/wiki/Spherical_cap#Applications
- *
- * \f[ \frac{\pi}{12d}(r_a+r_b-d)^2 (d^2+2d(r_a+r_b)-3(r_a-r_b)^2) \f]
-*/
-// TODO: Rewrite to remove if-statements and use min/max instead
-float get_spherical_volume_intersection(float separation, float radius_a, float radius_b){   
-    float bracket1 = 0.0;
-    float bracket2 = 0.0;
+// /** NOT IN USE
+//  * 
+//  * Compute the volume of intersection of two spheres,a and b, whose centres are separated
+//  * by a straight line of length d. This is equal to the sum of the volumes of the two spherical
+//  * caps comprising the intersection.
+//  *
+//  * https://en.wikipedia.org/wiki/Spherical_cap#Applications
+//  *
+//  * \f[ \frac{\pi}{12d}(r_a+r_b-d)^2 (d^2+2d(r_a+r_b)-3(r_a-r_b)^2) \f]
+// */
+// // TODO: Rewrite to remove if-statements and use min/max instead
+// float get_spherical_volume_intersection(float separation, float radius_a, float radius_b){   
+//     float bracket1 = 0.0;
+//     float bracket2 = 0.0;
 
-    // Spheres intersecting
-    if (separation < radius_a + radius_b && separation > std::abs(radius_a - radius_b) && separation > 0){
-        bracket1 = (radius_a + radius_b - separation) * (radius_a + radius_b - separation);
-        bracket2 = separation*separation + 2*separation*(radius_a + radius_b) - 3*(radius_a - radius_b)*(radius_a - radius_b);
-        return 0.0833 * M_PI / separation * bracket1 * bracket2;
-    }
-    // One sphere fully contained within the other
-    else if (separation <= std::abs(radius_a - radius_b)){
-        float radius_min = 0.0;
-        radius_min = std::min(radius_a, radius_b);
-        return 1.3333 * M_PI * radius_min * radius_min * radius_min;
-    }
-    // Spheres not in contact
-    else {
-        return 0.0;
-    }
+//     // Spheres intersecting
+//     if (separation < radius_a + radius_b && separation > std::abs(radius_a - radius_b) && separation > 0){
+//         bracket1 = (radius_a + radius_b - separation) * (radius_a + radius_b - separation);
+//         bracket2 = separation*separation + 2*separation*(radius_a + radius_b) - 3*(radius_a - radius_b)*(radius_a - radius_b);
+//         return 0.0833 * M_PI / separation * bracket1 * bracket2;
+//     }
+//     // One sphere fully contained within the other
+//     else if (separation <= std::abs(radius_a - radius_b)){
+//         float radius_min = 0.0;
+//         radius_min = std::min(radius_a, radius_b);
+//         return 1.3333 * M_PI * radius_min * radius_min * radius_min;
+//     }
+//     // Spheres not in contact
+//     else {
+//         return 0.0;
+//     }
 
-    // return std::min(0.0833 * M_PI / separation * bracket1 * bracket2, 1.3333 * M_PI * radius_min * radius_min * radius_min);
-}
+//     // return std::min(0.0833 * M_PI / separation * bracket1 * bracket2, 1.3333 * M_PI * radius_min * radius_min * radius_min);
+// }
 
 
 //    __      _

@@ -98,10 +98,6 @@ int ffea_test::do_ffea_test(std::string filename){
     if (buffer.str().find("lower_sphere") != std::string::npos ){
         result = ffea_test::lower_sphere();
     }
-
-    // if (buffer.str().find("point_lies_within_rod_element") != std::string::npos ){
-    //     result = ffea_test::point_lies_within_rod_element();
-    // }
     
     if (buffer.str().find("line_connecting_rod_elements") != std::string::npos ){
         result = ffea_test::line_connecting_rod_elements();
@@ -1448,9 +1444,9 @@ int ffea_test::rod_neighbour_list_construction(){
     float r1[3] = {0, 0, 0};
     float r2[3] = {0, 0, 0};
     float distance = 0;
-    std::vector<float> coords(7, 0);
     float c_a[3] = {0, 0, 0};
     float c_b[3] = {0, 0, 0};
+    float radius = 0;
     float c_ba[3] = {0, 0, 0};
     int num_neighbours = 0;
     int num_interactions = 0;
@@ -1473,7 +1469,7 @@ int ffea_test::rod_neighbour_list_construction(){
     std::cout << "ffea_test::rod_neighbour_list_construction() - generating neighbour list" << std::endl;
     for (int i=0; i<num_rods; i++){
         for (int j=i+1; j<num_rods; j++){
-            rod::create_neighbour_list(rod_array[i], rod_array[j]);
+            rod::update_neighbour_lists(rod_array[i], rod_array[j]);
         }
     }
 
@@ -1488,13 +1484,11 @@ int ffea_test::rod_neighbour_list_construction(){
             std::cout << "  element " << j << std::endl;
             rod::print_array("    r1", r1, 3);
             rod::print_array("    r2", r2, 3);
-            std::cout << "    num_neighbours: " << rod_array[i]->get_num_neighbours(j) << std::endl;
+            std::cout << "    num_neighbours: " << rod_array[i]->get_num_steric_neighbours(j) << std::endl;
             rod::print_vector("    all coords: ", rod_array[i]->steric_interaction_coordinates.at(j));
 
-            for (int k=0; k<rod_array[i]->get_num_neighbours(j); k++){
-                coords = rod_array[i]->get_interaction_coordinate_pair(j, k);
-                vec3d(n){c_a[n] = coords[n];}
-                vec3d(n){c_b[n] = coords[n+3];}
+            for (int k=0; k<rod_array[i]->get_num_steric_neighbours(j); k++){
+                rod_array[i]->get_steric_interaction_data_slice(j, k, c_a, c_b, radius);
                 vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
                 distance = rod::absolute(c_ba);
 
@@ -1502,7 +1496,7 @@ int ffea_test::rod_neighbour_list_construction(){
                 rod::print_array("    c_b", c_b, 3);
                 std::cout << "    |c_ba|: " << distance << std::endl;
             }
-            num_neighbours += rod_array[i]->get_num_neighbours(j);
+            num_neighbours += rod_array[i]->get_num_steric_neighbours(j);
         }
         rod_array[i]->check_neighbour_list_dimensions();
     }

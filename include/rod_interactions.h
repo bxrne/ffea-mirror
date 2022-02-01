@@ -30,10 +30,7 @@
 #ifndef ROD_INTERACTIONS
 #define ROD_INTERACTIONS
 
-#define _USE_MATH_DEFINES ///<  This has to come before including cmath
-
 #include "rod_math_v9.h"
-#include "rod_structure.h"
 
 namespace rod {
 
@@ -59,7 +56,18 @@ void get_shortest_distance_to_rod(
     float c_b[3]
     );
 
-void create_neighbour_list(rod::Rod *rod_a, rod::Rod *rod_b);
+void assign_neighbours_to_elements(
+    float p_a[3], 
+    float p_b[3], 
+    float r_a[3], 
+    float r_b[3], 
+    float radius_a, 
+    float radius_b, 
+    OUT 
+    std::vector<float> element_a_neighbours, 
+    std::vector<float> element_b_neighbours,  
+    bool in_range
+    );
 
 void get_steric_perturbation_energy(
     float perturbation_amount, 

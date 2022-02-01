@@ -76,7 +76,6 @@
 #include "KineticState.h"
 #include "rod_structure.h"
 #include "rod_blob_interface.h"
-#include "rod_interactions.h"
 
 #include "dimensions.h"
 using namespace std;
