@@ -83,7 +83,5 @@ void get_steric_perturbation_energy(
     float energies[2]
     );
 
-// float get_spherical_volume_intersection(float separation, float radius_a, float radius_b);  // Not in use
-
 }
 #endif

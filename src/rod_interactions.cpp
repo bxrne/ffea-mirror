@@ -305,42 +305,6 @@ void assign_neighbours_to_elements(
 }
 
 
-// /** NOT IN USE
-//  * 
-//  * Compute the volume of intersection of two spheres,a and b, whose centres are separated
-//  * by a straight line of length d. This is equal to the sum of the volumes of the two spherical
-//  * caps comprising the intersection.
-//  *
-//  * https://en.wikipedia.org/wiki/Spherical_cap#Applications
-//  *
-//  * \f[ \frac{\pi}{12d}(r_a+r_b-d)^2 (d^2+2d(r_a+r_b)-3(r_a-r_b)^2) \f]
-// */
-// // TODO: Rewrite to remove if-statements and use min/max instead
-// float get_spherical_volume_intersection(float separation, float radius_a, float radius_b){   
-//     float bracket1 = 0.0;
-//     float bracket2 = 0.0;
-
-//     // Spheres intersecting
-//     if (separation < radius_a + radius_b && separation > std::abs(radius_a - radius_b) && separation > 0){
-//         bracket1 = (radius_a + radius_b - separation) * (radius_a + radius_b - separation);
-//         bracket2 = separation*separation + 2*separation*(radius_a + radius_b) - 3*(radius_a - radius_b)*(radius_a - radius_b);
-//         return 0.0833 * M_PI / separation * bracket1 * bracket2;
-//     }
-//     // One sphere fully contained within the other
-//     else if (separation <= std::abs(radius_a - radius_b)){
-//         float radius_min = 0.0;
-//         radius_min = std::min(radius_a, radius_b);
-//         return 1.3333 * M_PI * radius_min * radius_min * radius_min;
-//     }
-//     // Spheres not in contact
-//     else {
-//         return 0.0;
-//     }
-
-//     // return std::min(0.0833 * M_PI / separation * bracket1 * bracket2, 1.3333 * M_PI * radius_min * radius_min * radius_min);
-// }
-
-
 //    __      _
 //  o'')}____//  I AM DEBUG DOG. PUT ME IN YOUR
 //   `_/      )  SOURCE CODE AND I WILL EAT THE
