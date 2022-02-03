@@ -28,7 +28,8 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 add_executable(twist_bend_independence_v2 twist_bend_independence_v2.cpp
                ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp
                ${PROJECT_SOURCE_DIR}/src/RngStream.cpp
-               ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp)
+               ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp
+               ${PROJECT_SOURCE_DIR}/src/rod_interactions.cpp)
 
 file (COPY twisted_bent_rod.rod DESTINATION ${TESTROD})
 

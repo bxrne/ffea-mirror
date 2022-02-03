@@ -32,6 +32,7 @@ add_executable(test_script_loader test_script_loader.cpp
                ${PROJECT_SOURCE_DIR}/src/FFEA_user_info.cpp
                ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp
                ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp
+               ${PROJECT_SOURCE_DIR}/src/rod_interactions.cpp
                ${PROJECT_SOURCE_DIR}/src/RngStream.cpp)
 if (USE_BOOST_INTERNAL)
    add_dependencies(test_script_loader ourboost)

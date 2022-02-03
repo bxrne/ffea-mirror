@@ -28,6 +28,7 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 add_executable(translation_and_rotation_test translation_and_rotation_test.cpp
                ${PROJECT_SOURCE_DIR}/src/rod_math_v9.cpp
                ${PROJECT_SOURCE_DIR}/src/RngStream.cpp
+               ${PROJECT_SOURCE_DIR}/src/rod_interactions.cpp
                ${PROJECT_SOURCE_DIR}/src/rod_structure.cpp)
 
 file (COPY realistic_rod.rodtraj DESTINATION ${TESTROD})
