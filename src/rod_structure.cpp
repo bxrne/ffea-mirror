@@ -383,16 +383,18 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float radius_a = get_radius(node_no);
 
         // Access steric interactions that occur with a given element on the current rod
+        if(rod::dbg_print){std::cout << "num steric neighbours: " << get_num_steric_neighbours(node_no) << std::endl;}
         for(int neighbour_no = 0; neighbour_no < get_num_steric_neighbours(node_no); neighbour_no++){
             float c_a[3] = {0, 0, 0};
             float c_b[3] = {0, 0, 0};
             float radius_b = 0;
             float energies[2] = {0, 0};
 
+            if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << std::endl;}
             get_steric_interaction_data_slice(node_no, neighbour_no, c_a, c_b, radius_b);
 
             // positive x
-            get_steric_perturbation_energy(
+            rod::get_steric_perturbation_energy(
                 perturbation_amount*0.5,
                 x,
                 5*kT,
@@ -410,7 +412,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             steric_perturbed_energy_positive[(node_no*3)+3] = energies[1];  // r2
 
             // positive y
-            get_steric_perturbation_energy(
+            rod::get_steric_perturbation_energy(
                 perturbation_amount*0.5,
                 y,
                 5*kT,
@@ -426,7 +428,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             steric_perturbed_energy_positive[(node_no*3)+1+3] = energies[1];
 
             // positive z
-            get_steric_perturbation_energy(
+            rod::get_steric_perturbation_energy(
                 perturbation_amount*0.5,
                 z,
                 5*kT,
@@ -442,7 +444,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             steric_perturbed_energy_positive[(node_no*3)+2+3] = energies[1];
 
             // negative x
-            get_steric_perturbation_energy(
+            rod::get_steric_perturbation_energy(
                 perturbation_amount*-0.5,
                 x,
                 5*kT,
@@ -458,7 +460,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             steric_perturbed_energy_negative[(node_no*3)+3] = energies[1];
 
             // negative y
-            get_steric_perturbation_energy(
+            rod::get_steric_perturbation_energy(
                 perturbation_amount*-0.5,
                 y,
                 5*kT,
@@ -474,7 +476,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             steric_perturbed_energy_negative[(node_no*3)+1+3] = energies[1];
 
             // negative z
-            get_steric_perturbation_energy(
+            rod::get_steric_perturbation_energy(
                 perturbation_amount*-0.5,
                 z,
                 5*kT,
@@ -1151,7 +1153,7 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
             rod_b->get_r(element_no_b, r_b, false);
 
             // Distance check occurs here
-            assign_neighbours_to_elements(p_a, 
+            rod::assign_neighbours_to_elements(p_a, 
                 p_b, 
                 r_a, 
                 r_b, 
@@ -1161,7 +1163,7 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
                 rod_b->steric_interaction_coordinates.at(element_no_b),  
                 elements_in_range);
 
-            if(dbg_print){
+            if(rod::dbg_print){
                 if(elements_in_range){std::cout << "  interaction - rod " << rod_a->rod_no << ", elem " << element_no_a << " | rod " << rod_b->rod_no << ", elem " << element_no_b << std::endl;}
                 else{std::cout << "  no interaction detected - rod " << rod_a->rod_no << ", elem " << element_no_a << " | rod " << rod_b->rod_no << ", elem " << element_no_b << std::endl;}
             }
