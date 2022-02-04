@@ -1461,7 +1461,7 @@ int ffea_test::rod_neighbour_list_construction(){
         current_rod->load_header(filename);
         current_rod->load_contents(filename);
         current_rod->set_units();
-        std::cout << "Loaded rod from " << filename << std::endl;
+        std::cout << "  Loaded rod from " << filename << std::endl;
         rod_array[i] = current_rod;
     }
 
@@ -1476,25 +1476,25 @@ int ffea_test::rod_neighbour_list_construction(){
     // Test the results
     std::cout << "ffea_test::rod_neighbour_list_construction() - results" << std::endl;
     for (int i=0; i<num_rods; i++){
-        std::cout << "rod " << i << std::endl;
+        std::cout << "  rod " << i << std::endl;
 
         for (int j=0; j<rod_array[i]->num_elements-1; j++){
             vec3d(n){r1[n] = rod_array[i]->current_r[3*j + n];}
             vec3d(n){r2[n] = rod_array[i]->current_r[3*(j+1) + n];}
             std::cout << "  element " << j << std::endl;
-            rod::print_array("    r1", r1, 3);
-            rod::print_array("    r2", r2, 3);
-            std::cout << "    num_neighbours: " << rod_array[i]->get_num_steric_neighbours(j) << std::endl;
-            rod::print_vector("    all coords: ", rod_array[i]->steric_interaction_coordinates.at(j));
+            rod::print_array("  r1", r1, 3);
+            rod::print_array("  r2", r2, 3);
+            std::cout << "  num_neighbours: " << rod_array[i]->get_num_steric_neighbours(j) << std::endl;
+            rod::print_vector("  all coords: ", rod_array[i]->steric_interaction_coordinates.at(j));
 
             for (int k=0; k<rod_array[i]->get_num_steric_neighbours(j); k++){
                 rod_array[i]->get_steric_interaction_data_slice(j, k, c_a, c_b, radius);
                 vec3d(n){c_ba[n] = c_b[n] - c_a[n];}
                 distance = rod::absolute(c_ba);
 
-                rod::print_array("    c_a", c_a, 3);
-                rod::print_array("    c_b", c_b, 3);
-                std::cout << "    |c_ba|: " << distance << std::endl;
+                rod::print_array("  c_a", c_a, 3);
+                rod::print_array("  c_b", c_b, 3);
+                std::cout << "  |c_ba|: " << distance << std::endl;
             }
             num_neighbours += rod_array[i]->get_num_steric_neighbours(j);
         }

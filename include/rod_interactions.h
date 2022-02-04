@@ -63,10 +63,8 @@ void assign_neighbours_to_elements(
     float r_b[3], 
     float radius_a, 
     float radius_b, 
-    OUT 
-    std::vector<float> element_a_neighbours, 
-    std::vector<float> element_b_neighbours,  
-    bool in_range
+    std::vector<float> &element_a_neighbours, 
+    std::vector<float> &element_b_neighbours
     );
 
 void get_steric_perturbation_energy(

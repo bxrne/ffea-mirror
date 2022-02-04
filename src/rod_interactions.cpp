@@ -90,12 +90,12 @@ void get_steric_perturbation_energy(
  * rod elements. Certain situations (e.g. almost-parallel rods) will mean this correction can be poor
  * (e.g. c being corrected to completely the wrong end of the rod), so a secondary correction is required.
  * 
- * 2) Compare the rod interaction vector, c_ba, to distances measured from nodes to c_a and c_b:
+ * 2) Compare the rod interaction vector, c_ab, to distances measured from nodes to c_a and c_b:
  *    d1 = c_b - r_a
  *    d2 = c_b - r_a2
  *    d3 = c_a - r_b
  *    d4 = c_a - r_b2 
- * Find the smallest vector from these and c_ba, and assign that to be the new interaction vector.
+ * Find the smallest vector from these and c_ab, and assign that to be the new interaction vector.
 */
 void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3], OUT float c_a_out[3], float c_b_out[3]){  
     float r_a2[3] = {0, 0, 0};
@@ -146,7 +146,7 @@ void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b
         vec3d(n){c_b[n] = r_b2[n];}
     }
 
-    // Compare c_ba to vectors pointing from the nodes on one rod to the 
+    // Compare c_ab to vectors pointing from the nodes on one rod to the 
     // interaction point on the opposing rod.
     // This part accounts for the mis-correction of the previous section by
     // explicitly working out the shortest distance between the two rods.
@@ -162,7 +162,7 @@ void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b
     d4_mag = rod::absolute(d4);
 
     // TODO: use std::map here to bypass if statements
-    // Replace c_ba with the smallest vector. Do nothing if c_ba is already
+    // Replace c_ab with the smallest vector. Do nothing if c_ab is already
     // the smallest.
     if (rod::absolute(c_ab) > 0.99*std::min({d1_mag, d2_mag, d3_mag, d4_mag})){
         if (d1_mag <= std::min({d2_mag, d3_mag, d4_mag})){
@@ -265,10 +265,8 @@ void assign_neighbours_to_elements(
     float r_b[3], 
     float radius_a, 
     float radius_b, 
-    OUT 
-    std::vector<float> element_a_neighbours, 
-    std::vector<float> element_b_neighbours,  
-    bool in_range
+    std::vector<float> &element_a_neighbours, 
+    std::vector<float> &element_b_neighbours
     ){
 
     float c_a[3] = {0, 0, 0};
@@ -278,9 +276,14 @@ void assign_neighbours_to_elements(
     rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
 
-    in_range = false;
+    if(rod::dbg_print){
+        std::cout << "rod element neighbour list assignment:" << std::endl;
+        std::cout << "  |c_ab|: " << rod::absolute(c_ab) << std::endl;
+        std::cout << "  radii sum: " << radius_a + radius_b << std::endl;
+    }
+
     if(rod::absolute(c_ab) < (radius_a + radius_b)){
-        in_range = true;
+        if(rod::dbg_print){std::cout << "  interaction" << std::endl;}
 
         // Increase vector capacity before assignment (optional, might help with memory stuff)
         element_a_neighbours.reserve(element_a_neighbours.size() + 7);
@@ -295,12 +298,8 @@ void assign_neighbours_to_elements(
         vec3d(n){element_b_neighbours.push_back(c_a[n]);}
         element_b_neighbours.push_back(radius_a);
     }
-
-    if(rod::dbg_print){
-        std::cout << "rod element neighbour list assignment:" << std::endl;
-        std::cout << "  |c_ab|: " << rod::absolute(c_ab) << std::endl;
-        std::cout << "  radii sum: " << radius_a + radius_b << std::endl;
-        std::cout << "  in_range: " << in_range << std::endl;
+    else{
+        if(rod::dbg_print){std::cout << "  no interaction detected" << std::endl;}
     }
 }
 
