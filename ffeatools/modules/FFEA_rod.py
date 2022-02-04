@@ -283,8 +283,8 @@ class FFEA_rod:
         rod_file.write("row12,twisted_energy_negative\n")
         rod_file.write("row13,material_params\n")
         rod_file.write("row14,B_matrix\n")
-        rod_file.write("row15,perturbed_steric_energy_positive\n")
-        rod_file.write("row16,perturbed_steric_energy_negative\n")
+        rod_file.write("row15,steric_perturbed_energy_positive\n")
+        rod_file.write("row16,steric_perturbed_energy_negative\n")
         
         # Connections (note: this is temporary, it might end up in the .ffea file)
         rod_file.write("CONNECTIONS,ROD,0\n")
@@ -324,8 +324,8 @@ class FFEA_rod:
             write_array(self.twisted_energy_negative[frame].flatten(), rod_file)
             write_array(self.material_params[frame].flatten(), rod_file)
             write_array(self.B_matrix[frame].flatten(), rod_file)
-            write_array(self.perturbed_steric_energy_positive[frame].flatten(), rod_file)
-            write_array(self.perturbed_steric_energy_negative[frame].flatten(), rod_file)
+            write_array(self.steric_perturbed_energy_positive[frame].flatten(), rod_file)
+            write_array(self.steric_perturbed_energy_negative[frame].flatten(), rod_file)
             
         rod_file.close()
             

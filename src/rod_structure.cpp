@@ -376,22 +376,21 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         internal_twisted_energy_negative[(node_no*3)+1] = energies[bend_index];
         internal_twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
 
+        // Rod-rod interactions
         if(calc_rod_steric == true){
-            // Rod-rod interactions
             float r_a[3] = {0, 0, 0};
             float p_a[3] = {0, 0, 0};
+            float radius_a = get_radius(node_no);
+            float energies[2] = {0, 0};
             get_r(node_no, r_a, false);
             get_p(node_no, p_a, false);
-            float radius_a = get_radius(node_no);
 
-            // Access steric interactions that occur with a given element on the current rod
             if(rod::dbg_print){std::cout << "num steric neighbours: " << get_num_steric_neighbours(node_no) << std::endl;}
             for(int neighbour_no = 0; neighbour_no < get_num_steric_neighbours(node_no); neighbour_no++){
                 float c_a[3] = {0, 0, 0};
                 float c_b[3] = {0, 0, 0};
                 float radius_b = 0;
-                float energies[2] = {0, 0};
-
+                
                 if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << std::endl;}
                 get_steric_interaction_data_slice(node_no, neighbour_no, c_a, c_b, radius_b);
 
@@ -408,7 +407,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                     radius_b, 
                     energies);
 
-                // We must interpolate interaction energies onto the next node
+                // We must interpolate interaction energies onto both nodes of a given element
                 // ! how will this affect rod-blob attachments?
                 steric_perturbed_energy_positive[node_no*3] += energies[0];  // r1
                 steric_perturbed_energy_positive[(node_no*3)+3] += energies[1];  // r2
