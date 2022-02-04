@@ -385,7 +385,10 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             get_r(node_no, r_a, false);
             get_p(node_no, p_a, false);
 
-            if(rod::dbg_print){std::cout << "num steric neighbours: " << get_num_steric_neighbours(node_no) << std::endl;}
+            if(rod::dbg_print){
+                std::cout << "num steric neighbours at rod " << this->rod_no << ", elem " << node_no << ": " << get_num_steric_neighbours(node_no) << std::endl;
+                std::cout << "skipping neighbour energy calculation\n" << std::endl;
+            }
             for(int neighbour_no = 0; neighbour_no < get_num_steric_neighbours(node_no); neighbour_no++){
                 float c_a[3] = {0, 0, 0};
                 float c_b[3] = {0, 0, 0};
