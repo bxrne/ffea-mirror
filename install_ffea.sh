@@ -3,8 +3,8 @@
 # This script builds FFEA, assuming you have pre-compiled eigen3 and boost.
 do_cmake=${1:-0}
 do_install=${2:-0}
-do_test=${3:-0}
-restrict_tests=${3:-1}
+do_ctest=${3:-0}
+restrict_tests=${3:-0}
 
 src_dir=$FFEA_SRC
 cmake_install_prefix=$FFEA_BUILD  # not sure if needed when we're already moving to that directory
@@ -30,12 +30,12 @@ then
 else
     cd $cmake_install_prefix
 fi
-
-make -j8
 	
 if [[ $do_install -eq 1 ]];
 then
 	make install -j8
+else
+    make -j8
 fi
 
 if [[ $do_ctest -eq 1 ]];
