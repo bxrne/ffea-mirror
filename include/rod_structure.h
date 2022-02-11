@@ -57,7 +57,6 @@ struct Rod
   int line_start = 0; /** Keeps track of whether the header file has been read */
   double rod_version = 999.999; /** If version number unknown, assume latest **/
   bool computed_rest_energy = false;
-  bool calc_rod_steric = true;  // Enable steric interactions. If false, the relevant energy arrays will be set to zero.
   
   /** Global simulation parameters - eventually we may read this stuff in from the .ffea file **/
   float viscosity = 1; 

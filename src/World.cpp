@@ -1951,13 +1951,16 @@ int World::run() {
         // Apply springs directly to nodes
         apply_springs();
                         
-        // // Rod neighbour list
-        // for (int i=0; i<params.num_rods; i++){
-        //     for (int j=i+1; j<params.num_rods; j++){
-        //         // if(steric_rods)
-        //         rod::update_neighbour_lists(rod_array[i], rod_array[j]);
-        //     }
-        // }
+        // Rod neighbours
+        if(params.calc_ssint == 1 || params.calc_steric == 1){
+            if(params.ssint_type == "steric" || params.ssint_type == "ljsteric"){
+                for (int i=0; i<params.num_rods; i++){
+                    for (int j=i+1; j<params.num_rods; j++){
+                        rod::update_neighbour_lists(rod_array[i], rod_array[j]);
+                    }
+                }
+            }
+        }
 
         // Do rods
         for (int i=0; i<params.num_rods; i++){

@@ -188,6 +188,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     //    end_node = num_elements-1;
     //}
     
+    if(dbg_print){std::cout << "Rod: " << this->rod_no << "\n";}
     if(dbg_print){std::cout << "Num elements: " << this->num_elements << "\n";} //temp
     if(dbg_print){std::cout << "End node: " << end_node << "\n";} //temp
     if(dbg_print){std::cout << "Node min: " << node_min << "\n";} //temp
@@ -377,133 +378,131 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         internal_twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
 
         // Rod-rod interactions
-        if(calc_rod_steric == true){
+        int num_neighbours = get_num_steric_neighbours(node_no);
+        for(int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
             float r_a[3] = {0, 0, 0};
             float p_a[3] = {0, 0, 0};
-            float radius_a = get_radius(node_no);
+            float radius_a = 0;
+            float radius_b = 0;
+            float c_a[3] = {0, 0, 0};
+            float c_b[3] = {0, 0, 0};
             float energies[2] = {0, 0};
+            
+            if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << " of " << num_neighbours << std::endl;}
             get_r(node_no, r_a, false);
             get_p(node_no, p_a, false);
+            radius_a = get_radius(node_no);
+            get_steric_interaction_data_slice(node_no, neighbour_no, c_a, c_b, radius_b);
 
-            if(rod::dbg_print){
-                std::cout << "num steric neighbours at rod " << this->rod_no << ", elem " << node_no << ": " << get_num_steric_neighbours(node_no) << std::endl;
-                std::cout << "skipping neighbour energy calculation\n" << std::endl;
-            }
-            for(int neighbour_no = 0; neighbour_no < get_num_steric_neighbours(node_no); neighbour_no++){
-                float c_a[3] = {0, 0, 0};
-                float c_b[3] = {0, 0, 0};
-                float radius_b = 0;
-                
-                if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << std::endl;}
-                get_steric_interaction_data_slice(node_no, neighbour_no, c_a, c_b, radius_b);
+            // positive x
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*0.5,
+                x,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                radius_a,
+                radius_b, 
+                energies);
 
-                // positive x
-                rod::get_steric_perturbation_energy(
-                    perturbation_amount*0.5,
-                    x,
-                    5*kT,
-                    r_a,
-                    p_a,
-                    c_a,
-                    c_b,
-                    radius_a,
-                    radius_b, 
-                    energies);
+            // We must interpolate interaction energies onto both nodes of a given element
+            // ! how will this affect rod-blob attachments?
+            steric_perturbed_energy_positive[node_no*3] += energies[0];  // r1
+            steric_perturbed_energy_positive[(node_no*3)+3] += energies[1];  // r2
 
-                // We must interpolate interaction energies onto both nodes of a given element
-                // ! how will this affect rod-blob attachments?
-                steric_perturbed_energy_positive[node_no*3] += energies[0];  // r1
-                steric_perturbed_energy_positive[(node_no*3)+3] += energies[1];  // r2
+            // positive y
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*0.5,
+                y,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                radius_a,
+                radius_b, 
+                energies);
 
-                // positive y
-                rod::get_steric_perturbation_energy(
-                    perturbation_amount*0.5,
-                    y,
-                    5*kT,
-                    r_a,
-                    p_a,
-                    c_a,
-                    c_b,
-                    radius_a,
-                    radius_b, 
-                    energies);
+            steric_perturbed_energy_positive[(node_no*3)+1] += energies[0];
+            steric_perturbed_energy_positive[(node_no*3)+1+3] += energies[1];
 
-                steric_perturbed_energy_positive[(node_no*3)+1] += energies[0];
-                steric_perturbed_energy_positive[(node_no*3)+1+3] += energies[1];
+            // positive z
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*0.5,
+                z,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                radius_a,
+                radius_b, 
+                energies);
 
-                // positive z
-                rod::get_steric_perturbation_energy(
-                    perturbation_amount*0.5,
-                    z,
-                    5*kT,
-                    r_a,
-                    p_a,
-                    c_a,
-                    c_b,
-                    radius_a,
-                    radius_b, 
-                    energies);
+            steric_perturbed_energy_positive[(node_no*3)+2] += energies[0];
+            steric_perturbed_energy_positive[(node_no*3)+2+3] += energies[1];
 
-                steric_perturbed_energy_positive[(node_no*3)+2] += energies[0];
-                steric_perturbed_energy_positive[(node_no*3)+2+3] += energies[1];
+            // negative x
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*-0.5,
+                x,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                radius_a,
+                radius_b, 
+                energies);
 
-                // negative x
-                rod::get_steric_perturbation_energy(
-                    perturbation_amount*-0.5,
-                    x,
-                    5*kT,
-                    r_a,
-                    p_a,
-                    c_a,
-                    c_b,
-                    radius_a,
-                    radius_b, 
-                    energies);
+            steric_perturbed_energy_negative[(node_no*3)] += energies[0];
+            steric_perturbed_energy_negative[(node_no*3)+3] += energies[1];
 
-                steric_perturbed_energy_negative[(node_no*3)] += energies[0];
-                steric_perturbed_energy_negative[(node_no*3)+3] += energies[1];
+            // negative y
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*-0.5,
+                y,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                radius_a,
+                radius_b, 
+                energies);
 
-                // negative y
-                rod::get_steric_perturbation_energy(
-                    perturbation_amount*-0.5,
-                    y,
-                    5*kT,
-                    r_a,
-                    p_a,
-                    c_a,
-                    c_b,
-                    radius_a,
-                    radius_b, 
-                    energies);
+            steric_perturbed_energy_negative[(node_no*3)+1] += energies[0];
+            steric_perturbed_energy_negative[(node_no*3)+1+3] += energies[1];
 
-                steric_perturbed_energy_negative[(node_no*3)+1] += energies[0];
-                steric_perturbed_energy_negative[(node_no*3)+1+3] += energies[1];
+            // negative z
+            rod::get_steric_perturbation_energy(
+                perturbation_amount*-0.5,
+                z,
+                5*kT,
+                r_a,
+                p_a,
+                c_a,
+                c_b,
+                radius_a,
+                radius_b, 
+                energies);
 
-                // negative z
-                rod::get_steric_perturbation_energy(
-                    perturbation_amount*-0.5,
-                    z,
-                    5*kT,
-                    r_a,
-                    p_a,
-                    c_a,
-                    c_b,
-                    radius_a,
-                    radius_b, 
-                    energies);
+            steric_perturbed_energy_negative[(node_no*3)+2] += energies[0];
+            steric_perturbed_energy_negative[(node_no*3)+2+3] += energies[1];
 
-                steric_perturbed_energy_negative[(node_no*3)+2] += energies[0];
-                steric_perturbed_energy_negative[(node_no*3)+2+3] += energies[1];
-            }
+        }// exit neighbour loop
+        
+        if(rod::dbg_print && num_neighbours == 0){
+            std::cout << "no neighbours found for element " << node_no << std::endl;
         }
-        else{
-            steric_perturbed_energy_positive[(node_no*3)] = 0;
-            steric_perturbed_energy_positive[(node_no*3)+1] = 0;
-            steric_perturbed_energy_positive[(node_no*3)+2] = 0;
-            steric_perturbed_energy_negative[(node_no*3)] = 0;
-            steric_perturbed_energy_negative[(node_no*3)+1] = 0;
-            steric_perturbed_energy_negative[(node_no*3)+2] = 0;
-        }
+        //     steric_perturbed_energy_positive[(node_no*3)] = 0;
+        //     steric_perturbed_energy_positive[(node_no*3)+1] = 0;
+        //     steric_perturbed_energy_positive[(node_no*3)+2] = 0;
+        //     steric_perturbed_energy_negative[(node_no*3)] = 0;
+        //     steric_perturbed_energy_negative[(node_no*3)+1] = 0;
+        //     steric_perturbed_energy_negative[(node_no*3)+2] = 0;
   
     }// exit energy loop
         
