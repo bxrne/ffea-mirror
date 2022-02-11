@@ -161,7 +161,7 @@ void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b
     d3_mag = rod::absolute(d3);
     d4_mag = rod::absolute(d4);
 
-    // TODO: use std::map here to bypass if statements
+    // TODO: use std::map trick here to bypass if statements (see Jacan)
     // Replace c_ab with the smallest vector. Do nothing if c_ab is already
     // the smallest.
     if (rod::absolute(c_ab) > 0.99*std::min({d1_mag, d2_mag, d3_mag, d4_mag})){

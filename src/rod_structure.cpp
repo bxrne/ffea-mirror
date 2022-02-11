@@ -1067,8 +1067,13 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
         p[1] =  current_r[(index*3)+4] - current_r[(index*3)+1];
         p[2] =  current_r[(index*3)+5] - current_r[(index*3)+2];
     }
+    if(rod::dbg_print){
+        if(rod::absolute(p) > -1e-8 and rod::absolute(p) < 1e-8){
+            throw std::logic_error("Length of rod element " << index << " is zero")
+        }
+    }
     return *this;
-}
+
 
 /**
  * Get the rod node position for the equilibrium or current structure, given
@@ -1158,7 +1163,7 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
 
     for (int element_index_a=0; element_index_a < rod_a->get_num_nodes()-1; element_index_a++){
         for (int element_index_b=0; element_index_b < rod_b->get_num_nodes()-1; element_index_b++){
-            if(rod::dbg_print){std::cout << "rod " << rod_a->rod_no << ", elem " << element_index_a << " | rod " << rod_b->rod_no << ", elem " << element_index_b;}
+            if(rod::dbg_print){std::cout << "rod " << rod_a->rod_no << ", elem " << element_index_a << " | rod " << rod_b->rod_no << ", elem " << element_index_b << std::endl;}
 
             rod_a->get_p(element_index_a, p_a, false);
             rod_b->get_p(element_index_b, p_b, false);
