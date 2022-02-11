@@ -177,7 +177,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
     // if there is a rod-blob interface, this will avoid doing dynamics
     // on nodes which are attached to blobs
-    int end_node = this->num_elements;
+    int end_node = this->num_nodes;
     
     int node_min = 0;
     //if (this->interface_at_start){
@@ -185,11 +185,11 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     //}
     
     //if (this->interface_at_end){
-    //    end_node = num_elements-1;
+    //    end_node = num_nodes-1;
     //}
     
     if(dbg_print){std::cout << "Rod: " << this->rod_no << "\n";}
-    if(dbg_print){std::cout << "Num elements: " << this->num_elements << "\n";} //temp
+    if(dbg_print){std::cout << "Num elements: " << this->num_nodes << "\n";} //temp
     if(dbg_print){std::cout << "End node: " << end_node << "\n";} //temp
     if(dbg_print){std::cout << "Node min: " << node_min << "\n";} //temp
     
@@ -216,7 +216,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         int end_cutoff_val;
         int *start_cutoff = &start_cutoff_val;
         int *end_cutoff = &end_cutoff_val; // for the multiple return values
-        set_cutoff_values(node_no, num_elements, start_cutoff, end_cutoff);
+        set_cutoff_values(node_no, num_nodes, start_cutoff, end_cutoff);
         
         // We need this e now because we need the previous value of e to do a material frame update
         // If you're curious about the [4][3] check out the get_perturbation_energy docs
@@ -497,12 +497,6 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         if(rod::dbg_print && num_neighbours == 0){
             std::cout << "no neighbours found for element " << node_no << std::endl;
         }
-        //     steric_perturbed_energy_positive[(node_no*3)] = 0;
-        //     steric_perturbed_energy_positive[(node_no*3)+1] = 0;
-        //     steric_perturbed_energy_positive[(node_no*3)+2] = 0;
-        //     steric_perturbed_energy_negative[(node_no*3)] = 0;
-        //     steric_perturbed_energy_negative[(node_no*3)+1] = 0;
-        //     steric_perturbed_energy_negative[(node_no*3)+2] = 0;
   
     }// exit energy loop
         
@@ -588,7 +582,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         }
         
         // If we're applying delta twist, we must load our new p_i back in
-        if (node_no != num_elements - 1){ // The last node has no p_i, so it can't rotate
+        if (node_no != num_nodes - 1){ // The last node has no p_i, so it can't rotate
             float m_to_rotate[3];
             m_to_rotate[0] = current_m[node_no*3]; m_to_rotate[1] = current_m[(node_no*3)+1]; m_to_rotate[2] = current_m[(node_no*3)+2]; // take the relevant info out of the data structure
             float p_i[3];
@@ -602,7 +596,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         }
         
         // If the element has moved, we need to update the material frame to have moved accordingly
-        if (node_no != num_elements - 1){ // for last node index, material frame doesn't exist!
+        if (node_no != num_nodes - 1){ // for last node index, material frame doesn't exist!
             float current_p_i[3]; 
             float m_to_fix[3];
             float m_i_prime[3];
@@ -634,7 +628,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
  ---END HEADER--- line). Not all the info is read, some of it is for
  clarity. This populates some rod variables:
  - length - total length of the array (normally 3x the number of nodes)
- - num_elements - number of nodes in the rod
+ - num_nodes - number of nodes in the rod
  - num_rods - number of rods in the simulation. Not used right now.
  - line_start - number of the line at which the trajectory begins. This
    variable is used by load_contents later on, to skip the header.
@@ -669,7 +663,7 @@ Rod Rod::load_header(std::string filename){
             /** Read in the contents */
             if (line_vec[0] == "version"){ this->rod_version = std::stod(line_vec[1]);}
             if (line_vec[0] == "length"){ this->length = std::stoi(line_vec[1]); length_set=true; }
-            if (line_vec[0] == "num_elements"){ this->num_elements = std::stoi(line_vec[1]); }
+            if (line_vec[0] == "num_nodes"){ this->num_nodes = std::stoi(line_vec[1]); }
             if (line_vec[0] == "num_rods"){ this->num_rods = std::stoi(line_vec[1]); }
         }   
         if (line == rod_connections){
@@ -1031,7 +1025,7 @@ Rod Rod::get_centroid(float *r, OUT float centroid[3]){
         centroid[1] += r[i+1];
         centroid[2] += r[i+2];
     }
-    vec3d(n){ centroid[n] /= this->num_elements; }
+    vec3d(n){ centroid[n] /= this->num_nodes; }
     return *this;
 }
 
@@ -1092,7 +1086,7 @@ float Rod::get_radius(int node_index){
     return material_params[(node_index*3)+2];
 }
 
-int Rod::get_num_steric_neighbours(int element_index){
+int Rod::get_num_steric_neighbours(int element_index){ 
     return steric_interaction_coordinates.at(element_index).size() / 7;
 }
 
@@ -1120,12 +1114,12 @@ void Rod::check_neighbour_list_dimensions(){
     int num_cols = 0;
     bool dim_ok = true;
 
-    if(num_rows != this->num_elements-1){
-        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->num_elements-1 << ")." << std::endl;
+    if(num_rows != this->num_nodes-1){
+        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->num_nodes-1 << ")." << std::endl;
         dim_ok = false;
     }
 
-    for (int i=0; i<this->num_elements-1; i++){
+    for (int i=0; i<this->num_nodes-1; i++){
         num_cols = steric_interaction_coordinates.at(i).size();
         if(num_cols % 7 != 0){
             std::cout << "Warning: number of items (" << num_cols << ") in row " << i << " of neighbour list should be a multiple of 7." << std::endl;
@@ -1152,10 +1146,8 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
     float p_a[3] = {0, 0, 0};
     float p_b[3] = {0, 0, 0};
 
-    // Rather confusingly, num_elements actually refers to the number of NODES in the rod (8/12/21)
-    // ! please change this
-    for (int element_no_a=0; element_no_a<rod_a->num_elements-1; element_no_a++){
-        for (int element_no_b=0; element_no_b<rod_b->num_elements-1; element_no_b++){
+    for (int element_no_a=0; element_no_a<rod_a->num_nodes-1; element_no_a++){
+        for (int element_no_b=0; element_no_b<rod_b->num_nodes-1; element_no_b++){
             if(rod::dbg_print){std::cout << "rod " << rod_a->rod_no << ", elem " << element_no_a << " | rod " << rod_b->rod_no << ", elem " << element_no_b;}
 
             rod_a->get_p(element_no_a, p_a, false);
