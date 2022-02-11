@@ -177,7 +177,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
     // if there is a rod-blob interface, this will avoid doing dynamics
     // on nodes which are attached to blobs
-    int end_node = this->num_nodes;
+    int end_node = this->get_num_nodes();
     
     int node_min = 0;
     //if (this->interface_at_start){
@@ -185,11 +185,11 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     //}
     
     //if (this->interface_at_end){
-    //    end_node = num_nodes-1;
+    //    end_node = get_num_nodes()-1;
     //}
     
     if(dbg_print){std::cout << "Rod: " << this->rod_no << "\n";}
-    if(dbg_print){std::cout << "Num elements: " << this->num_nodes << "\n";} //temp
+    if(dbg_print){std::cout << "Num nodes: " << this->get_num_nodes() << "\n";} //temp
     if(dbg_print){std::cout << "End node: " << end_node << "\n";} //temp
     if(dbg_print){std::cout << "Node min: " << node_min << "\n";} //temp
     
@@ -216,14 +216,14 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         int end_cutoff_val;
         int *start_cutoff = &start_cutoff_val;
         int *end_cutoff = &end_cutoff_val; // for the multiple return values
-        set_cutoff_values(node_no, num_nodes, start_cutoff, end_cutoff);
+        set_cutoff_values(node_no, get_num_nodes(), start_cutoff, end_cutoff);
         
         // We need this e now because we need the previous value of e to do a material frame update
         // If you're curious about the [4][3] check out the get_perturbation_energy docs
         float p[4][3];
         load_p(p, current_r, node_no);
         
-        float energies[3]; //bend, stretch, twist (temporary variable). TODO: add extra dimensions for other energies (steric, protein-protein, hydrodynamic)
+        float energies[3]; //bend, stretch, twist (temporary variable).
         
         // todo: these can have fewer arguments - maybe perturbation amount and cutoff values
         
@@ -376,9 +376,13 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         internal_twisted_energy_negative[node_no*3] = energies[stretch_index];
         internal_twisted_energy_negative[(node_no*3)+1] = energies[bend_index];
         internal_twisted_energy_negative[(node_no*3)+2] = energies[twist_index];
+  
+    }// exit internal energy loop
+       
+    // Rod-rod interactions: loop over all elements, interpolate energies onto nodes
+    for(int elem_no = 0; elem_no < get_num_nodes()-1; elem_no++){
+        int num_neighbours = get_num_steric_neighbours(elem_no);
 
-        // Rod-rod interactions
-        int num_neighbours = get_num_steric_neighbours(node_no);
         for(int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
             float r_a[3] = {0, 0, 0};
             float p_a[3] = {0, 0, 0};
@@ -389,10 +393,10 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             float energies[2] = {0, 0};
             
             if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << " of " << num_neighbours << std::endl;}
-            get_r(node_no, r_a, false);
-            get_p(node_no, p_a, false);
-            radius_a = get_radius(node_no);
-            get_steric_interaction_data_slice(node_no, neighbour_no, c_a, c_b, radius_b);
+            get_r(elem_no, r_a, false);
+            get_p(elem_no, p_a, false);
+            radius_a = get_radius(elem_no);
+            get_steric_interaction_data_slice(elem_no, neighbour_no, c_a, c_b, radius_b);
 
             // positive x
             rod::get_steric_perturbation_energy(
@@ -409,8 +413,9 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
 
             // We must interpolate interaction energies onto both nodes of a given element
             // ! how will this affect rod-blob attachments?
-            steric_perturbed_energy_positive[node_no*3] += energies[0];  // r1
-            steric_perturbed_energy_positive[(node_no*3)+3] += energies[1];  // r2
+            // ! RACE CONDITION when updating these arrays, due to elements sharing nodes!
+            steric_perturbed_energy_positive[elem_no*3] += energies[0];  // r1
+            steric_perturbed_energy_positive[(elem_no*3)+3] += energies[1];  // r2
 
             // positive y
             rod::get_steric_perturbation_energy(
@@ -425,8 +430,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 radius_b, 
                 energies);
 
-            steric_perturbed_energy_positive[(node_no*3)+1] += energies[0];
-            steric_perturbed_energy_positive[(node_no*3)+1+3] += energies[1];
+            steric_perturbed_energy_positive[(elem_no*3)+1] += energies[0];
+            steric_perturbed_energy_positive[(elem_no*3)+1+3] += energies[1];
 
             // positive z
             rod::get_steric_perturbation_energy(
@@ -441,8 +446,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 radius_b, 
                 energies);
 
-            steric_perturbed_energy_positive[(node_no*3)+2] += energies[0];
-            steric_perturbed_energy_positive[(node_no*3)+2+3] += energies[1];
+            steric_perturbed_energy_positive[(elem_no*3)+2] += energies[0];
+            steric_perturbed_energy_positive[(elem_no*3)+2+3] += energies[1];
 
             // negative x
             rod::get_steric_perturbation_energy(
@@ -457,8 +462,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 radius_b, 
                 energies);
 
-            steric_perturbed_energy_negative[(node_no*3)] += energies[0];
-            steric_perturbed_energy_negative[(node_no*3)+3] += energies[1];
+            steric_perturbed_energy_negative[(elem_no*3)] += energies[0];
+            steric_perturbed_energy_negative[(elem_no*3)+3] += energies[1];
 
             // negative y
             rod::get_steric_perturbation_energy(
@@ -473,8 +478,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 radius_b, 
                 energies);
 
-            steric_perturbed_energy_negative[(node_no*3)+1] += energies[0];
-            steric_perturbed_energy_negative[(node_no*3)+1+3] += energies[1];
+            steric_perturbed_energy_negative[(elem_no*3)+1] += energies[0];
+            steric_perturbed_energy_negative[(elem_no*3)+1+3] += energies[1];
 
             // negative z
             rod::get_steric_perturbation_energy(
@@ -489,17 +494,18 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 radius_b, 
                 energies);
 
-            steric_perturbed_energy_negative[(node_no*3)+2] += energies[0];
-            steric_perturbed_energy_negative[(node_no*3)+2+3] += energies[1];
+            steric_perturbed_energy_negative[(elem_no*3)+2] += energies[0];
+            steric_perturbed_energy_negative[(elem_no*3)+2+3] += energies[1];
 
-        }// exit neighbour loop
+        }// exit steric loop
         
         if(rod::dbg_print && num_neighbours == 0){
-            std::cout << "no neighbours found for element " << node_no << std::endl;
+            std::cout << "no neighbours found for element " << elem_no << std::endl;
         }
-  
-    }// exit energy loop
-        
+
+    }//exit interaction energy loop
+
+ 
     //This loop is for the dynamics
     for (int node_no = 0; node_no<end_node; node_no++){
                                 
@@ -582,7 +588,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         }
         
         // If we're applying delta twist, we must load our new p_i back in
-        if (node_no != num_nodes - 1){ // The last node has no p_i, so it can't rotate
+        if (node_no != get_num_nodes() - 1){ // The last node has no p_i, so it can't rotate
             float m_to_rotate[3];
             m_to_rotate[0] = current_m[node_no*3]; m_to_rotate[1] = current_m[(node_no*3)+1]; m_to_rotate[2] = current_m[(node_no*3)+2]; // take the relevant info out of the data structure
             float p_i[3];
@@ -596,7 +602,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         }
         
         // If the element has moved, we need to update the material frame to have moved accordingly
-        if (node_no != num_nodes - 1){ // for last node index, material frame doesn't exist!
+        if (node_no != get_num_nodes() - 1){ // for last node index, material frame doesn't exist!
             float current_p_i[3]; 
             float m_to_fix[3];
             float m_i_prime[3];
@@ -1025,7 +1031,7 @@ Rod Rod::get_centroid(float *r, OUT float centroid[3]){
         centroid[1] += r[i+1];
         centroid[2] += r[i+2];
     }
-    vec3d(n){ centroid[n] /= this->num_nodes; }
+    vec3d(n){ centroid[n] /= this->get_num_nodes(); }
     return *this;
 }
 
@@ -1086,6 +1092,10 @@ float Rod::get_radius(int node_index){
     return material_params[(node_index*3)+2];
 }
 
+int Rod::get_num_nodes(){
+    return this->num_nodes;
+}
+
 int Rod::get_num_steric_neighbours(int element_index){ 
     return steric_interaction_coordinates.at(element_index).size() / 7;
 }
@@ -1114,12 +1124,12 @@ void Rod::check_neighbour_list_dimensions(){
     int num_cols = 0;
     bool dim_ok = true;
 
-    if(num_rows != this->num_nodes-1){
-        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->num_nodes-1 << ")." << std::endl;
+    if(num_rows != this->get_num_nodes()-1){
+        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->get_num_nodes()-1 << ")." << std::endl;
         dim_ok = false;
     }
 
-    for (int i=0; i<this->num_nodes-1; i++){
+    for (int i=0; i<this->get_num_nodes()-1; i++){
         num_cols = steric_interaction_coordinates.at(i).size();
         if(num_cols % 7 != 0){
             std::cout << "Warning: number of items (" << num_cols << ") in row " << i << " of neighbour list should be a multiple of 7." << std::endl;
@@ -1146,24 +1156,24 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
     float p_a[3] = {0, 0, 0};
     float p_b[3] = {0, 0, 0};
 
-    for (int element_no_a=0; element_no_a<rod_a->num_nodes-1; element_no_a++){
-        for (int element_no_b=0; element_no_b<rod_b->num_nodes-1; element_no_b++){
-            if(rod::dbg_print){std::cout << "rod " << rod_a->rod_no << ", elem " << element_no_a << " | rod " << rod_b->rod_no << ", elem " << element_no_b;}
+    for (int element_index_a=0; element_index_a < rod_a->get_num_nodes()-1; element_index_a++){
+        for (int element_index_b=0; element_index_b < rod_b->get_num_nodes()-1; element_index_b++){
+            if(rod::dbg_print){std::cout << "rod " << rod_a->rod_no << ", elem " << element_index_a << " | rod " << rod_b->rod_no << ", elem " << element_index_b;}
 
-            rod_a->get_p(element_no_a, p_a, false);
-            rod_b->get_p(element_no_b, p_b, false);
-            rod_a->get_r(element_no_a, r_a, false);
-            rod_b->get_r(element_no_b, r_b, false);
+            rod_a->get_p(element_index_a, p_a, false);
+            rod_b->get_p(element_index_b, p_b, false);
+            rod_a->get_r(element_index_a, r_a, false);
+            rod_b->get_r(element_index_b, r_b, false);
 
             // Distance check
             rod::assign_neighbours_to_elements(p_a, 
                 p_b, 
                 r_a, 
                 r_b, 
-                rod_a->get_radius(element_no_a), 
-                rod_b->get_radius(element_no_b), 
-                rod_a->steric_interaction_coordinates.at(element_no_a), 
-                rod_b->steric_interaction_coordinates.at(element_no_b));
+                rod_a->get_radius(element_index_a), 
+                rod_b->get_radius(element_index_b), 
+                rod_a->steric_interaction_coordinates.at(element_index_a), 
+                rod_b->steric_interaction_coordinates.at(element_index_b));
         }
     }
 }

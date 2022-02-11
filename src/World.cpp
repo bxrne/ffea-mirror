@@ -3410,10 +3410,10 @@ void World::get_system_centroid(vector3 *centroid) {
         float rod_centroid[3];
         rod_array[i]->get_centroid(rod_array[i]->current_r, rod_centroid);
         /** I'm leaving it like this and there's nothing you can do about it */
-        centroid->x += rod_centroid[0]*rod_array[i]->num_elements;
-        centroid->y += rod_centroid[1]*rod_array[i]->num_elements;
-        centroid->z += rod_centroid[2]*rod_array[i]->num_elements;
-        total_num_nodes += rod_array[i]->num_elements;
+        centroid->x += rod_centroid[0]*rod_array[i]->get_num_nodes();
+        centroid->y += rod_centroid[1]*rod_array[i]->get_num_nodes();
+        centroid->z += rod_centroid[2]*rod_array[i]->get_num_nodes();
+        total_num_nodes += rod_array[i]->get_num_nodes();
     }
     
     centroid->x /= total_num_nodes;

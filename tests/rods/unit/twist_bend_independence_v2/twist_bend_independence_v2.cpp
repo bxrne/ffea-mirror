@@ -41,7 +41,7 @@ float twist_energy_perturbation_test(
     int end_cutoff;
     int *start_cutoff_ptr = &start_cutoff;
     int *end_cutoff_ptr = &end_cutoff; // for the multiple return values
-    rod::set_cutoff_values(p_i_node_no, rod_to_test.num_elements, start_cutoff_ptr, end_cutoff_ptr);
+    rod::set_cutoff_values(p_i_node_no, rod_to_test.num_nodes, start_cutoff_ptr, end_cutoff_ptr);
                 
     //feenableexcept( FE_INVALID | FE_OVERFLOW );
         

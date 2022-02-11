@@ -859,43 +859,12 @@ void Rod_blob_interface::get_attachment_node(OUT float attachment_node[3], float
         index = 0;
     }
     else{
-        index = this->connected_rod->num_elements-1;
+        index = this->connected_rod->get_num_nodes()-1;
     }
     
     float end_node_pos[3];
     vec3d(n){end_node_pos[n] = this->connected_rod->current_r[(index*3)+n];}
     //normalize(end_node, end_node);
-    
-    
-    
-    //getting equil blob centroid
-    
-    //float centroid[3];
-    //if (equil){
-    //    // note: this NEVER RUNS and is TO BE REMOVED SOON
-    //    vector3 centroid_equil_vec;
-    //    centroid_equil_vec.x = 0.0; centroid_equil_vec.y = 0.0; centroid_equil_vec.z = 0.0;
-    //    int num_nodes = this->connected_blob->get_num_nodes();
-    //    for (int n =0; n < num_nodes; n++) {
-    //        arr3 curr_node;
-    //        this->connected_blob->get_node_0(n, curr_node);
-    //        centroid_equil_vec.x += curr_node[0];
-    //        centroid_equil_vec.y += curr_node[1];
-    //        centroid_equil_vec.z += curr_node[2];
-    //    }
-    //    centroid_equil_vec.x /= num_nodes; centroid_equil_vec.y /= num_nodes; centroid_equil_vec.z /= num_nodes;
-    //    vec3d(n){centroid[n] = centroid_equil_vec.data[n];}
-    //}
-    //else{
-    //    // jeez that was a pain in the ass
-    //    vector3 centroid_vec;
-    //    this->connected_blob->get_centroid(&centroid_vec);
-    //    vec3d(n){centroid[n] = centroid_vec.data[n];}
-    //}
-    
-    //float path_to_centroid[3];
-    //vec3d(n){path_to_centroid[n] = centroid[n] - attachment_node_pos[n];};
-    //normalize(path_to_centroid, path_to_centroid);
     
     print_array("   attachment_node_pos", attachment_node_pos, 3);
     print_array("   attachment_node", attachment_node, 3);
@@ -1160,7 +1129,7 @@ void Rod_blob_interface::position_rod_from_blob(bool use_equil){ // default fals
     vec3d(n){current_r_rotated[n+3] = attachment_node_pos[n] + p_0_rotated[n];}
     
     // build the wretched thing one element at a time
-    for (int i=1; i<this->connected_rod->num_elements - 1; i++){
+    for (int i=1; i<this->connected_rod->get_num_nodes() - 1; i++){
         //r
         this->connected_rod->get_p(i, p, use_equil);
         p_scale = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
@@ -1201,7 +1170,7 @@ void Rod_blob_interface::position_blob_from_rod(){
     this->update_internal_state(true, true);
     
     // get end node
-    this->connected_rod->get_p(connected_rod->num_elements-2, p_end, true); // -2! indexed from 0! duh
+    this->connected_rod->get_p(connected_rod->get_num_nodes()-2, p_end, true); // -2! indexed from 0! duh
     get_attachment_node(attachment_node, attachment_node_pos, false);
     normalize(p_end, p_end_normalized);
     
@@ -1373,12 +1342,12 @@ void Rod_blob_interface::get_node_energy(int node_index, float attachment_node_e
     }
     else{
         if(dbg_print){std::cout << " Ends at blob \n";}
-        adjacent_index = this->connected_rod->num_elements-1;
-        double_adjacent_index = this->connected_rod->num_elements-2;
-        triple_adjacent_index = this->connected_rod->num_elements-3;
-        mat_adjacent_index = this->connected_rod->num_elements-2;
-        mat_double_adjacent_index = this->connected_rod->num_elements-3;
-        mat_triple_adjacent_index = this->connected_rod->num_elements-4;
+        adjacent_index = this->connected_rod->get_num_nodes()-1;
+        double_adjacent_index = this->connected_rod->get_num_nodes()-2;
+        triple_adjacent_index = this->connected_rod->get_num_nodes()-3;
+        mat_adjacent_index = this->connected_rod->get_num_nodes()-2;
+        mat_double_adjacent_index = this->connected_rod->get_num_nodes()-3;
+        mat_triple_adjacent_index = this->connected_rod->get_num_nodes()-4;
     }
 
     // get equil p, m

@@ -50,8 +50,8 @@ std::vector <float> stof_vec (std::vector <std::string> vec_in, int length);
 struct Rod
 {
   /** Rod metadata **/
-  int length; /** The length of an array in the rod (3x the number of elements - x, y and z) */
-  int num_elements; /** The number of elements in the rod */
+  int length; /** The length of an array in the rod (3x the number of nodes - x, y and z) */
+  int num_nodes; /** The number of nodes in the rod */
   int num_rods; /** When the system is set up in ffeatools, this will be set */
   int rod_no; /** Each rod will be created with a unique ID */
   int line_start = 0; /** Keeps track of whether the header file has been read */
@@ -126,6 +126,7 @@ struct Rod
   Rod get_p(int index, OUT float p[3], bool equil);
   Rod get_r(int node_index, OUT float r[3], bool equil);
   float get_radius(int node_index);
+  int get_num_nodes();
   int get_num_steric_neighbours(int element_index);
   void get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
   void check_neighbour_list_dimensions();

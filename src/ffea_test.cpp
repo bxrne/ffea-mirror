@@ -751,7 +751,7 @@ int ffea_test::connection_propagation(int mode, bool ends_at_rod){ // mode 0 = t
         end_index = 0;
     }
     else{
-        end_index = current_rod->num_elements-2;
+        end_index = current_rod->get_num_nodes()-2;
     }
     
     current_rod->pinned_nodes[end_index] = true;
@@ -829,7 +829,7 @@ int ffea_test::connection_propagation(int mode, bool ends_at_rod){ // mode 0 = t
         
         if (world->rod_blob_interface_array[0]->ends_at_rod){
             vec3d(n){current_rod->current_r[n + current_rod->length - 3] = current_rod->current_r[n + current_rod->length - 6] + end_p_rotated[n];}
-            current_rod->pinned_nodes[current_rod->num_elements-1] = true;
+            current_rod->pinned_nodes[current_rod->get_num_nodes()-1] = true;
         }
         else{
             vec3d(n){current_rod->current_r[n] = current_rod->current_r[n+3] - end_p_rotated[n];}
@@ -923,7 +923,7 @@ int ffea_test::connection_propagation(int mode, bool ends_at_rod){ // mode 0 = t
             float energyplus[3] = {0,0,0};
             float energyminus[3] = {0,0,0};
             int start_cutoff; int end_cutoff;
-            rod::set_cutoff_values(node_index, current_interface->connected_rod->num_elements, &start_cutoff, &end_cutoff);
+            rod::set_cutoff_values(node_index, current_interface->connected_rod->get_num_nodes(), &start_cutoff, &end_cutoff);
             
             rod::get_perturbation_energy( //from rod_math
             perturb*i,
@@ -1132,7 +1132,7 @@ int ffea_test::euler_beam(){ // the euler beam test returns!
     bending_beam.timestep *= 2;
     bending_beam.change_filename(std::string("beam.rodtraj"));
     float force[4] = {0,2.4364705882352941e-13*6,0,0};
-    bending_beam.add_force(force, bending_beam.num_elements-1);
+    bending_beam.add_force(force, bending_beam.get_num_nodes()-1);
     bending_beam.pinned_nodes[0] = true;
     bending_beam.pinned_nodes[1] = true;
     
@@ -1163,7 +1163,7 @@ int ffea_test::twist_bend_coil(){
     bending_beam.kT = 1.12e-23/mesoDimensions::Energy;
     bending_beam.viscosity /= 2;
     
-    int end_index = bending_beam.num_elements-2;
+    int end_index = bending_beam.get_num_nodes()-2;
     
     bending_beam.pinned_nodes[0] = true;
     bending_beam.pinned_nodes[1] = true;
@@ -1478,7 +1478,7 @@ int ffea_test::rod_neighbour_list_construction(){
     for (int i=0; i<num_rods; i++){
         std::cout << "  rod " << i << std::endl;
 
-        for (int j=0; j<rod_array[i]->num_elements-1; j++){
+        for (int j=0; j<rod_array[i]->get_num_nodes()-1; j++){
             vec3d(n){r1[n] = rod_array[i]->current_r[3*j + n];}
             vec3d(n){r2[n] = rod_array[i]->current_r[3*(j+1) + n];}
             std::cout << "  element " << j << std::endl;
