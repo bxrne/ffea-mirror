@@ -67,21 +67,21 @@ void get_steric_perturbation_energy(
     float c_ab[3] = {0, 0, 0};
     float energy = 0;
     float displacement[3] = {0, 0, 0};  // along rod a
-    float weight_node_1 = 0;
-    float weight_node_2 = 0;
+    float weight_start_node = 0;
+    float weight_end_node = 0;
 
     c_b[perturbation_dimension] += perturbation_amount;
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
     energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
 
     // Energy must be interpolated onto nodes of rod a.
-    // e.g. if c_a = r_a, all energy goes onto node 1
+    // e.g. if c_a = r_a, all energy goes onto the start node
     vec3d(n){displacement[n] = c_a[n] - r_a[n];}
-    weight_node_2 = rod::absolute(displacement) / rod::absolute(p_a);
-    weight_node_1 = 1 - weight_node_2;
+    weight_end_node = rod::absolute(displacement) / rod::absolute(p_a);
+    weight_start_node = std::max(0, 1 - weight_end_node));
     
-    energies[0] = weight_node_1 * energy;
-    energies[1] = weight_node_2 * energy;
+    energies[0] = weight_start_node * energy;
+    energies[1] = weight_end_node * energy;
 
 }
 
