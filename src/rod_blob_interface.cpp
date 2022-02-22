@@ -859,7 +859,7 @@ void Rod_blob_interface::get_attachment_node(OUT float attachment_node[3], float
         index = 0;
     }
     else{
-        index = this->connected_rod->get_num_nodes()-1;
+        index = this->connected_rod->num_nodes-1;
     }
     
     float end_node_pos[3];
@@ -1129,7 +1129,7 @@ void Rod_blob_interface::position_rod_from_blob(bool use_equil){ // default fals
     vec3d(n){current_r_rotated[n+3] = attachment_node_pos[n] + p_0_rotated[n];}
     
     // build the wretched thing one element at a time
-    for (int i=1; i<this->connected_rod->get_num_nodes() - 1; i++){
+    for (int i=1; i<this->connected_rod->num_nodes - 1; i++){
         //r
         this->connected_rod->get_p(i, p, use_equil);
         p_scale = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]);
@@ -1170,7 +1170,7 @@ void Rod_blob_interface::position_blob_from_rod(){
     this->update_internal_state(true, true);
     
     // get end node
-    this->connected_rod->get_p(connected_rod->get_num_nodes()-2, p_end, true); // -2! indexed from 0! duh
+    this->connected_rod->get_p(connected_rod->num_nodes-2, p_end, true); // -2! indexed from 0! duh
     get_attachment_node(attachment_node, attachment_node_pos, false);
     normalize(p_end, p_end_normalized);
     
@@ -1342,12 +1342,12 @@ void Rod_blob_interface::get_node_energy(int node_index, float attachment_node_e
     }
     else{
         if(dbg_print){std::cout << " Ends at blob \n";}
-        adjacent_index = this->connected_rod->get_num_nodes()-1;
-        double_adjacent_index = this->connected_rod->get_num_nodes()-2;
-        triple_adjacent_index = this->connected_rod->get_num_nodes()-3;
-        mat_adjacent_index = this->connected_rod->get_num_nodes()-2;
-        mat_double_adjacent_index = this->connected_rod->get_num_nodes()-3;
-        mat_triple_adjacent_index = this->connected_rod->get_num_nodes()-4;
+        adjacent_index = this->connected_rod->num_nodes-1;
+        double_adjacent_index = this->connected_rod->num_nodes-2;
+        triple_adjacent_index = this->connected_rod->num_nodes-3;
+        mat_adjacent_index = this->connected_rod->num_nodes-2;
+        mat_double_adjacent_index = this->connected_rod->num_nodes-3;
+        mat_triple_adjacent_index = this->connected_rod->num_nodes-4;
     }
 
     // get equil p, m
