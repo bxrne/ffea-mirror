@@ -140,8 +140,9 @@ class FFEA_rod:
             self.twisted_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
             self.material_params = np.zeros([self.num_frames, self.num_elements, 3])
             self.B_matrix = np.zeros([self.num_frames, self.num_elements, 4])
-            self.steric_perturbed_energy_positive = np.zeros([self.num_frames, self.num_elements, 3])
-            self.steric_perturbed_energy_negative = np.zeros([self.num_frames, self.num_elements, 3])
+            self.steric_perturbed_energy_positive = np.zeros([self.num_frames, 2*(self.num_elements-1), 3])
+            self.steric_perturbed_energy_negative = np.zeros([self.num_frames, 2*(self.num_elements-1), 3])
+            self.steric_unit_vector = np.zeros([self.num_frames, self.num_elements-1, 3])
 
         return
     
@@ -203,10 +204,12 @@ class FFEA_rod:
         self.twisted_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(12)])
         self.material_params = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(13)])
         self.B_matrix = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(14)])
-        self.steric_perturbed_energy_positive = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(15)])
-        self.steric_perturbed_energy_negative = np.empty([self.num_frames, self.num_elements, self.get_num_dimensions(16)])
+        self.steric_perturbed_energy_positive = np.empty([self.num_frames, 2*(self.num_elements-1), self.get_num_dimensions(11)])
+        self.steric_perturbed_energy_negative = np.empty([self.num_frames, 2*(self.num_elements-1), self.get_num_dimensions(11)])
+        self.steric_unit_vector = np.empty([self.num_frames, self.num_elements-1, self.get_num_dimensions(3)])
 
         # look, this is not pretty but it is really fast
+        # Hard-coded some shapes at the end because I wasn't following the previous convention
 
         rod_file = open(self.filename, "r")
         frame_no = 0
@@ -248,6 +251,8 @@ class FFEA_rod:
                     self.steric_perturbed_energy_positive[frame_no] = np.fromstring(line, sep=",").reshape(self.steric_perturbed_energy_positive[frame_no].shape)
                     line = rod_file.readline()
                     self.steric_perturbed_energy_negative[frame_no] = np.fromstring(line, sep=",").reshape(self.steric_perturbed_energy_negative[frame_no].shape)
+                    line = rod_file.readline()
+                    self.steric_unit_vector[frame_no] = np.fromstring(line, sep=",").reshape(self.steric_unit_vector[frame_no].shape)
                     frame_no += 1
                 except ValueError as e:
                     raise ValueError(str(e)+"\nError loading frame "+str(frame_no)+"\nProblem line: "+str(line))
@@ -285,6 +290,7 @@ class FFEA_rod:
         rod_file.write("row14,B_matrix\n")
         rod_file.write("row15,steric_perturbed_energy_positive\n")
         rod_file.write("row16,steric_perturbed_energy_negative\n")
+        rod_file.write("row17,steric_unit_vector\n")
         
         # Connections (note: this is temporary, it might end up in the .ffea file)
         rod_file.write("CONNECTIONS,ROD,0\n")
@@ -326,6 +332,7 @@ class FFEA_rod:
             write_array(self.B_matrix[frame].flatten(), rod_file)
             write_array(self.steric_perturbed_energy_positive[frame].flatten(), rod_file)
             write_array(self.steric_perturbed_energy_negative[frame].flatten(), rod_file)
+            write_array(self.steric_unit_vector[frame].flatten(), rod_file)
             
         rod_file.close()
             
@@ -1311,6 +1318,7 @@ class anal_rod:
         self.rod.B_matrix = self.rod.B_matrix[::interval]
         self.rod.steric_perturbed_energy_positive = self.rod.steric_perturbed_energy_positive[::interval]
         self.rod.steric_perturbed_energy_negative = self.rod.steric_perturbed_energy_negative[::interval]
+        self.rod.steric_unit_vector = self.rod.steric_unit_vector[::interval]
         self.rod.num_frames = len(self.rod.current_r)
 
         try:
@@ -1443,8 +1451,10 @@ class anal_rod:
                 self.rod.twisted_energy_negative = np.array([np.insert(self.rod.twisted_energy_negative[0], element, 0, axis=0)])
                 self.rod.material_params = np.array([np.insert(self.rod.material_params[0], element, interp_r(self.rod.material_params[0][element], self.rod.material_params[0][element-1]), axis=0)])
                 self.rod.B_matrix = np.array([np.insert(self.rod.B_matrix[0], element, interp_r(self.rod.B_matrix[0][element], self.rod.B_matrix[0][element-1]), axis=0)])
-                self.rod.steric_perturbed_energy_positive = np.array([np.insert(self.rod.steric_perturbed_energy_positive[0], element, 0, axis=0)])
-                self.rod.steric_perturbed_energy_negative = np.array([np.insert(self.rod.steric_perturbed_energy_negative[0], element, 0, axis=0)])
+                # These aren't node-based, so won't work here!
+                # self.rod.steric_perturbed_energy_positive = np.array([np.insert(self.rod.steric_perturbed_energy_positive[0], element, 0, axis=0)])
+                # self.rod.steric_perturbed_energy_negative = np.array([np.insert(self.rod.steric_perturbed_energy_negative[0], element, 0, axis=0)])
+                # self.rod.steric_unit_vector = np.array([np.insert(self.rod.steric_unit_vector[0], element, 0, axis=0)])
             self.rod.num_elements = len(self.rod.equil_r[0])
             self.rod.length=3*self.rod.num_elements
         return
@@ -1479,8 +1489,10 @@ class anal_rod:
         self.rod.twisted_energy_negative = determine_simplification_func(self.rod.twisted_energy_negative, target_length, margin)
         self.rod.material_params = determine_simplification_func(self.rod.material_params, target_length, margin)
         self.rod.B_matrix = determine_simplification_func(self.rod.B_matrix, target_length, margin)
+        print("WARNING: arrays that are based on element, rather than nodes, may cause this function to break.")
         self.rod.steric_perturbed_energy_positive = determine_simplification_func(self.rod.steric_perturbed_energy_positive, target_length, margin)
         self.rod.steric_perturbed_energy_negative = determine_simplification_func(self.rod.steric_perturbed_energy_negative, target_length, margin)
+        self.rod.steric_unit_vector = determine_simplification_func(self.rod.steric_unit_vector, target_length, margin)
         self.rod.num_elements = len(self.rod.equil_r[0])
         self.rod.length=3*self.rod.num_elements
 
