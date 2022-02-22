@@ -27,64 +27,13 @@
  *	Email: bsrctb@leeds.ac.uk
 
  *	Author: Ryan Cocking, University of Leeds
- *	Email: bsrctb@leeds.ac.uk
+ *	Email: bsrctb@leeds.ac.uk 
  */
 
 
 #include "rod_interactions.h"
 
 namespace rod {
-
-/* Perturb the separation between two sterically interacting rod elements in a
-   specific degree of freedom to get the potential energy associated with rod a. 
-
-   \f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)] \f|
-    
-   Args:
-   - perturbation_amount - the amount of perturbation to do in the numerical differentiation.
-   - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
-   - force_constant - arbitrary coefficient used to scale the severity of the steric repulsion [force units]
-   - node_a - the 'start' node of the current element on rod a
-   - element_a -
-   - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
-   Returns:
-   - energies - a 2-element array for energies interpolated onto the start [0] and end [1] nodes of element_a
-*/
-void get_steric_perturbation_energy(
-    float perturbation_amount, 
-    int perturbation_dimension, 
-    float force_constant,
-    float r_a[3],
-    float p_a[3],
-    float c_a[3],
-    float c_b[3], 
-    float radius_a, 
-    float radius_b,
-    OUT
-    float energies[2]
-    ){
-
-    float c_ab[3] = {0, 0, 0};
-    float energy = 0;
-    float displacement[3] = {0, 0, 0};  // along rod a
-    float weight_start_node = 0;
-    float weight_end_node = 0;
-
-    c_b[perturbation_dimension] += perturbation_amount;
-    vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
-    energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
-
-    // Energy must be interpolated onto nodes of rod a.
-    // e.g. if c_a = r_a, all energy goes onto the start node
-    vec3d(n){displacement[n] = c_a[n] - r_a[n];}
-    weight_end_node = rod::absolute(displacement) / rod::absolute(p_a);
-    weight_start_node = std::max(0, 1 - weight_end_node));
-    
-    energies[0] = weight_start_node * energy;
-    energies[1] = weight_end_node * energy;
-
-}
-
 
 /** 1) Check that the points of the rod interaction vector, c_a and c_b, lie within their respective
  * rod elements. Certain situations (e.g. almost-parallel rods) will mean this correction can be poor
@@ -303,6 +252,126 @@ void assign_neighbours_to_elements(
     }
 }
 
+
+/* Given a point, c, that lies on a rod element, p, compute the weights required to
+   interpolate c onto the start and end nodes of the element. E.g. if c is located on
+   the start node, r, then the weighting on the start node is 1.
+*/
+void get_interpolation_weights(float r[3], float p[3], float c[3], OUT float weight_start_node, float weight_end_node){
+    float displacement[3] = {0, 0, 0};
+
+    vec3d(n){displacement[n] = c[n] - r[n];}
+    weight_end_node = rod::absolute(displacement) / rod::absolute(p);
+    weight_start_node = std::max(0.0f, 1 - weight_end_node);
+}
+
+
+/* Perturb the separation between two sterically interacting rod elements in a
+   specific degree of freedom to get the potential energy associated with rod a. 
+
+   \f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)] \f|
+    
+   Args:
+   - perturbation_amount - the amount of perturbation to do in the numerical differentiation.
+   - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
+   - force_constant - arbitrary coefficient used to scale the severity of the steric repulsion [force units]
+   - node_a - the 'start' node of the current element on rod a
+   - element_a -
+   - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
+   Returns:
+   - energies - a 2-element array for energies interpolated onto the start [0] and end [1] nodes of element_a
+*/
+void get_steric_perturbation_energy(
+    float perturbation_amount, 
+    int perturbation_dimension, 
+    float force_constant,
+    float r_a[3],
+    float p_a[3],
+    float c_a[3],
+    float c_b[3], 
+    float radius_a, 
+    float radius_b,
+    OUT
+    float energies[2]
+    ){
+
+    float c_ab[3] = {0, 0, 0};
+    float energy = 0;
+    float w0 = 0;
+    float w1 = 0;
+
+    c_b[perturbation_dimension] += perturbation_amount;
+    vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
+    energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
+
+    // Energy must be interpolated onto nodes of the element on rod a
+    rod::get_interpolation_weights(r_a, p_a, c_a, w0, w1);
+    energies[0] = w0 * energy;
+    energies[1] = w1 * energy;
+
+}
+
+
+// Sum steric energy from adjacent elements onto a given node
+void get_steric_energy_on_node(
+    int node_index, 
+    int node_min, 
+    int node_max, 
+    float *energy_array_positive,  // 2(L-3) length array
+    float *energy_array_negative, 
+    OUT 
+    float energy_positive[3], 
+    float energy_negative[3]
+    ){
+
+    int i = node_index*6;        // current element
+    int j = (node_index*6) - 3;  // previous element
+
+    if (node_index == node_min){
+        // End nodes: energy contributions from one element only
+        // TODO: Please write developer documentation explaining this horror
+        vec3d(n){energy_positive[n] = energy_array_positive[i+n];}
+        vec3d(n){energy_negative[n] = energy_array_negative[i+n];}
+    }
+    else if (node_index == node_max - 1){
+        vec3d(n){energy_positive[n] = energy_array_positive[j+n];}
+        vec3d(n){energy_negative[n] = energy_array_negative[j+n];}
+    }
+    else{
+        // Central nodes: energy contributions from two elements
+        vec3d(n){energy_positive[n] = energy_array_positive[i+n] + energy_array_positive[j+n];}
+        vec3d(n){energy_negative[n] = energy_array_negative[i+n] + energy_array_negative[j+n];}
+    }
+
+}
+
+
+// Sum and normalise the two unit vectors from adjacent elements onto a shared node
+void get_unit_vector_on_node(
+    int node_index, 
+    int node_min, 
+    int node_max, 
+    float* unit_vector_array, // L-3 length array
+    OUT
+    float unit_vector[3]
+    ){
+
+    float sum[3] = {0, 0, 0};
+
+    int i = node_index*3;        // current element
+    int j = (node_index*3) - 3;  // previous element
+
+    if (node_index == node_min){
+        vec3d(n){unit_vector[n] = unit_vector_array[i+n];}
+    }
+    else if (node_index == node_max - 1){
+        vec3d(n){unit_vector[n] = unit_vector_array[j+n];}
+    }
+    else{
+        vec3d(n){sum[n] = unit_vector_array[i+n] + unit_vector_array[j+n];}
+        rod::normalize(sum, unit_vector);
+    }
+}
 
 //    __      _
 //  o'')}____//  I AM DEBUG DOG. PUT ME IN YOUR

@@ -85,6 +85,7 @@ struct Rod
   float * B_matrix; /** Contents of the bending modulus matrix for each node, as a 1-d array. Given as [a_1_1, a_1_2, a_2,1, a_2_2, a_1_1...]. **/
   float * steric_perturbed_energy_positive;  /** Energies from steric interactions at each rod node. Given as [x0, y0, z0, x1, y1, z1 ...]**/
   float * steric_perturbed_energy_negative;
+  float * steric_unit_vector;
 
   float * applied_forces; /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
   bool * pinned_nodes; /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
@@ -126,8 +127,8 @@ struct Rod
   Rod get_p(int index, OUT float p[3], bool equil);
   Rod get_r(int node_index, OUT float r[3], bool equil);
   float get_radius(int node_index);
-  int get_num_nodes();
   int get_num_steric_neighbours(int element_index);
+  int get_num_nodes();
   void get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
   void check_neighbour_list_dimensions();
 };

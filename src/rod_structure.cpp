@@ -90,8 +90,9 @@ Rod::Rod(int length, int set_rod_no):
     internal_twisted_energy_negative(new float[length]),
     material_params(new float[length]),
     B_matrix(new float[length+(length/3)]),
-    steric_perturbed_energy_positive(new float[2*length-6]),
-    steric_perturbed_energy_negative(new float[2*length-6]),
+    steric_perturbed_energy_positive(new float[2*(length-3)]),
+    steric_perturbed_energy_negative(new float[2*(length-3)]),
+    steric_unit_vector(new float[length-3]),
     applied_forces(new float[length+(length/3)]),
     pinned_nodes(new bool[length/3])
     {}; 
@@ -155,7 +156,7 @@ Rod Rod::set_units(){
         B_matrix[i] /= bending_response_factor;
     }
 
-    for (int i=0; i<2*length-6; i++){
+    for (int i=0; i<2*(length-3); i++){
         steric_perturbed_energy_positive[i] /= mesoDimensions::Energy;
         steric_perturbed_energy_negative[i] /= mesoDimensions::Energy;
     }    
@@ -189,10 +190,12 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     //    end_node = get_num_nodes()-1;
     //}
     
-    if(dbg_print){std::cout << "Rod: " << this->rod_no << "\n";}
-    if(dbg_print){std::cout << "Num nodes: " << this->get_num_nodes() << "\n";} //temp
-    if(dbg_print){std::cout << "End node: " << end_node << "\n";} //temp
-    if(dbg_print){std::cout << "Node min: " << node_min << "\n";} //temp
+    if(dbg_print){
+        std::cout << "Rod: " << this->rod_no << "\n";
+        std::cout << "Num nodes: " << this->get_num_nodes() << "\n"; //temp
+        std::cout << "End node: " << end_node << "\n"; //temp
+        std::cout << "Node min: " << node_min << "\n";
+    } //temp
     
     //The first loop is over all the nodes, and it computes all the energies for each one
     #pragma omp parallel for schedule(dynamic) //most of the execution time is spent in this first loop
@@ -200,7 +203,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         //std::cout << "node " << node_no << "\n";
         
-        if(dbg_print){std::cout << "IT BREAKS DURING NODE" << node_no << " ENERGY\n";}
+        if(dbg_print){std::cout << "IT BREAKS DURING NODE " << node_no << " ENERGY\n";}
                 
         // if the node is pinned, we go to the next iteration of the loop (e.g. the next node)
         if (pinned_nodes[node_no] == true){
@@ -217,7 +220,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         int end_cutoff_val;
         int *start_cutoff = &start_cutoff_val;
         int *end_cutoff = &end_cutoff_val; // for the multiple return values
-        set_cutoff_values(node_no, get_num_nodes(), start_cutoff, end_cutoff);
+        set_cutoff_values(node_no, this->get_num_nodes(), start_cutoff, end_cutoff);
         
         // We need this e now because we need the previous value of e to do a material frame update
         // If you're curious about the [4][3] check out the get_perturbation_energy docs
@@ -381,11 +384,15 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     }// exit internal energy loop
        
     // Rod-rod interactions: loop over all elements, interpolate energies onto nodes
-    int end_elem = get_num_nodes()-1;
+    int end_elem = this->get_num_nodes()-1;
     float steric_force_scaling = 5*kT;
     #pragma omp parallel for schedule(dynamic)
     for(int elem_no = 0; elem_no < end_elem; elem_no++){
         int num_neighbours = get_num_steric_neighbours(elem_no);
+        float c_ab_sum[3] = {0, 0, 0};
+        float c_ab_norm[3] = {0, 0, 0};
+        
+        if(rod::dbg_print){std::cout << "element: " << elem_no << std::endl;}
 
         for(int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
             float r_a[3] = {0, 0, 0};
@@ -394,7 +401,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             float radius_b = 0;
             float c_a[3] = {0, 0, 0};
             float c_b[3] = {0, 0, 0};
-            float energies = {0, 0};
+            float energies[2] = {0, 0};
             
             if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << " of " << num_neighbours << std::endl;}
             get_r(elem_no, r_a, false);
@@ -499,11 +506,13 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
             steric_perturbed_energy_negative[(elem_no*3)+2] += energies[0]; 
             steric_perturbed_energy_negative[(elem_no*3)+2+3] += energies[1];
 
+            vec3d(n){c_ab_sum[n] += (c_b[n] - c_a[n]);}
+
         }// exit steric loop
-        
-        if(rod::dbg_print && num_neighbours == 0){
-            std::cout << "no neighbours found for element " << elem_no << std::endl;
-        }
+
+        // Resultant unit vector on element, from sum over all neighbours
+        rod:normalize(c_ab_sum, c_ab_norm);
+        vec3d(n){steric_unit_vector[(elem_no*3)+n] = c_ab_norm[n];}
 
     }//exit interaction energy loop
 
@@ -560,33 +569,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         // Rod-rod steric interactions
         float steric_positive[3] = {0, 0, 0}; // [x, y, z]
         float steric_negative[3] = {0, 0, 0};
-        if (node_no == node_min){
-            // End nodes: energy contributions from one element only
-            // TODO: Please write developer documentation explaining this horror
-            steric_positive[0] = steric_perturbed_energy_positive[node_no*6]
-            steric_positive[1] = steric_perturbed_energy_positive[(node_no*6)+1]
-            steric_positive[2] = steric_perturbed_energy_positive[(node_no*6)+2]
-            steric_negative[0] = steric_perturbed_energy_negative[node_no*6]
-            steric_negative[1] = steric_perturbed_energy_negative[(node_no*6)+1]
-            steric_negative[2] = steric_perturbed_energy_negative[(node_no*6)+2]
-        }
-        else if (node_no == end_node - 1){
-            steric_positive[0] = steric_perturbed_energy_positive[(node_no*6)-3]
-            steric_positive[1] = steric_perturbed_energy_positive[(node_no*6)+1-3]
-            steric_positive[2] = steric_perturbed_energy_positive[(node_no*6)+2-3]
-            steric_negative[0] = steric_perturbed_energy_negative[(node_no*6)-3]
-            steric_negative[1] = steric_perturbed_energy_negative[(node_no*6)+1-3]
-            steric_negative[2] = steric_perturbed_energy_negative[(node_no*6)+2-3]
-        }
-        else{
-            // Central nodes: energy contributions from two elements
-            steric_positive[0] = steric_perturbed_energy_positive[node_no*6] + steric_perturbed_energy_positive[(node_no*6)-3]
-            steric_positive[1] = steric_perturbed_energy_positive[(node_no*6)+1] + steric_perturbed_energy_positive[(node_no*6)+1-3]
-            steric_positive[2] = steric_perturbed_energy_positive[(node_no*6)+2] + steric_perturbed_energy_positive[(node_no*6)+2-3]
-            steric_negative[0] = steric_perturbed_energy_negative[node_no*6] + steric_perturbed_energy_negative[(node_no*6)-3]
-            steric_negative[1] = steric_perturbed_energy_negative[(node_no*6)+1] + steric_perturbed_energy_negative[(node_no*6)+1-3]
-            steric_negative[2] = steric_perturbed_energy_negative[(node_no*6)+2] + steric_perturbed_energy_negative[(node_no*6)+2-3]
-        }
+
         // Seems to me it should be (positive - negative), but Rob has it the other way around? I'm following his convention here.
         // TODO: WE NEED THE DIRECTION OF THE REPULSIVE FORCE!!
         // LOOP OVER NEIGHBOUR LIST HERE AND MULTIPLY ENERGY BY UNIT VECTOR -c_ab??
@@ -622,7 +605,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         }
         
         // If we're applying delta twist, we must load our new p_i back in
-        if (node_no != get_num_nodes() - 1){ // The last node has no p_i, so it can't rotate
+        if (node_no != this->get_num_nodes() - 1){ // The last node has no p_i, so it can't rotate
             float m_to_rotate[3];
             m_to_rotate[0] = current_m[node_no*3]; m_to_rotate[1] = current_m[(node_no*3)+1]; m_to_rotate[2] = current_m[(node_no*3)+2]; // take the relevant info out of the data structure
             float p_i[3];
@@ -636,7 +619,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         }
         
         // If the element has moved, we need to update the material frame to have moved accordingly
-        if (node_no != get_num_nodes() - 1){ // for last node index, material frame doesn't exist!
+        if (node_no != this->get_num_nodes() - 1){ // for last node index, material frame doesn't exist!
             float current_p_i[3]; 
             float m_to_fix[3];
             float m_i_prime[3];
@@ -655,6 +638,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         step_no += 1; //we just did one timestep so increment this
 
     }
+    // TODO: Purge neighbour list for this timestep
     
     return *this; 
 }
@@ -703,7 +687,7 @@ Rod Rod::load_header(std::string filename){
             /** Read in the contents */
             if (line_vec[0] == "version"){ this->rod_version = std::stod(line_vec[1]);}
             if (line_vec[0] == "length"){ this->length = std::stoi(line_vec[1]); length_set=true; }
-            if (line_vec[0] == "num_nodes"){ this->num_nodes = std::stoi(line_vec[1]); }
+            if (line_vec[0] == "num_elements"){ this->num_nodes = std::stoi(line_vec[1]); }
             if (line_vec[0] == "num_rods"){ this->num_rods = std::stoi(line_vec[1]); }
         }   
         if (line == rod_connections){
@@ -735,8 +719,9 @@ Rod Rod::load_header(std::string filename){
     internal_twisted_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
     material_params = static_cast<float *>(malloc(sizeof(float) * length));
     B_matrix = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
-    steric_perturbed_energy_positive = static_cast<float *>(malloc(sizeof(float) * 2*length-6));
-    steric_perturbed_energy_negative = static_cast<float *>(malloc(sizeof(float) * 2*length-6));
+    steric_perturbed_energy_positive = static_cast<float *>(malloc(sizeof(float) * 2*(length-3) ));
+    steric_perturbed_energy_negative = static_cast<float *>(malloc(sizeof(float) * 2*(length-3) ));
+    steric_unit_vector = static_cast<float *>(malloc(sizeof(float) * (length-3) ));
     applied_forces = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length/3));
     steric_interaction_coordinates = std::vector< std::vector<float> > ((length/3)-1);
@@ -824,7 +809,12 @@ Rod Rod::load_contents(std::string filename){
             line_vec_float = stof_vec(line_vec);
             
             /** Check we're not going to overflow and ruin someone's life when we write into the array*/
-            assert( (unsigned)length == line_vec_float.size() || (unsigned)length+(length/3) == line_vec_float.size() ); //it's definitely fine to cast length
+            assert( 
+                (unsigned)length == line_vec_float.size() || 
+                (unsigned)length+(length/3) == line_vec_float.size() || 
+                (unsigned)2*(length-3) == line_vec_float.size() ||
+                (unsigned)length-3 == line_vec_float.size()
+                ); //it's definitely fine to cast length
             
             /** Set our rod data arrays to the raw .data() from the vector. */
             if (n == line_of_last_frame+1){ for (int i=0; i<length; i++) equil_r[i] = line_vec_float.data()[i];}
@@ -841,8 +831,9 @@ Rod Rod::load_contents(std::string filename){
             if (n == line_of_last_frame+12){ for (int i=0; i<length; i++) internal_twisted_energy_negative[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+13){ for (int i=0; i<length; i++) material_params[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+14){ for (int i=0; i<length+(length/3); i++) B_matrix[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+15){ for (int i=0; i<length; i++) steric_perturbed_energy_positive[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+16){ for (int i=0; i<length; i++) steric_perturbed_energy_negative[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+15){ for (int i=0; i<2*(length-3); i++) steric_perturbed_energy_positive[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+16){ for (int i=0; i<2*(length-3); i++) steric_perturbed_energy_negative[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+17){ for (int i=0; i<length-3; i++) steric_unit_vector[i] = line_vec_float.data()[i];}
 
         }
         n++;
@@ -873,8 +864,9 @@ Rod Rod::write_frame_to_file(){
     write_array(internal_twisted_energy_negative, length, mesoDimensions::Energy);
     write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
     write_array(B_matrix, length+(length/3), bending_response_factor );
-    write_array(steric_perturbed_energy_positive, 2*length-6, mesoDimensions::Energy);
-    write_array(steric_perturbed_energy_negative, 2*length-6, mesoDimensions::Energy);
+    write_array(steric_perturbed_energy_positive, 2*(length-3), mesoDimensions::Energy);
+    write_array(steric_perturbed_energy_negative, 2*(length-3), mesoDimensions::Energy);
+    write_array(steric_unit_vector, length-3, 1.0f);
     std:fflush(file_ptr);
     return *this;
 }
@@ -1087,27 +1079,30 @@ Rod Rod::get_min_max(float *r, OUT float min[3], float max[3]){
  */
 Rod Rod::get_p(int index, OUT float p[3], bool equil){
     if (equil){
-        p[0] =  equil_r[(index*3)+3] - equil_r[index*3];
-        p[1] =  equil_r[(index*3)+4] - equil_r[(index*3)+1];
-        p[2] =  equil_r[(index*3)+5] - equil_r[(index*3)+2];
+        vec3d(n){p[n] = equil_r[(index*3)+3+n] - equil_r[(index*3)+n];}
     }
     else{
-        if(dbg_print){std::cout << "index = " << index << "\n";}
-        if(dbg_print){std::cout << "   r_i = [" << current_r[index*3] << ", " << current_r[(index*3)+1] << ", " << current_r[(index*3)+1] << "]\n";}
-        if(dbg_print){std::cout << "   r_ip1 = [" << current_r[(index*3)+3] << ", " << current_r[(index*3)+4] << ", " << current_r[(index*3)+5] << "]\n";}
+        if(dbg_print){
+            std::cout << "index = " << index << "\n";
+            float r_i[3] = {0, 0, 0}; 
+            float r_ip1[3] = {0, 0, 0};  
+            get_r(index*3, r_i, false);
+            get_r((index*3)+3, r_ip1, false);
+            rod::print_array("  r_i", r_i, 3);
+            rod::print_array("  r_ip1", r_ip1, 3);
+        }
         // current_r is 1D, so coordinates for rod nodes that are adjacent in space
         // are separated in the array by 3 items (x, y, and z)
-        p[0] =  current_r[(index*3)+3] - current_r[index*3];
-        p[1] =  current_r[(index*3)+4] - current_r[(index*3)+1];
-        p[2] =  current_r[(index*3)+5] - current_r[(index*3)+2];
+        vec3d(n){p[n] = current_r[(index*3)+3+n] - current_r[(index*3)+n];}
     }
     if(rod::dbg_print){
-        if(rod::absolute(p) > -1e-8 and rod::absolute(p) < 1e-8){
-            throw std::logic_error("Length of rod element " << index << " is zero")
+        print_array("  p", p, 3);
+        if(std::abs(rod::absolute(p)) < 1e-7){
+            throw std::invalid_argument("Length of rod element is zero");
         }
     }
     return *this;
-
+}
 
 /**
  * Get the rod node position for the equilibrium or current structure, given
@@ -1115,14 +1110,10 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
  */
 Rod Rod::get_r(int node_index, OUT float r[3], bool equil){
     if (equil) {
-        r[0] = equil_r[node_index*3];
-        r[1] = equil_r[(node_index*3)+1];
-        r[2] = equil_r[(node_index*3)+2];
+        vec3d(n){r[n] = equil_r[(node_index*3)+n];}
     }
     else{
-        r[0] = current_r[node_index*3];
-        r[1] = current_r[(node_index*3)+1];
-        r[2] = current_r[(node_index*3)+2];
+        vec3d(n){r[n] = current_r[(node_index*3)+n];}
     }
     return *this;
 }
@@ -1131,12 +1122,16 @@ float Rod::get_radius(int node_index){
     return material_params[(node_index*3)+2];
 }
 
-int Rod::get_num_nodes(){
-    return this->num_nodes;
+// TODO: Implement some check that ensures we don't have too many neighbours
+int Rod::get_num_steric_neighbours(int element_index){
+    return steric_interaction_coordinates.at(element_index).size() / 7;
 }
 
-int Rod::get_num_steric_neighbours(int element_index){ 
-    return steric_interaction_coordinates.at(element_index).size() / 7;
+int Rod::get_num_nodes(){
+    if(rod::dbg_print){
+        if(this->num_nodes==0){throw std::invalid_argument("Rod cannot have zero nodes.");}
+    }
+    return this->num_nodes;
 }
 
 /**
@@ -1163,12 +1158,12 @@ void Rod::check_neighbour_list_dimensions(){
     int num_cols = 0;
     bool dim_ok = true;
 
-    if(num_rows != this->get_num_nodes()-1){
-        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->get_num_nodes()-1 << ")." << std::endl;
+    if(num_rows != this->num_nodes-1){
+        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->num_nodes-1 << ")." << std::endl;
         dim_ok = false;
     }
 
-    for (int i=0; i<this->get_num_nodes()-1; i++){
+    for (int i=0; i<this->num_nodes-1; i++){
         num_cols = steric_interaction_coordinates.at(i).size();
         if(num_cols % 7 != 0){
             std::cout << "Warning: number of items (" << num_cols << ") in row " << i << " of neighbour list should be a multiple of 7." << std::endl;
