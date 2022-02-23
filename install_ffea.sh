@@ -1,6 +1,21 @@
 #!/bin/bash
 # Author: Ryan Cocking (2022)
-# This script builds FFEA, assuming you have pre-compiled eigen3 and boost.
+# This script builds FFEA
+
+if [ $1 == "-h" ] || [ $1 == "--help" ];
+then
+    echo ""
+    echo "Arguments (0|1, default 0)"
+    echo "--------------------------"
+    echo "do_cmake:       Build from scratch"
+    echo "do_install:     Build executable after making"
+    echo "do_ctest:       Enable unit testing"
+    echo "restrict_tests: Only perform specific tests"
+    echo ""
+    echo "Leave all as zero if you only want to make"
+    echo ""
+    exit
+fi
 
 # ============= Parameters ============= #
 src_dir=$FFEA_SRC
@@ -8,12 +23,14 @@ cmake_install_prefix=$FFEA_BUILD  # not sure if needed when we're already moving
 python_exec=$CONDA_PREFIX/bin/python  # if you're in the correct (python2.7) conda env, this may not be needed either
 boost_root_dir=$SOFTWARE_HOME/boost_build  # leave empty for FFEA to auto-download
 eigen3_include_dir=$SOFTWARE_HOME/eigen-3.3.9/include/eigen3  #  "   "   "    "
+use_ffea_debug=ON
 echo ""
 echo "SRC                   "$src_dir
 echo "CMAKE_INSTALL_PREFIX  "$cmake_install_prefix
 echo "PYTHON_EXECUTABLE     "$python_exec
 echo "BOOST_ROOT            "$boost_root_dir
 echo "EIGEN3_INCLUDE_DIR    "$eigen3_include_dir
+echo "USE_DEBUG             "$use_ffea_debug
 
 if [[ -z $boost_root_dir ]];
 then
@@ -23,19 +40,17 @@ if [[ -z $eigen3_include_dir ]];
 then
     echo "Building with internal Eigen3"
 fi
-
 # ================ Args ================ #
 do_cmake=${1:-0}  # required if making changes to the testing code
 do_install=${2:-0}
 do_ctest=${3:-0}
-restrict_tests=${3:-0}
+restrict_tests=${4:-0}
 echo ""
 echo "do_cmake        "$do_cmake
 echo "do_install      "$do_install
 echo "do_ctest        "$do_ctest
 echo "restrict_tests  "$restrict_tests
 echo ""
-
 # ============== Threads =============== #
 max_proc_id=$(cat /proc/cpuinfo | grep 'processor' | tail -1 | awk '{print $3}')
 max_threads=$((max_proc_id+1))
@@ -50,6 +65,12 @@ echo "Building with "$use_threads" threads out of "$max_threads
 echo ""
 
 # =============== Script =============== #
+if [[ $use_ffea_debug -eq "ON" ]];
+then
+    # edit the rod debug flag in-place to be switched on
+    sed -i 's/dbg_print = false/dbg_print = true/' $FFEA_SRC/src/rod_math_v9.cpp
+fi
+
 if [[ $do_cmake -eq 1 ]];
 then
     rm -r $cmake_install_prefix
@@ -66,7 +87,7 @@ then
     then
         cmake $src_dir -DCMAKE_INSTALL_PREFIX=$cmake_install_prefix -DPYTHON_EXECUTABLE=$python_exec -DUSE_EIGEN3_INTERNAL=ON -DUSE_BOOST_INTERNAL=OFF -DBOOST_ROOT=$boost_root_dir
     else
-        cmake $src_dir -DCMAKE_INSTALL_PREFIX=$cmake_install_prefix -DPYTHON_EXECUTABLE=$python_exec -DUSE_EIGEN3_INTERNAL=OFF -DUSE_BOOST_INTERNAL=OFF -DBOOST_ROOT=$boost_root_dir -DEIGEN3_INCLUDE_DIR=$eigen3_include_dir
+        cmake $src_dir -DCMAKE_INSTALL_PREFIX=$cmake_install_prefix -DPYTHON_EXECUTABLE=$python_exec -DUSE_EIGEN3_INTERNAL=OFF -DUSE_BOOST_INTERNAL=OFF -DBOOST_ROOT=$boost_root_dir -DEIGEN3_INCLUDE_DIR=$eigen3_include_dir -DUSE_DEBUG=$use_ffea_debug
     fi
 
     make -j $use_threads
