@@ -1185,6 +1185,7 @@ Rod Rod::remove_neighbours(){
     return *this;
 }
 
+// Just a silly debug function that prints all the positional data of the rod
 Rod Rod::print_node_positions(){
     float r[3] = {0, 0, 0};
     for (int i=0; i<this->get_num_nodes(); i++){
@@ -1211,12 +1212,6 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
 
     for (int element_a=0; element_a < rod_a->get_num_nodes()-1; element_a++){
         for (int element_b=0; element_b < rod_b->get_num_nodes()-1; element_b++){
-          
-            // ! For some reason the second rod has all its nodes being zero?
-            if(rod::dbg_print){
-                rod_a->print_node_positions();
-                rod_b->print_node_positions();
-            }
         
             rod_a->get_r(element_a, r_a, false);
             rod_a->get_p(element_a, p_a, false);
