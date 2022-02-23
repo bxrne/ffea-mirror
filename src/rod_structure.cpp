@@ -170,10 +170,11 @@ Rod Rod::set_units(){
 
 /**
  Do a timestep.
- This function contains two loops. Both are over the nodes. The first loop
- populates the contents of the energy arrays, which int we use to work out
- delta E. The second one uses those energies to compute dynamics and
- applies those dynamics to the position arrays.
+ This function contains three loops. Two over nodes and one over elements. The 
+ first loop (nodes) populates the contents of the energy arrays, which we use to 
+ work out delta E. The second one (elements) works out the energy from all steric 
+ interactions between neighbouring elements. The third loop (nodes) uses energies 
+ to compute dynamics and applies those dynamics to the position arrays.
 */
 Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     
@@ -638,7 +639,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         step_no += 1; //we just did one timestep so increment this
 
     }
-    // TODO: Purge neighbour list for this timestep
+    this->remove_neighbours();
     
     return *this; 
 }
@@ -697,6 +698,7 @@ Rod Rod::load_header(std::string filename){
     }
     
     assert(length_set == true && "Length of the rod from file has not been set.");
+    assert(this->num_nodes != 0 && "Rod has zero nodes.");
     
     /** Warn the user if there is a file version mismatch */
     if (fabs(this->rod_version - rod_software_version) > 0.0000001){
@@ -740,7 +742,7 @@ Rod Rod::load_header(std::string filename){
     this->timestep = 1e-12/mesoDimensions::time;
     this->kT = 0;
     this->perturbation_amount = 0.001*pow(10,-9)/mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
-    
+
     return *this;
 }
 
@@ -790,8 +792,8 @@ Rod Rod::load_contents(std::string filename){
     }
     
     /** Check that we got the last frame */
-    assert(line_of_last_frame != 0);
-    std::cout << "[rod] Last frame: line " << line_of_last_frame << "\n";
+    assert(line_of_last_frame != 0 && "Could not find last frame of rod.");
+    if(rod::dbg_print){std::cout << "[rod] Last frame: line " << line_of_last_frame << "\n";}
     
     /** Seek back to the start of the file */
     infile.clear();
@@ -838,6 +840,7 @@ Rod Rod::load_contents(std::string filename){
         }
         n++;
     }
+    std::cout << "Loaded contents of rod " << this->rod_no << " with " << this->get_num_nodes() << " nodes." << std::endl;
     
     return *this;
 }
@@ -1083,11 +1086,11 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
     }
     else{
         if(dbg_print){
-            std::cout << "index = " << index << "\n";
+            std::cout << "rod " << this->rod_no << ", index = " << index << "\n";
             float r_i[3] = {0, 0, 0}; 
             float r_ip1[3] = {0, 0, 0};  
-            get_r(index*3, r_i, false);
-            get_r((index*3)+3, r_ip1, false);
+            vec3d(n){r_i[n] = current_r[(index*3)+n];}
+            vec3d(n){r_ip1[n] = current_r[(index*3)+3+n];}
             rod::print_array("  r_i", r_i, 3);
             rod::print_array("  r_ip1", r_ip1, 3);
         }
@@ -1095,12 +1098,8 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
         // are separated in the array by 3 items (x, y, and z)
         vec3d(n){p[n] = current_r[(index*3)+3+n] - current_r[(index*3)+n];}
     }
-    if(rod::dbg_print){
-        print_array("  p", p, 3);
-        if(std::abs(rod::absolute(p)) < 1e-7){
-            throw std::invalid_argument("Length of rod element is zero");
-        }
-    }
+    if(rod::dbg_print){print_array("  p", p, 3);}
+    assert(std::abs(rod::absolute(p)) > 1e-7 && "Length of rod element is zero");
     return *this;
 }
 
@@ -1108,12 +1107,12 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
  * Get the rod node position for the equilibrium or current structure, given
  * a node index.
  */
-Rod Rod::get_r(int node_index, OUT float r[3], bool equil){
+Rod Rod::get_r(int node_index, OUT float r_i[3], bool equil){
     if (equil) {
-        vec3d(n){r[n] = equil_r[(node_index*3)+n];}
+        vec3d(n){r_i[n] = equil_r[(node_index*3)+n];}
     }
     else{
-        vec3d(n){r[n] = current_r[(node_index*3)+n];}
+        vec3d(n){r_i[n] = current_r[(node_index*3)+n];}
     }
     return *this;
 }
@@ -1143,7 +1142,7 @@ int Rod::get_num_nodes(){
      c_b: point lying on rod b (3-5)
      radius_b (6)
  */
-void Rod::get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b){
+Rod Rod::get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b){
     std::vector<float> slice;
 
     slice = slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index*7, (neighbour_index*7)+6);
@@ -1151,19 +1150,21 @@ void Rod::get_steric_interaction_data_slice(int element_index, int neighbour_ind
     vec3d(n){c_a[n] = slice.at(n);}
     vec3d(n){c_b[n] = slice.at(n+3);}
     radius_b = slice.at(6);
+
+    return *this;
 }
 
-void Rod::check_neighbour_list_dimensions(){
+Rod Rod::check_neighbour_list_dimensions(){
     int num_rows = steric_interaction_coordinates.size();
     int num_cols = 0;
     bool dim_ok = true;
 
-    if(num_rows != this->num_nodes-1){
-        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->num_nodes-1 << ")." << std::endl;
+    if(num_rows != this->get_num_nodes()-1){
+        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->get_num_nodes()-1 << ")." << std::endl;
         dim_ok = false;
     }
 
-    for (int i=0; i<this->num_nodes-1; i++){
+    for (int i=0; i<this->get_num_nodes()-1; i++){
         num_cols = steric_interaction_coordinates.at(i).size();
         if(num_cols % 7 != 0){
             std::cout << "Warning: number of items (" << num_cols << ") in row " << i << " of neighbour list should be a multiple of 7." << std::endl;
@@ -1174,6 +1175,24 @@ void Rod::check_neighbour_list_dimensions(){
     if(dim_ok){
         std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK (" << num_rows << ", " << num_cols << ")." << std::endl;
     }
+
+    return *this;
+}
+
+Rod Rod::remove_neighbours(){
+    this->steric_interaction_coordinates.clear();
+    if(rod::dbg_print){std::cout << "Emptied neighbour list" << std::endl;}
+    return *this;
+}
+
+Rod Rod::print_node_positions(){
+    float r[3] = {0, 0, 0};
+    for (int i=0; i<this->get_num_nodes(); i++){
+        std::string msg = "rod " + std::to_string(this->rod_no) + " r" + std::to_string(i);
+        vec3d(n){r[n] = this->current_r[(i*3)+n];}
+        rod::print_array(msg, r, 3);
+    }
+    return *this;
 }
 
 /* Construct steric interaction neighbour lists for two rods, a and b.
@@ -1190,26 +1209,32 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
     float p_a[3] = {0, 0, 0};
     float p_b[3] = {0, 0, 0};
 
-    for (int element_index_a=0; element_index_a < rod_a->get_num_nodes()-1; element_index_a++){
-        for (int element_index_b=0; element_index_b < rod_b->get_num_nodes()-1; element_index_b++){
-            if(rod::dbg_print){std::cout << "rod " << rod_a->rod_no << ", elem " << element_index_a << " | rod " << rod_b->rod_no << ", elem " << element_index_b << std::endl;}
+    for (int element_a=0; element_a < rod_a->get_num_nodes()-1; element_a++){
+        for (int element_b=0; element_b < rod_b->get_num_nodes()-1; element_b++){
+          
+            // ! For some reason the second rod has all its nodes being zero?
+            if(rod::dbg_print){
+                rod_a->print_node_positions();
+                rod_b->print_node_positions();
+            }
+        
+            rod_a->get_r(element_a, r_a, false);
+            rod_a->get_p(element_a, p_a, false);
 
-            rod_a->get_p(element_index_a, p_a, false);
-            rod_b->get_p(element_index_b, p_b, false);
-            rod_a->get_r(element_index_a, r_a, false);
-            rod_b->get_r(element_index_b, r_b, false);
+            rod_b->get_r(element_b, r_b, false);
+            rod_b->get_p(element_b, p_b, false);
 
             // Distance check
             rod::assign_neighbours_to_elements(p_a, 
                 p_b, 
                 r_a, 
                 r_b, 
-                rod_a->get_radius(element_index_a), 
-                rod_b->get_radius(element_index_b), 
-                rod_a->steric_interaction_coordinates.at(element_index_a), 
-                rod_b->steric_interaction_coordinates.at(element_index_b));
+                rod_a->get_radius(element_a), 
+                rod_b->get_radius(element_b), 
+                rod_a->steric_interaction_coordinates.at(element_a), 
+                rod_b->steric_interaction_coordinates.at(element_b));
+            }
         }
     }
-}
 
 } //end namespace

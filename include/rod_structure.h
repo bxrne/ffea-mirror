@@ -129,8 +129,10 @@ struct Rod
   float get_radius(int node_index);
   int get_num_steric_neighbours(int element_index);
   int get_num_nodes();
-  void get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
-  void check_neighbour_list_dimensions();
+  Rod get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
+  Rod check_neighbour_list_dimensions();
+  Rod remove_neighbours();
+  Rod print_node_positions();
 };
 
 void update_neighbour_lists(Rod *rod_a, Rod *rod_b);
