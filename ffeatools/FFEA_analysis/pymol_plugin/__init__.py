@@ -139,6 +139,7 @@ class FFEA_viewer_control_window:
         self.show_inverted = IntVar(self.root, value=self.display_flags['show_inverted'])
         self.show_springs = IntVar(self.root, value=self.display_flags['show_springs'])
         self.show_rod_tangent = IntVar(self.root, value=self.display_flags['show_rod_tangent'])
+        self.show_rod_steric_vector = IntVar(self.root, value=self.display_flags['show_rod_steric_vector'])
         self.rod_color = StringVar(self.root, value=self.display_flags['rod_color'])
         self.show_numbers = StringVar(self.root, value=self.display_flags['show_numbers'])
         self.matparam = StringVar(self.root, value=self.display_flags['matparam'])
@@ -214,6 +215,10 @@ class FFEA_viewer_control_window:
         label_mesh.grid(row=7, column=2, sticky=W, padx=(0, 95))
         self.om_rod_color = OptionMenu(display_flags_frame, self.rod_color, "Rainbow", "Candy Cane", "Green", command=lambda x:self.update_display_flags("rod_color", val=self.rod_color.get()))
         self.om_rod_color.grid(row=7, column=2, sticky=E)
+
+    # Show rod steric interaction vector
+        self.check_button_show_rod_steric_vector = Checkbutton(display_flags_frame, text="Rod Steric Vector", variable=self.show_rod_steric_vector, command=lambda:self.update_display_flags("show_rod_steric_vector"))
+        self.check_button_show_rod_steric_vector.grid(row=8, column=2, sticky=W)
 
 	# # show solid:
         label_solid = Label(display_flags_frame, text="Show Solid:")
@@ -1064,6 +1069,7 @@ class FFEA_viewer_control_window:
         self.check_button_show_inverted.config(state=DISABLED)
         self.check_button_show_danger.config(state=DISABLED)
         self.check_button_show_rod_tangent.config(state=DISABLED)
+        self.check_button_show_rod_steric_vector.config(state=DISABLED)
         self.om_rod_color.config(state=DISABLED)
 
         self.text_button_system_name.config(state=DISABLED)
@@ -1208,17 +1214,29 @@ class FFEA_viewer_control_window:
             line = [] 
             color_cycle = cycle(self.rod_color_dict[self.display_flags['rod_color']])
 
+            # draw rod elements
             for j in range(len(rod.current_r[i])-1):
                 color = next(color_cycle)
+                # 9.0 is the PyMOL CGO code for a cylinder object
                 line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, color[0], color[1], color[2], color[0], color[1], color[2] ]
-                # line = line + [9.0, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], 5, 0, 1, 0, 0, 1, 0]  # green: 0 1 0
+                mid_x = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2
+                mid_y = (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2
+                mid_z = (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
 	            # material frame in center of each element
                 if self.display_flags['show_rod_tangent'] == 1:
-                    mid_x, mid_y, mid_z = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2, (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2, (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
                     line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 4, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7]
-                # line = line + [9.0, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], 4, 0, 0, 1, 0, 0, 1]
-                # print("frame "+str(i)+" element "+str(j)+"= "+str(line))
-                # print(line)
+                # unit vector of steric interaction force
+                if self.display_flags['show_rod_steric_vector'] == 1:
+                    
+                    #vec_x = rod.steric_unit_vector[i][j][0]*abs(rod.current_m[i][j][0])  # scale by length of material axes
+                    #vec_y = rod.steric_unit_vector[i][j][1]*abs(rod.current_m[i][j][1])
+                    #vec_z = rod.steric_unit_vector[i][j][2]*abs(rod.current_m[i][j][2])
+
+                    vec_x = 0.33*abs(rod.current_m[i][j][0])  # scale by length of material axes
+                    vec_y = 0.33*abs(rod.current_m[i][j][1])
+                    vec_z = 0.33*abs(rod.current_m[i][j][2])
+                    line = line + [9.0, mid_x, mid_y, mid_z, mid_x+vec_x, mid_y+vec_x, mid_z+vec_x, 3, 0, 0, 1, 0, 0, 1]
+
             cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
 
 
@@ -1543,6 +1561,7 @@ class FFEA_viewer_control_window:
             'show_shortest_edge': 0,
             'show_springs': 0,
             'show_rod_tangent': 1,
+            'show_rod_steric_vector': 1,
             'rod_color': "Green",
             'show_box': "No Box",
             'load_trajectory': "Trajectory", ## PYMOL OK
