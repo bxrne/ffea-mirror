@@ -639,7 +639,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         step_no += 1; //we just did one timestep so increment this
 
     }
-    this->remove_neighbours();
+    this->reset_neighbour_list();
     
     return *this; 
 }
@@ -1157,31 +1157,27 @@ Rod Rod::get_steric_interaction_data_slice(int element_index, int neighbour_inde
 Rod Rod::check_neighbour_list_dimensions(){
     int num_rows = steric_interaction_coordinates.size();
     int num_cols = 0;
-    bool dim_ok = true;
+    std::string msg;
 
-    if(num_rows != this->get_num_nodes()-1){
-        std::cout << "Warning: number of rows in neighbour list (" << num_rows << ") should be equal to number of rod elements (" << this->get_num_nodes()-1 << ")." << std::endl;
-        dim_ok = false;
-    }
+    msg = "Number of rows in neighbour list (" + std::to_string(num_rows) + ") should be equal to number of rod elements (" + std::to_string(this->get_num_nodes()-1) + ").";
+    if (num_rows != this->get_num_nodes()-1){throw std::logic_error(msg);}
 
     for (int i=0; i<this->get_num_nodes()-1; i++){
         num_cols = steric_interaction_coordinates.at(i).size();
-        if(num_cols % 7 != 0){
-            std::cout << "Warning: number of items (" << num_cols << ") in row " << i << " of neighbour list should be a multiple of 7." << std::endl;
-            dim_ok = false;
-        }
+        msg = "Number of items (" + std::to_string(num_cols) + ") in row " + std::to_string(i) + " of neighbour list should be a multiple of 7.";
+        if (num_cols % 7 != 0){throw std::logic_error(msg);}
+        if (rod::dbg_print){std::cout << "items in row " << i << ": " << num_cols << std::endl;}
     }
 
-    if(dim_ok){
-        std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK (" << num_rows << ", " << num_cols << ")." << std::endl;
-    }
-
+    if(rod::dbg_print){std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK" << std::endl;}
     return *this;
 }
 
-Rod Rod::remove_neighbours(){
-    this->steric_interaction_coordinates.clear();
-    if(rod::dbg_print){std::cout << "Emptied neighbour list" << std::endl;}
+Rod Rod::reset_neighbour_list(){
+    for (int i=0; i < this->get_num_nodes()-1; i++){
+        this->steric_interaction_coordinates.at(i).clear();
+    }
+    if(rod::dbg_print){std::cout << "Reset neighbour list of rod " << this->rod_no << std::endl;}
     return *this;
 }
 
@@ -1210,6 +1206,11 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
     float p_a[3] = {0, 0, 0};
     float p_b[3] = {0, 0, 0};
 
+    rod_a->check_neighbour_list_dimensions();
+    rod_b->check_neighbour_list_dimensions();
+
+    if (rod::dbg_print){std::cout <<"Updating neighbour lists of rods " << rod_a->rod_no << " and " << rod_b->rod_no << std::endl;}
+
     for (int element_a=0; element_a < rod_a->get_num_nodes()-1; element_a++){
         for (int element_b=0; element_b < rod_b->get_num_nodes()-1; element_b++){
         
@@ -1220,6 +1221,7 @@ void update_neighbour_lists(Rod *rod_a, Rod *rod_b){
             rod_b->get_p(element_b, p_b, false);
 
             // Distance check
+            // ! pass in steric interactions full instead of specific element - will fail if zero
             rod::assign_neighbours_to_elements(p_a, 
                 p_b, 
                 r_a, 

@@ -226,13 +226,11 @@ void assign_neighbours_to_elements(
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
 
     if(rod::dbg_print){
-        std::cout << "rod element neighbour list assignment:" << std::endl;
-        std::cout << "  |c_ab|: " << rod::absolute(c_ab) << std::endl;
-        std::cout << "  radii sum: " << radius_a + radius_b << std::endl;
+        std::cout << "|c_ab|: " << rod::absolute(c_ab) << ",  radius_a + radius_b: " << radius_a + radius_b << std::endl;
     }
 
     if(rod::absolute(c_ab) < (radius_a + radius_b)){
-        if(rod::dbg_print){std::cout << "  interaction" << std::endl;}
+        if(rod::dbg_print){std::cout << "assigning neighbours" << std::endl;}
 
         // Increase vector capacity before assignment (optional, might help with memory stuff)
         element_a_neighbours.reserve(element_a_neighbours.size() + 7);
@@ -248,7 +246,7 @@ void assign_neighbours_to_elements(
         element_b_neighbours.push_back(radius_a);
     }
     else{
-        if(rod::dbg_print){std::cout << "  no interaction detected" << std::endl;}
+        if(rod::dbg_print){std::cout << "no interaction" << std::endl;}
     }
 }
 

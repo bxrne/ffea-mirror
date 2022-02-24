@@ -1960,7 +1960,7 @@ int World::run() {
                     }
                 }
             }
-            if(rod::dbg_print){std::cout << "Generated Rod neighbour lists" << std::endl;}
+            if(rod::dbg_print){std::cout << "Generated rod neighbour lists" << std::endl;}
         }
 
         // Do rods
