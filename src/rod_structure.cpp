@@ -35,6 +35,8 @@
 
 namespace rod {
 
+bool calc_rod_steric = true;
+
 /** Easy access to 1-d arrays */
 #define odx(x) x*3
 #define ody(y) (y*3)+1
@@ -386,136 +388,139 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
        
     // Rod-rod interactions: loop over all elements, interpolate energies onto nodes
     int end_elem = this->get_num_nodes()-1;
-    float steric_force_scaling = 5*kT;
-    #pragma omp parallel for schedule(dynamic)
-    for(int elem_no = 0; elem_no < end_elem; elem_no++){
-        int num_neighbours = get_num_steric_neighbours(elem_no);
-        float c_ab_sum[3] = {0, 0, 0};
-        float c_ab_norm[3] = {0, 0, 0};
-        
-        if(rod::dbg_print){std::cout << "element: " << elem_no << std::endl;}
-
-        for(int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
-            float r_a[3] = {0, 0, 0};
-            float p_a[3] = {0, 0, 0};
-            float radius_a = 0;
-            float radius_b = 0;
-            float c_a[3] = {0, 0, 0};
-            float c_b[3] = {0, 0, 0};
-            float energies[2] = {0, 0};
+    float steric_force_scaling = 5;  // Arbitrary value to determine severity of repulsion force [force units]
+    if(rod::calc_rod_steric == true){
+        #pragma omp parallel for schedule(dynamic)
+        for(int elem_no = 0; elem_no < end_elem; elem_no++){
+            int num_neighbours = get_num_steric_neighbours(elem_no);
+            float c_ab_sum[3] = {0, 0, 0};
+            float c_ab_norm[3] = {0, 0, 0};
             
-            if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << " of " << num_neighbours << std::endl;}
-            get_r(elem_no, r_a, false);
-            get_p(elem_no, p_a, false);
-            radius_a = get_radius(elem_no);
-            get_steric_interaction_data_slice(elem_no, neighbour_no, c_a, c_b, radius_b);
+            if(rod::dbg_print){std::cout << "element: " << elem_no << std::endl;}
 
-            // positive x
-            rod::get_steric_perturbation_energy(
-                perturbation_amount*0.5, 
-                x, 
-                steric_force_scaling,
-                r_a,
-                p_a,
-                c_a,
-                c_b,
-                radius_a,
-                radius_b, 
-                energies);
+            for(int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
+                float r_a[3] = {0, 0, 0};
+                float p_a[3] = {0, 0, 0};
+                float radius_a = 0;
+                float radius_b = 0;
+                float c_a[3] = {0, 0, 0};
+                float c_b[3] = {0, 0, 0};
+                float energies[2] = {0, 0};
+                
+                if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << " of " << num_neighbours << std::endl;}
+                get_r(elem_no, r_a, false);
+                get_p(elem_no, p_a, false);
+                radius_a = get_radius(elem_no);
+                get_steric_interaction_data_slice(elem_no, neighbour_no, c_a, c_b, radius_b);
 
-            steric_perturbed_energy_positive[elem_no*3] += energies[0]; 
-            steric_perturbed_energy_positive[(elem_no*3)+3] += energies[1];
+                // positive x
+                rod::get_steric_perturbation_energy(
+                    perturbation_amount*0.5, 
+                    x, 
+                    steric_force_scaling,
+                    r_a,
+                    p_a,
+                    c_a,
+                    c_b,
+                    radius_a,
+                    radius_b, 
+                    energies);
 
-            // positive y
-            rod::get_steric_perturbation_energy(
-                perturbation_amount*0.5,
-                y,
-                steric_force_scaling,
-                r_a,
-                p_a,
-                c_a,
-                c_b,
-                radius_a,
-                radius_b, 
-                energies);
+                steric_perturbed_energy_positive[elem_no*3] += energies[0]; 
+                steric_perturbed_energy_positive[(elem_no*3)+3] += energies[1];
 
-            steric_perturbed_energy_positive[(elem_no*3)+1] += energies[0]; 
-            steric_perturbed_energy_positive[(elem_no*3)+1+3] += energies[1];
-            
+                // positive y
+                rod::get_steric_perturbation_energy(
+                    perturbation_amount*0.5,
+                    y,
+                    steric_force_scaling,
+                    r_a,
+                    p_a,
+                    c_a,
+                    c_b,
+                    radius_a,
+                    radius_b, 
+                    energies);
 
-            // positive z
-            rod::get_steric_perturbation_energy(
-                perturbation_amount*0.5,
-                z,
-                steric_force_scaling,
-                r_a,
-                p_a,
-                c_a,
-                c_b,
-                radius_a,
-                radius_b, 
-                energies);
+                steric_perturbed_energy_positive[(elem_no*3)+1] += energies[0]; 
+                steric_perturbed_energy_positive[(elem_no*3)+1+3] += energies[1];
+                
 
-            steric_perturbed_energy_positive[(elem_no*3)+2] += energies[0]; 
-            steric_perturbed_energy_positive[(elem_no*3)+2+3] += energies[1];
+                // positive z
+                rod::get_steric_perturbation_energy(
+                    perturbation_amount*0.5,
+                    z,
+                    steric_force_scaling,
+                    r_a,
+                    p_a,
+                    c_a,
+                    c_b,
+                    radius_a,
+                    radius_b, 
+                    energies);
 
-            // negative x
-            rod::get_steric_perturbation_energy(
-                perturbation_amount*-0.5,
-                x,
-                steric_force_scaling,
-                r_a,
-                p_a,
-                c_a,
-                c_b,
-                radius_a,
-                radius_b, 
-                energies);
+                steric_perturbed_energy_positive[(elem_no*3)+2] += energies[0]; 
+                steric_perturbed_energy_positive[(elem_no*3)+2+3] += energies[1];
 
-            steric_perturbed_energy_negative[(elem_no*3)] += energies[0]; 
-            steric_perturbed_energy_negative[(elem_no*3)+3] += energies[1];
-            
-            // negative y
-            rod::get_steric_perturbation_energy(
-                perturbation_amount*-0.5,
-                y,
-                steric_force_scaling,
-                r_a,
-                p_a,
-                c_a,
-                c_b,
-                radius_a,
-                radius_b, 
-                energies);
+                // negative x
+                rod::get_steric_perturbation_energy(
+                    perturbation_amount*-0.5,
+                    x,
+                    steric_force_scaling,
+                    r_a,
+                    p_a,
+                    c_a,
+                    c_b,
+                    radius_a,
+                    radius_b, 
+                    energies);
 
-            steric_perturbed_energy_negative[(elem_no*3)+1] += energies[0]; 
-            steric_perturbed_energy_negative[(elem_no*3)+1+3] += energies[1];
+                steric_perturbed_energy_negative[(elem_no*3)] += energies[0]; 
+                steric_perturbed_energy_negative[(elem_no*3)+3] += energies[1];
+                
+                // negative y
+                rod::get_steric_perturbation_energy(
+                    perturbation_amount*-0.5,
+                    y,
+                    steric_force_scaling,
+                    r_a,
+                    p_a,
+                    c_a,
+                    c_b,
+                    radius_a,
+                    radius_b, 
+                    energies);
 
-            // negative z
-            rod::get_steric_perturbation_energy(
-                perturbation_amount*-0.5,
-                z,
-                steric_force_scaling,
-                r_a,
-                p_a,
-                c_a,
-                c_b,
-                radius_a,
-                radius_b, 
-                energies);
+                steric_perturbed_energy_negative[(elem_no*3)+1] += energies[0]; 
+                steric_perturbed_energy_negative[(elem_no*3)+1+3] += energies[1];
 
-            steric_perturbed_energy_negative[(elem_no*3)+2] += energies[0]; 
-            steric_perturbed_energy_negative[(elem_no*3)+2+3] += energies[1];
+                // negative z
+                rod::get_steric_perturbation_energy(
+                    perturbation_amount*-0.5,
+                    z,
+                    steric_force_scaling,
+                    r_a,
+                    p_a,
+                    c_a,
+                    c_b,
+                    radius_a,
+                    radius_b, 
+                    energies);
 
-            vec3d(n){c_ab_sum[n] += (c_b[n] - c_a[n]);}
+                steric_perturbed_energy_negative[(elem_no*3)+2] += energies[0]; 
+                steric_perturbed_energy_negative[(elem_no*3)+2+3] += energies[1];
 
-        }// exit steric loop
+                vec3d(n){c_ab_sum[n] += (c_b[n] - c_a[n]);}
 
-        // Resultant unit vector on element, from sum over all neighbours
-        rod:normalize(c_ab_sum, c_ab_norm);
-        vec3d(n){steric_unit_vector[(elem_no*3)+n] = c_ab_norm[n];}
+            }// exit steric loop
 
-    }//exit interaction energy loop
+            // Resultant unit vector on element, from sum over all neighbours
+            rod:normalize(c_ab_sum, c_ab_norm);
+            vec3d(n){steric_unit_vector[(elem_no*3)+n] = c_ab_norm[n];}
+
+        }//exit interaction energy loop
+
+    }//exit steric if-statement
 
  
     //This loop is for the dynamics
@@ -568,15 +573,35 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         float twist_force = (internal_twisted_energy_negative[node_no*3]+internal_twisted_energy_negative[(node_no*3)+1]+internal_twisted_energy_negative[(node_no*3)+2] - (internal_twisted_energy_positive[node_no*3]+internal_twisted_energy_positive[(node_no*3)+1]+internal_twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
 
         // Rod-rod steric interactions
-        float steric_positive[3] = {0, 0, 0}; // [x, y, z]
-        float steric_negative[3] = {0, 0, 0};
+        // Seems to me the energy gradient should be (positive - negative), but Rob has it the other way around? I'm following his convention here.
+        if(rod::calc_rod_steric == true){
+            float steric_positive[3] = {0, 0, 0}; // x, y, z
+            float steric_negative[3] = {0, 0, 0};
+            get_steric_energy_on_node(
+                node_no, 
+                node_min, 
+                end_node, 
+                steric_perturbed_energy_positive, 
+                steric_perturbed_energy_negative, 
+                steric_positive, 
+                steric_negative);
+            float unit_vector[3] = {0, 0, 0};
+            get_unit_vector_on_node(
+                node_no, 
+                node_min, 
+                end_node, 
+                steric_unit_vector, // L-3 length array
+                unit_vector);
 
-        // Seems to me it should be (positive - negative), but Rob has it the other way around? I'm following his convention here.
-        // TODO: WE NEED THE DIRECTION OF THE REPULSIVE FORCE!!
-        // LOOP OVER NEIGHBOUR LIST HERE AND MULTIPLY ENERGY BY UNIT VECTOR -c_ab??
-        float steric_force_x = (steric_negative[0] - steric_positive[0]) / perturbation_amount;
-        float steric_force_y = (steric_negative[1] - steric_positive[1]) / perturbation_amount;
-        float steric_force_z = (steric_negative[2] - steric_positive[2]) / perturbation_amount;
+            if(rod::dbg_print){
+                rod::print_array("steric_energy_positive", steric_positive, 3);
+                rod::print_array("steric_energy_negative", steric_negative, 3);
+            }
+
+            x_force += unit_vector[0] * (steric_negative[0] - steric_positive[0]) / perturbation_amount;
+            y_force += unit_vector[1] * (steric_negative[1] - steric_positive[1]) / perturbation_amount;
+            z_force += unit_vector[2] * (steric_negative[2] - steric_positive[2]) / perturbation_amount;
+        }
 
         // Get applied force, if any
         float applied_force_x = applied_forces[node_no*4];

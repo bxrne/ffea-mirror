@@ -306,6 +306,10 @@ void get_steric_perturbation_energy(
     rod::get_interpolation_weights(r_a, p_a, c_a, w0, w1);
     energies[0] = w0 * energy;
     energies[1] = w1 * energy;
+    if(rod::dbg_print){
+        std::cout << "weighting on nodes: " << w0 << ", " << w1 << std::endl;
+        std::cout << "steric energy on nodes: " << energies[0] << ", " << energies[1] << std::endl;
+    }
 
 }
 

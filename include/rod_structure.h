@@ -46,6 +46,8 @@
 
 namespace rod {
 
+extern bool calc_rod_steric;
+
 std::vector <float> stof_vec (std::vector <std::string> vec_in, int length);
 struct Rod
 {

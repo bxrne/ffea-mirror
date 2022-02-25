@@ -1952,15 +1952,16 @@ int World::run() {
         apply_springs();
                         
         // Rod neighbours
-        if(params.calc_ssint == 1 || params.calc_steric == 1){
-            if(params.ssint_type == "steric" || params.ssint_type == "ljsteric"){
-                for (int i=0; i<params.num_rods; i++){
-                    for (int j=i+1; j<params.num_rods; j++){
-                        rod::update_neighbour_lists(rod_array[i], rod_array[j]);
-                    }
+        if(rod::calc_rod_steric == true){
+            for (int i=0; i<params.num_rods; i++){
+                for (int j=i+1; j<params.num_rods; j++){
+                    rod::update_neighbour_lists(rod_array[i], rod_array[j]);
                 }
             }
             if(rod::dbg_print){std::cout << "Generated rod neighbour lists" << std::endl;}
+        }
+        else if(rod::dbg_print){
+            std::cout << "Steric interactions disabled. No neighbours calculated." << std::endl;
         }
 
         // Do rods
