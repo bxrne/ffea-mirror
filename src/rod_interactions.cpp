@@ -261,6 +261,13 @@ void get_interpolation_weights(float r[3], float p[3], float c[3], OUT float wei
     vec3d(n){displacement[n] = c[n] - r[n];}
     weight_end_node = rod::absolute(displacement) / rod::absolute(p);
     weight_start_node = std::max(0.0f, 1 - weight_end_node);
+    if(rod::dbg_print){
+        std::cout << "interpolation weights" << std::endl;
+        std::cout << "\t|displacement|: " << rod::absolute(displacement) << std::endl;
+        std::cout << "\t|p|: " << rod::absolute(p) << std::endl;
+        std::cout << "\tweight_end_node: " << weight_end_node;
+        std::cout << "\tweight_start_node: " << weight_start_node << std::endl;
+    }
 }
 
 
@@ -307,8 +314,15 @@ void get_steric_perturbation_energy(
     energies[0] = w0 * energy;
     energies[1] = w1 * energy;
     if(rod::dbg_print){
-        std::cout << "weighting on nodes: " << w0 << ", " << w1 << std::endl;
-        std::cout << "steric energy on nodes: " << energies[0] << ", " << energies[1] << std::endl;
+        std::cout << "steric perturbation energy" << std::endl;
+        rod::print_array("\tc_a", c_a, 3);
+        rod::print_array("\tc_b perturbed", c_b, 3);
+        std::cout << "\tforce_constant: " << force_constant << std::endl;
+        std::cout << "\t|c_ab|: " << rod::absolute(c_ab) << std::endl;
+        std::cout << "\tradius sum: " << radius_a + radius_b << std::endl;
+        std::cout << "\telement energy: " << energy << std::endl;
+        std::cout << "\tnode weights: " << w0 << ", " << w1 << std::endl;
+        std::cout << "\tinterpolated node energies: " << energies[0] << ", " << energies[1] << std::endl;
     }
 
 }
