@@ -35,7 +35,7 @@
 
 namespace rod {
 
-bool dbg_print = true;
+bool dbg_print = false;
     
      /*---------*/
     /* Utility */
@@ -93,7 +93,7 @@ bool not_simulation_destroying(float x[3], std::string message){
  Print the contents of an array to the stdout.
 */
 void print_array(std::string array_name, float array[], int length){
-    if(dbg_print){
+    if(rod::dbg_print){
         std::cout << array_name << " : [";
         for (int i = 0; i < length; i++){
             if (i != length-1){
@@ -108,7 +108,7 @@ void print_array(std::string array_name, float array[], int length){
 }
 
 void print_array(std::string array_name, double array[], int length){
-    if(dbg_print){
+    if(rod::dbg_print){
         std::cout << array_name << " : [";
         for (int i = 0; i < length; i++){
             if (i != length-1){
@@ -390,8 +390,8 @@ float get_signed_angle(float m1[3], float m2[3], float l[3]){
     float m2_cross_m1[3];
     cross_product(m2, m1, m2_cross_m1);
     print_array("cross", m2_cross_m1, 3);
-    if(dbg_print){std::cout << "top: " << (m2_cross_m1[0] * l[0] + m2_cross_m1[1] * l[1] + m2_cross_m1[2] * l[2]) << "\n";}
-    if(dbg_print){std::cout << "bottom: " << (m1[0]*m2[0]+m1[1]*m2[1]+m1[2]*m2[2]) << "\n";}
+    if(rod::dbg_print){std::cout << "top: " << (m2_cross_m1[0] * l[0] + m2_cross_m1[1] * l[1] + m2_cross_m1[2] * l[2]) << "\n";}
+    if(rod::dbg_print){std::cout << "bottom: " << (m1[0]*m2[0]+m1[1]*m2[1]+m1[2]*m2[2]) << "\n";}
     return atan2( (m2_cross_m1[0] * l[0] + m2_cross_m1[1] * l[1] + m2_cross_m1[2] * l[2]), (m1[0]*m2[0]+m1[1]*m2[1]+m1[2]*m2[2]) );
 }
 
@@ -437,13 +437,13 @@ void update_m1_matrix(float m_i[3], float p_i[3], float p_i_prime[3], float m_i_
  where \f$k\f$ is the spring constant, \f$p\f$ is the current segment and \f$m'\f$ is the equilbrium one.
 */
 float get_stretch_energy(float k, float p_i[3], float p_i_equil[3]){
-    if(dbg_print){std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1] << ", " << p_i_equil[2] << "}, ";}
-    if(dbg_print){std::cout << "p_i = {" << p_i[0] << ", " << p_i[1] << ", " << p_i[2] << "}, ";}
+    if(rod::dbg_print){std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1] << ", " << p_i_equil[2] << "}, ";}
+    if(rod::dbg_print){std::cout << "p_i = {" << p_i[0] << ", " << p_i[1] << ", " << p_i[2] << "}, ";}
     float diff = absolute(p_i) - absolute(p_i_equil);
-    if(dbg_print){std::cout << "k = " << k << ", ";}
-    if(dbg_print){std::cout << "diff = " << diff << ", ";}
+    if(rod::dbg_print){std::cout << "k = " << k << ", ";}
+    if(rod::dbg_print){std::cout << "diff = " << diff << ", ";}
     float stretch_energy = (diff*diff*0.5*k)/absolute(p_i_equil);
-    if(dbg_print){std::cout << "stretch energy: " << stretch_energy << "\n";}
+    if(rod::dbg_print){std::cout << "stretch energy: " << stretch_energy << "\n";}
     not_simulation_destroying(stretch_energy, "get_stretch_energy is simulation destroying.");
     
     return stretch_energy;
@@ -469,7 +469,7 @@ void parallel_transport(float m[3], float m_prime[3], float p_im1[3], float p_i[
 */
 float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil[3], float m_im1_equil[3], float p_im1[3], float p_i[3], float p_im1_equil[3], float p_i_equil[3]){
     
-    if (dbg_print){std::cout << "\n\ntwist energy being calculated.\n\n";}
+    if (rod::dbg_print){std::cout << "\n\ntwist energy being calculated.\n\n";}
     
     float l_i = get_l_i(p_im1_equil, p_i_equil);
     
@@ -498,7 +498,7 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
     float m_equil_prime[3];
     parallel_transport(m_im1_equil_norm, m_equil_prime, p_im1_equil_norm, p_i_equil_norm);
     
-    if(dbg_print){std::cout << "parallel transport at equil is occuring.\n";}
+    if(rod::dbg_print){std::cout << "parallel transport at equil is occuring.\n";}
     print_array("m_im1_equil_norm", m_im1_equil_norm, 3);
     print_array("m_equil_prime", m_equil_prime, 3);
     print_array("p_im1_equil_norm", p_im1_equil_norm, 3);
@@ -514,23 +514,23 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
     
     float twist_energy = beta/(l_i*2) * pow(fmod( delta_theta - delta_theta_equil + M_PI, 2*M_PI) - M_PI, 2);
 
-    if(dbg_print){std::cout << " m_i_norm: [" << m_i_norm[0] << ", " << m_i_norm[1] << ", " << m_i_norm[2] << "\n";}
-    if(dbg_print){std::cout << " m_im1_norm: [" << m_im1_norm[0] << ", " << m_im1_norm[1] << ", " << m_im1_norm[2] << "\n";}
+    if(rod::dbg_print){std::cout << " m_i_norm: [" << m_i_norm[0] << ", " << m_i_norm[1] << ", " << m_i_norm[2] << "\n";}
+    if(rod::dbg_print){std::cout << " m_im1_norm: [" << m_im1_norm[0] << ", " << m_im1_norm[1] << ", " << m_im1_norm[2] << "\n";}
 
-    if(dbg_print){std::cout << " m_i_equil: [" << m_i_equil_norm[0] << ", " << m_i_equil_norm[1] << ", " << m_i_equil_norm[2] << "\n";}
-    if(dbg_print){std::cout << " m_im1_equil: [" << m_im1_equil_norm[0] << ", " << m_im1_equil_norm[1] << ", " << m_im1_equil_norm[2] << "\n";}
+    if(rod::dbg_print){std::cout << " m_i_equil: [" << m_i_equil_norm[0] << ", " << m_i_equil_norm[1] << ", " << m_i_equil_norm[2] << "\n";}
+    if(rod::dbg_print){std::cout << " m_im1_equil: [" << m_im1_equil_norm[0] << ", " << m_im1_equil_norm[1] << ", " << m_im1_equil_norm[2] << "\n";}
 
-    if(dbg_print){std::cout << "p_i_norm: [" << p_i_norm[0] << ", " << p_i_norm[1] << ", " << p_i_norm[2] << "]\n";}
-    if(dbg_print){std::cout << "p_im1_norm: [" << p_im1_norm[0] << ", " << p_im1_norm[1] << ", " << p_im1_norm[2] << "]\n";}
-    if(dbg_print){std::cout << "p_i_equil_norm: [" << p_i_equil_norm[0] << ", " << p_i_equil_norm[1] << ", " << p_i_equil_norm[2] << "]\n";}
-    if(dbg_print){std::cout << "p_im1_equil_norm: [" << p_im1_equil_norm[0] << ", " << p_im1_equil_norm[1] << ", " << p_im1_equil_norm[2] << "]\n";}
+    if(rod::dbg_print){std::cout << "p_i_norm: [" << p_i_norm[0] << ", " << p_i_norm[1] << ", " << p_i_norm[2] << "]\n";}
+    if(rod::dbg_print){std::cout << "p_im1_norm: [" << p_im1_norm[0] << ", " << p_im1_norm[1] << ", " << p_im1_norm[2] << "]\n";}
+    if(rod::dbg_print){std::cout << "p_i_equil_norm: [" << p_i_equil_norm[0] << ", " << p_i_equil_norm[1] << ", " << p_i_equil_norm[2] << "]\n";}
+    if(rod::dbg_print){std::cout << "p_im1_equil_norm: [" << p_im1_equil_norm[0] << ", " << p_im1_equil_norm[1] << ", " << p_im1_equil_norm[2] << "]\n";}
     
-    if(dbg_print){std::cout << " m_prime: [" << m_prime[0] << ", " << m_prime[1] << ", " << m_prime[2] << "\n";}
-    if(dbg_print){std::cout << " m_equil_prime: [" << m_equil_prime[0] << ", " << m_equil_prime[1] << ", " << m_equil_prime[2] << "\n";}
+    if(rod::dbg_print){std::cout << " m_prime: [" << m_prime[0] << ", " << m_prime[1] << ", " << m_prime[2] << "\n";}
+    if(rod::dbg_print){std::cout << " m_equil_prime: [" << m_equil_prime[0] << ", " << m_equil_prime[1] << ", " << m_equil_prime[2] << "\n";}
     
-    if(dbg_print){std::cout << " delta_theta: " << delta_theta << "\n";}
-    if(dbg_print){std::cout << " delta_theta_equil: " << delta_theta_equil << "\n";}
-    if(dbg_print){std::cout << " twist_energy: " << twist_energy << "\n";}
+    if(rod::dbg_print){std::cout << " delta_theta: " << delta_theta << "\n";}
+    if(rod::dbg_print){std::cout << " delta_theta_equil: " << delta_theta_equil << "\n";}
+    if(rod::dbg_print){std::cout << " twist_energy: " << twist_energy << "\n";}
     
     //float delta_theta = safe_cos( m_prime[x]*m_i_norm[x] + m_prime[y]*m_i_norm[y] + m_prime[z]*m_i_norm[z] );
     //float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil_norm[x] + m_equil_prime[y]*m_i_equil_norm[y] + m_equil_prime[z]*m_i_equil_norm[z] );   
@@ -538,7 +538,7 @@ float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil
     //float twist_energy = (beta/l_i)*pow((delta_theta - delta_theta_equil), 2);
     not_simulation_destroying(twist_energy, "get_twist_energy is simulation destroying.");
     
-    if (dbg_print){std::cout << "\n\ntwist has been calculated.\n\n";}
+    if (rod::dbg_print){std::cout << "\n\ntwist has been calculated.\n\n";}
 
     return twist_energy;
 }
@@ -583,7 +583,7 @@ float get_bend_energy(float omega_i_im1[2], float omega_i_im1_equil[2], float B_
     not_simulation_destroying(result, "get_bend_energy is simulation destroying.");
     print_array("    B_equil", B_equil, 4);
     print_array("    delta_omega", delta_omega, 2);
-    if(dbg_print){std::cout << "    result:" << result << "\n";}
+    if(rod::dbg_print){std::cout << "    result:" << result << "\n";}
     return result;
 }
 
@@ -647,7 +647,7 @@ float get_bend_energy_from_p(
     not_simulation_destroying(bend_energy, "get_bend_energy_from_p is simulation destroying.");
     
     if (bend_energy >= 1900000850){
-        if(dbg_print){std::cout << "bend energy looks a bit large... here's a dump \n";}
+        if(rod::dbg_print){std::cout << "bend energy looks a bit large... here's a dump \n";}
         print_array("p_im1", p_im1, 3);
         print_array("p_i", p_i, 3);
         print_array("p_im1_equil", p_im1_equil, 3);
@@ -664,8 +664,8 @@ float get_bend_energy_from_p(
         print_array("B_i_equil", B_i_equil, 3);
         
         print_array("B_im1_equil", B_im1_equil, 4);
-        if(dbg_print){std::cout << "l_equil = " << l_i << "\n";}
-        if(dbg_print){std::cout << "Energon Crystals = " << bend_energy << "\n";}
+        if(rod::dbg_print){std::cout << "l_equil = " << l_i << "\n";}
+        if(rod::dbg_print){std::cout << "Energon Crystals = " << bend_energy << "\n";}
 //        assert(false);
     }
     
@@ -819,14 +819,14 @@ float get_bend_energy_mutual_parallel_transport(
     not_simulation_destroying(bend_energy, "get_bend_energy_from_p is simulation destroying.");
     if(bend_energy >= 1900000850){ std::cout << "bend energy is very large. Please fire this up in gdb!\n"; }
 
-    if(dbg_print){std::cout << "    benergy delta_omega : [" << omega_j_im1[0]-omega_j_im1_equil[0] << ", " << omega_j_im1[1] - omega_j_im1_equil[1] << "]\n";}
+    if(rod::dbg_print){std::cout << "    benergy delta_omega : [" << omega_j_im1[0]-omega_j_im1_equil[0] << ", " << omega_j_im1[1] - omega_j_im1_equil[1] << "]\n";}
 
     //std::cout << "delta_omega = [" << omega_j_im1[0] << ", " << omega_j_im1[1] << "]\n";
     //std::cout << "delta_omega_equil = [" << omega_j_im1_equil[0] << ", " << omega_j_im1_equil[1] << "]\n";
     print_array("    kb_i", kb_i, 3);
     print_array("    kb_i_equil", kb_i_equil, 3);
     
-    if(dbg_print){std::cout << "    benergy is " << bend_energy << "\n";}
+    if(rod::dbg_print){std::cout << "    benergy is " << bend_energy << "\n";}
 
     return bend_energy;
 }
@@ -1127,7 +1127,7 @@ void get_perturbation_energy(
         float energies[3]
     ){
         
-    if(dbg_print){std::cout << "getting energy for node " << p_i_node_no << " in dimension " << perturbation_dimension << "\n";} //temp
+    if(rod::dbg_print){std::cout << "getting energy for node " << p_i_node_no << " in dimension " << perturbation_dimension << "\n";} //temp
         
     //feenableexcept( FE_INVALID | FE_OVERFLOW );
         
@@ -1135,7 +1135,7 @@ void get_perturbation_energy(
     // We need to make a copy of it, because we'l be modifying it for our
     // Numerical differentiation later on.
 
-    if(dbg_print){std::cout << "Setting up...\n";}
+    if(rod::dbg_print){std::cout << "Setting up...\n";}
 
     float B_equil[4][4];
     load_B_all(B_equil, B_matrix, p_i_node_no);
@@ -1157,7 +1157,7 @@ void get_perturbation_energy(
     load_m(m_equil, m_all_equil, p_i_node_no);
     load_m(material, material_params, p_i_node_no);
     
-    if(dbg_print){std::cout << "Applying perturbation...\n";}
+    if(rod::dbg_print){std::cout << "Applying perturbation...\n";}
     
     // Apply our perturbation in x, y or z (for numerical differentiation)
     if (perturbation_dimension < 4 and perturbation_amount != 0){ //e.g. if we're perturbing x, y, or z
@@ -1170,20 +1170,20 @@ void get_perturbation_energy(
         rodrigues_rotation(m[i], p[i], perturbation_amount, m[i]);
     }
     
-    if(dbg_print){std::cout << "Update m1...\n";}
+    if(rod::dbg_print){std::cout << "Update m1...\n";}
 
     // If we've perturbed it in x, y, or z, we need to update m, and then adjust it to make sure it's perpendicular
     if (perturbation_dimension < 4 and perturbation_amount != 0){ 
         update_m1_matrix_all(m, original_p, p, m, start_cutoff, end_cutoff);
     }
     
-    if(dbg_print){std::cout << "Normalize...\n";}
+    if(rod::dbg_print){std::cout << "Normalize...\n";}
 
     // Normalize m1, just to be sure (the maths doesn't work if it's not normalized)
     normalize_all(m);
     normalize_all(m_equil);
     
-    if(dbg_print){std::cout << "Compute m_i_2...\n";}
+    if(rod::dbg_print){std::cout << "Compute m_i_2...\n";}
 
     // Compute m_i_2 (we know it's perpendicular to e_i and m_i_1, so this shouldn't be too hard)
     float n[4][3];
@@ -1191,7 +1191,7 @@ void get_perturbation_energy(
     cross_all(p, m, n);
     cross_all(p_equil, m_equil, n_equil);
     
-    if(dbg_print){std::cout << "Computing energies...\n";}
+    if(rod::dbg_print){std::cout << "Computing energies...\n";}
     
     // Compute unperturbed energy.
     // I could make this less verbose, but the explicit lookup table is a bit clearer about what's going on.

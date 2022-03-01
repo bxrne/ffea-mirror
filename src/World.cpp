@@ -1952,7 +1952,7 @@ int World::run() {
         apply_springs();
                         
         // Rod neighbours
-        if(rod::calc_rod_steric == true){
+        if(params.calc_ssint == 1 || params.calc_steric == 1){
             for (int i=0; i<params.num_rods; i++){
                 for (int j=i+1; j<params.num_rods; j++){
                     rod::update_neighbour_lists(rod_array[i], rod_array[j]);
@@ -1961,7 +1961,7 @@ int World::run() {
             if(rod::dbg_print){std::cout << "Generated rod neighbour lists" << std::endl;}
         }
         else if(rod::dbg_print){
-            std::cout << "Steric interactions disabled. No neighbours calculated." << std::endl;
+            std::cout << "Rod-rod steric interactions disabled." << std::endl;
         }
 
         // Do rods
@@ -2795,6 +2795,11 @@ int World::read_and_build_system(vector<string> script_vector) {
         rod_array[i]->viscosity = params.stokes_visc;
         rod_array[i]->timestep = params.dt;
         rod_array[i]->kT = params.kT;
+        rod_array[i]->calc_noise = params.calc_noise;
+        if(params.calc_ssint == 1 || params.calc_steric == 1){
+            rod_array[i]->calc_ssint = 1;
+        }
+        
     }
     
     // Create rod-blob interfaces

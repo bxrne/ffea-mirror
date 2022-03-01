@@ -45,9 +45,10 @@
 #include <vector>
 //#include <fenv.h>
 
-
 namespace rod {
     
+extern bool dbg_print;
+
 const static bool debug_nan = false;
 
 const double boltzmann_constant = 1.3806503e-23/mesoDimensions::Energy;
@@ -70,8 +71,6 @@ static const int ip1 = 3; ///< index of i+1th thing
 #define OMP_SIMD_INTERNAL _Pragma("omp simd")
 
 #define vec3d(x)for(int x = 0; x < 3; ++ x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
-
-extern bool dbg_print; // prints tons of intermediate info for debugging purposes. don't enable this
 
 static const float rod_software_version = 0.3;
 

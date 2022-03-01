@@ -46,8 +46,6 @@
 
 namespace rod {
 
-extern bool calc_rod_steric;
-
 std::vector <float> stof_vec (std::vector <std::string> vec_in, int length);
 struct Rod
 {
@@ -65,6 +63,8 @@ struct Rod
   float timestep = 0.002;
   float kT = 0; /** Boltzmann's constant x temperature. **/
   float perturbation_amount = 0.01; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
+  int calc_noise = 1;
+  int calc_ssint = 0;
 
   float translational_friction;
   float rotational_friction; /** these will have to be changed when I end up implementing per-element radius, to be computed on-the-fly instead most likely **/

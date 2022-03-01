@@ -131,7 +131,7 @@ void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b
     vec3d(n){c_a_out[n] = c_a[n];}
     vec3d(n){c_b_out[n] = c_b[n];}
 
-    if(dbg_print){
+    if(rod::dbg_print){
         std::cout << "correction to rod-rod distance" << std::endl;
         printf("\tp_a.(c_a - r_a) : %.3e\n", dot_a);
         printf("\tp_b.(c_b - r_b) : %.3e\n", dot_b);
@@ -175,7 +175,7 @@ void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3], floa
     vec3d(n){c_a[n] = r_a[n] + dot_product_3x1(r_ab, n_b) / dot_product_3x1(l_a, n_b) * l_a[n];}
     vec3d(n){c_b[n] = r_b[n] + dot_product_3x1(r_ba, n_a) / dot_product_3x1(l_b, n_a) * l_b[n];}
 
-    if(dbg_print){
+    if(rod::dbg_print){
         std::cout << "shortest rod-rod distance" << std::endl;
         print_array("\tp_a", p_a, 3);
         print_array("\tp_b", p_b, 3);

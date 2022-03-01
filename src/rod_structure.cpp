@@ -35,8 +35,6 @@
 
 namespace rod {
 
-bool calc_rod_steric = true;
-
 /** Easy access to 1-d arrays */
 #define odx(x) x*3
 #define ody(y) (y*3)+1
@@ -193,7 +191,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     //    end_node = get_num_nodes()-1;
     //}
     
-    if(dbg_print){
+    if(rod::dbg_print){
         std::cout << "Rod: " << this->rod_no << "\n";
         std::cout << "Num nodes: " << this->get_num_nodes() << "\n"; //temp
         std::cout << "End node: " << end_node << "\n"; //temp
@@ -206,7 +204,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         //std::cout << "node " << node_no << "\n";
         
-        if(dbg_print){std::cout << "IT BREAKS DURING NODE " << node_no << " ENERGY\n";}
+        if(rod::dbg_print){std::cout << "IT BREAKS DURING NODE " << node_no << " ENERGY\n";}
                 
         // if the node is pinned, we go to the next iteration of the loop (e.g. the next node)
         if (pinned_nodes[node_no] == true){
@@ -236,7 +234,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         
         // We move the node backwards and forwards in each degree of freedom, so we end up calling get_perturbation_energy eight whole times
         // Fill the temporary variable with energies ( we basically pass the entire state of the rod to get_perturbation_energy)
-        if(dbg_print){std::cout << "getting perturbation energy 1...\n";} //temp
+        if(rod::dbg_print){std::cout << "getting perturbation energy 1...\n";} //temp
         get_perturbation_energy( 
             perturbation_amount*0.5, //half one way, half the other
             x, // dimension (x, y, z are array indices, defined to be 1, 2, 3 at the top of this file, twist is = 4)
@@ -256,7 +254,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         internal_perturbed_x_energy_positive[(node_no*3)+1] = energies[bend_index];
         internal_perturbed_x_energy_positive[(node_no*3)+2] = energies[twist_index];   
         
-        if(dbg_print){std::cout << "getting perturbation energy 2...\n";} //temp
+        if(rod::dbg_print){std::cout << "getting perturbation energy 2...\n";} //temp
         get_perturbation_energy( //from rod_math
             perturbation_amount*0.5, 
             y, // dimension
@@ -387,9 +385,10 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     }// exit internal energy loop
        
     // Rod-rod interactions: loop over all elements, interpolate energies onto nodes
+    if(rod::dbg_print){std::cout << "rod.calc_ssint: " << this->calc_ssint << std::endl;}
     int end_elem = this->get_num_nodes()-1;
-    float steric_force_scaling = 5;  // Arbitrary value to determine severity of repulsion force [force units]
-    if(rod::calc_rod_steric == true){
+    float steric_force_scaling = 1;  // Arbitrary value to determine severity of repulsion force [force units]
+    if(this->calc_ssint == 1){
         #pragma omp parallel for schedule(dynamic)
         for(int elem_no = 0; elem_no < end_elem; elem_no++){
             int num_neighbours = get_num_steric_neighbours(elem_no);
@@ -561,20 +560,26 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         get_p_i(r_i, r_ip1, previous_p_i);
     
         // Get fluctuating force
-        float x_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
-        float y_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
-        float z_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
-        float twist_noise = get_noise(timestep, kT, rotational_friction, random_number(-0.5, 0.5, rng, thread_id));            
+        float x_noise = 0;
+        float y_noise = 0;
+        float z_noise = 0;
+        float twist_noise = 0;
+        if(this->calc_noise == 1){
+            x_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
+            y_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
+            z_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
+            twist_noise = get_noise(timestep, kT, rotational_friction, random_number(-0.5, 0.5, rng, thread_id));          
+        } 
 
-        // Sum our energies and use them to compute the force            
+        // Sum our energies and use them to compute the force
+        // ! Not sure why we have negative - positive here, I'd have assumed it was the other way around
         float x_force = (internal_perturbed_x_energy_negative[node_no*3]+internal_perturbed_x_energy_negative[(node_no*3)+1]+internal_perturbed_x_energy_negative[(node_no*3)+2] - (internal_perturbed_x_energy_positive[node_no*3]+internal_perturbed_x_energy_positive[(node_no*3)+1]+internal_perturbed_x_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float y_force = (internal_perturbed_y_energy_negative[node_no*3]+internal_perturbed_y_energy_negative[(node_no*3)+1]+internal_perturbed_y_energy_negative[(node_no*3)+2] - (internal_perturbed_y_energy_positive[node_no*3]+internal_perturbed_y_energy_positive[(node_no*3)+1]+internal_perturbed_y_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float z_force = (internal_perturbed_z_energy_negative[node_no*3]+internal_perturbed_z_energy_negative[(node_no*3)+1]+internal_perturbed_z_energy_negative[(node_no*3)+2] - (internal_perturbed_z_energy_positive[node_no*3]+internal_perturbed_z_energy_positive[(node_no*3)+1]+internal_perturbed_z_energy_positive[(node_no*3)+2] ))/perturbation_amount;
         float twist_force = (internal_twisted_energy_negative[node_no*3]+internal_twisted_energy_negative[(node_no*3)+1]+internal_twisted_energy_negative[(node_no*3)+2] - (internal_twisted_energy_positive[node_no*3]+internal_twisted_energy_positive[(node_no*3)+1]+internal_twisted_energy_positive[(node_no*3)+2] ))/twist_perturbation;
 
         // Rod-rod steric interactions
-        // Seems to me the energy gradient should be (positive - negative), but Rob has it the other way around? I'm following his convention here.
-        if(rod::calc_rod_steric == true){
+        if(this->calc_ssint == 1){
             float steric_positive[3] = {0, 0, 0}; // x, y, z
             float steric_negative[3] = {0, 0, 0};
             get_steric_energy_on_node(
@@ -593,14 +598,21 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 steric_unit_vector, // L-3 length array
                 unit_vector);
 
+            float x_steric = unit_vector[0] * std::abs(steric_positive[0] - steric_negative[0]) / perturbation_amount;
+            float y_steric = unit_vector[1] * std::abs(steric_positive[0] - steric_negative[0]) / perturbation_amount;
+            float z_steric = unit_vector[2] * std::abs(steric_positive[0] - steric_negative[0]) / perturbation_amount;
+            x_force += x_steric;
+            y_force += y_steric;
+            z_force += z_steric;
+
             if(rod::dbg_print){
                 rod::print_array("steric_energy_positive", steric_positive, 3);
                 rod::print_array("steric_energy_negative", steric_negative, 3);
+                float diff[3] = {0, 0, 0};
+                vec3d(n){diff[n] = std::abs(steric_positive[n] - steric_negative[n]);}
+                rod::print_array("|difference|", diff, 3);
+                std::cout << "force: [" << x_steric << ", " << y_steric << ", " << z_steric << "]" << std::endl;
             }
-
-            x_force += unit_vector[0] * (steric_negative[0] - steric_positive[0]) / perturbation_amount;
-            y_force += unit_vector[1] * (steric_negative[1] - steric_positive[1]) / perturbation_amount;
-            z_force += unit_vector[2] * (steric_negative[2] - steric_positive[2]) / perturbation_amount;
         }
 
         // Get applied force, if any
@@ -620,6 +632,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         current_r[node_no*3] += delta_r_x;
         current_r[(node_no*3)+1] += delta_r_y;
         current_r[(node_no*3)+2] += delta_r_z;
+        if(rod::dbg_print){std::cout << "delta_r: [" << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "]" << std::endl;}
                 
         // A wee sanity check to stop your simulations from exploding horribly
         for (int i=0; i<length; i++){
@@ -664,7 +677,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         step_no += 1; //we just did one timestep so increment this
 
     }
-    this->reset_neighbour_list();
+
+    if(this->calc_ssint == 1){this->reset_neighbour_list();}
     
     return *this; 
 }
@@ -767,6 +781,8 @@ Rod Rod::load_header(std::string filename){
     this->timestep = 1e-12/mesoDimensions::time;
     this->kT = 0;
     this->perturbation_amount = 0.001*pow(10,-9)/mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
+    this->calc_noise = 1;
+    this->calc_ssint = 0;
 
     return *this;
 }
@@ -1110,7 +1126,7 @@ Rod Rod::get_p(int index, OUT float p[3], bool equil){
         vec3d(n){p[n] = equil_r[(index*3)+3+n] - equil_r[(index*3)+n];}
     }
     else{
-        if(dbg_print){
+        if(rod::dbg_print){
             std::cout << "rod " << this->rod_no << ", index = " << index << "\n";
             float r_i[3] = {0, 0, 0}; 
             float r_ip1[3] = {0, 0, 0};  

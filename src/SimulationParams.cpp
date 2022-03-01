@@ -630,7 +630,7 @@ int SimulationParams::validate(int sim_mode) {
 		if (calc_steric == 0) {
 			FFEA_ERROR_MESSG("Inconsistent parameters. If you want steric interactions, set 'calc_steric = 1'\n");
 		}
-		calc_ssint = 0;
+		calc_ssint = 0;  // ! WHY???
 	}
         else if (ssint_type != "lennard-jones" && ssint_type != "ljsteric" && ssint_type != "gensoft") {
             FFEA_ERROR_MESSG("Optional: 'ssint_type', must be either 'lennard-jones', 'ljsteric' (both methods combined) or 'gensoft' (polynomial soft attraction).\n");
