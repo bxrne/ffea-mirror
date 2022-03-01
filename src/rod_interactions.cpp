@@ -226,7 +226,8 @@ void assign_neighbours_to_elements(
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
 
     if(rod::dbg_print){
-        std::cout << "|c_ab|: " << rod::absolute(c_ab) << ",  radius_a + radius_b: " << radius_a + radius_b << std::endl;
+        std::cout << "|c_ab|: " << rod::absolute(c_ab)*mesoDimensions::length*1e9 << " nm" << std::endl;  
+        std::cout << "radius_a + radius_b: " << (radius_a + radius_b)*mesoDimensions::length*1e9 << " nm" << std::endl;
     }
 
     if(rod::absolute(c_ab) < (radius_a + radius_b)){
