@@ -67,15 +67,6 @@ void assign_neighbours_to_elements(
     std::vector<float> &element_b_neighbours
     );
 
-void get_interpolation_weights(
-    float r[3], 
-    float p[3], 
-    float c[3], 
-    OUT 
-    float weight_start_node, 
-    float weight_end_node
-    );
-
 void get_steric_perturbation_energy(
     float perturbation_amount, 
     int perturbation_dimension, 

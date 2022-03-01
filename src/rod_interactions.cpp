@@ -251,26 +251,6 @@ void assign_neighbours_to_elements(
 }
 
 
-/* Given a point, c, that lies on a rod element, p, compute the weights required to
-   interpolate c onto the start and end nodes of the element. E.g. if c is located on
-   the start node, r, then the weighting on the start node is 1.
-*/
-void get_interpolation_weights(float r[3], float p[3], float c[3], OUT float weight_start_node, float weight_end_node){
-    float displacement[3] = {0, 0, 0};
-
-    vec3d(n){displacement[n] = c[n] - r[n];}
-    weight_end_node = rod::absolute(displacement) / rod::absolute(p);
-    weight_start_node = std::max(0.0f, 1 - weight_end_node);
-    if(rod::dbg_print){
-        std::cout << "interpolation weights" << std::endl;
-        std::cout << "\t|displacement|: " << rod::absolute(displacement) << std::endl;
-        std::cout << "\t|p|: " << rod::absolute(p) << std::endl;
-        std::cout << "\tweight_end_node: " << weight_end_node;
-        std::cout << "\tweight_start_node: " << weight_start_node << std::endl;
-    }
-}
-
-
 /* Perturb the separation between two sterically interacting rod elements in a
    specific degree of freedom to get the potential energy associated with rod a. 
 
@@ -302,17 +282,23 @@ void get_steric_perturbation_energy(
 
     float c_ab[3] = {0, 0, 0};
     float energy = 0;
-    float w0 = 0;
-    float w1 = 0;
+    float displacement[3] = {0, 0, 0};
+    float weight_start_node = 0;
+    float weight_end_node = 0;
 
     c_b[perturbation_dimension] += perturbation_amount;
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
     energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
 
-    // Energy must be interpolated onto nodes of the element on rod a
-    rod::get_interpolation_weights(r_a, p_a, c_a, w0, w1);
-    energies[0] = w0 * energy;
-    energies[1] = w1 * energy;
+    // Energy must be interpolated onto nodes of the element on rod a.
+    // E.g. if c is located on the start node, r, then the weighting on 
+    // the start node is 1.
+    vec3d(n){displacement[n] = c_a[n] - r_a[n];}
+    weight_end_node = rod::absolute(displacement) / rod::absolute(p_a);
+    weight_start_node = std::max(0.0f, 1 - weight_end_node);
+    energies[0] = weight_start_node * energy;
+    energies[1] = weight_end_node * energy;
+
     if(rod::dbg_print){
         std::cout << "steric perturbation energy" << std::endl;
         rod::print_array("\tc_a", c_a, 3);
@@ -320,8 +306,10 @@ void get_steric_perturbation_energy(
         std::cout << "\tforce_constant: " << force_constant << std::endl;
         std::cout << "\t|c_ab|: " << rod::absolute(c_ab) << std::endl;
         std::cout << "\tradius sum: " << radius_a + radius_b << std::endl;
+        std::cout << "\t|c_a - r_a|: " << rod::absolute(displacement) << std::endl;
+        std::cout << "\t|p_a|: " << rod::absolute(p_a) << std::endl;
         std::cout << "\telement energy: " << energy << std::endl;
-        std::cout << "\tnode weights: " << w0 << ", " << w1 << std::endl;
+        std::cout << "\tnode weights: " <<  weight_start_node << ", " << weight_end_node << std::endl;
         std::cout << "\tinterpolated node energies: " << energies[0] << ", " << energies[1] << std::endl;
     }
 
