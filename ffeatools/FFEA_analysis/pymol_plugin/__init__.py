@@ -1213,11 +1213,7 @@ class FFEA_viewer_control_window:
         for i in range(len(rod.current_r)):
             line = [] 
             color_cycle = cycle(self.rod_color_dict[self.display_flags['rod_color']])
-            #r0 = np.array([rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2]])
-            #r1 = np.array([rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2]])
-            #length = np.linalg.norm(r1-r0)
-            #radius = rod.material_params[i][j][2]
-            display_radius = 5.0  # Need a way of scaling this to make collisions more intuitive to look at (see notebook 24/02)
+            display_radius = 5.0
 
             # draw rod elements
             for j in range(len(rod.current_r[i])-1):
@@ -1227,15 +1223,36 @@ class FFEA_viewer_control_window:
                 mid_x = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2
                 mid_y = (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2
                 mid_z = (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
-	            # material frame in center of each element
+	            # material frame in center of each element - light grey
                 if self.display_flags['show_rod_tangent'] == 1:
+                    # 
                     line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], display_radius/2.0, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7]
-                # unit vector of steric interaction force
+                # unit vector of steric interaction force - orange
                 if self.display_flags['show_rod_steric_vector'] == 1:
-                    vec_x = rod.steric_unit_vector[i][j][0]
-                    vec_y = rod.steric_unit_vector[i][j][1]
-                    vec_z = rod.steric_unit_vector[i][j][2]
-                    line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+vec_x, mid_y+vec_x, mid_z+vec_x, display_radius/2.0, 1, 0.8, 0, 1, 0.8, 0]
+                    line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+rod.steric_unit_vector[i][j][0], mid_y+rod.steric_unit_vector[i][j][1], mid_z+rod.steric_unit_vector[i][j][2], display_radius/2.0, 1, 0.8, 0, 1, 0.8, 0]
+
+                # attempt to render the 'correct' radius of the rods - purple
+                # first, draw two opposing lines perpendicular to the rod, but with lengths equal to the radius
+                p = np.array(rod.current_r[i][j+1]) - np.array(rod.current_r[i][j])
+                m = np.array(rod.current_m[i][j])
+                steric_radius  = rod.material_params[i][j][2] / 1.7e-10  # FFEA units
+                mhat = m / np.linalg.norm(m)
+                rad_vec = mhat * steric_radius
+                radius_line_pos = [CYLINDER, mid_x, mid_y, mid_z, mid_x+rad_vec[0], mid_y+rad_vec[1], mid_z+rad_vec[2], display_radius/3.0, 1, 0, 1, 1, 0, 1]
+                radius_line_neg = [CYLINDER, mid_x, mid_y, mid_z, mid_x-rad_vec[0], mid_y-rad_vec[1], mid_z-rad_vec[2], display_radius/3.0, 1, 0, 1, 1, 0, 1]
+                # now, estimate the width of the cylinder that will fit within these lines - translucent white
+                radius_try = 3*display_radius
+                estimated_cylinder = [ALPHA, 0.4, CYLINDER, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], radius_try, 1, 1, 1, 1, 1, 1]
+                line = line + radius_line_pos + radius_line_neg + estimated_cylinder
+
+                # 3 * display_radius = 15 [pymol display units]
+                # rod radius = 2.5 [nm]
+                #            = 14.7 [FFEA units]
+                # So is the scaling factor 1.02 pymol display units per FFEA length unit? (15/2.5 = 6, 6*0.17=1.02)
+                
+
+                print("element radius: ",steric_radius, rod.material_params[i][j][2])
+                print("element length: ", np.linalg.norm(p), np.linalg.norm(p)*1.7e-10)
 
             cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
 
