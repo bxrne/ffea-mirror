@@ -1208,51 +1208,41 @@ class FFEA_viewer_control_window:
         # Scale the material frame to be a similar size to the rod elements
         #rod.current_m *= (avg_m/avg_p)/np.sqrt(2)
         rod = rescale_m(rod)
-        
-        # units note: radii are arbitrary so far. the *10**10 is to go from SI to angstroms (I should remove this after I add proper scaling)
+
         for i in range(len(rod.current_r)):
             line = [] 
             color_cycle = cycle(self.rod_color_dict[self.display_flags['rod_color']])
-            display_radius = 5.0
 
             # draw rod elements
             for j in range(len(rod.current_r[i])-1):
                 color = next(color_cycle)
+                steric_radius = rod.material_params[i][j][2] / 1.7e-10  # element radius in FFEA units
+                display_radius = 1.02 * steric_radius  # multiply by PyMOL display scaling factor
                 # 9.0 is the PyMOL CGO code for a cylinder object
                 line = line + [CYLINDER, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], display_radius, color[0], color[1], color[2], color[0], color[1], color[2] ]
                 mid_x = (rod.current_r[i][j][0]+rod.current_r[i][j+1][0])/2
                 mid_y = (rod.current_r[i][j][1]+rod.current_r[i][j+1][1])/2
                 mid_z = (rod.current_r[i][j][2]+rod.current_r[i][j+1][2])/2
-	            # material frame in center of each element - light grey
+                mvec = np.array([rod.current_m[i][j][0], rod.current_m[i][j][1], rod.current_m[i][j][2]])
+                mmag = np.linalg.norm(mvec)
+                mhat = mvec / mmag 
+                # material frame in center of each element - light grey
                 if self.display_flags['show_rod_tangent'] == 1:
-                    # 
-                    line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+rod.current_m[i][j][0], mid_y+rod.current_m[i][j][1], mid_z+rod.current_m[i][j][2], display_radius/2.0, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7]
+                    # draw material axes a bit further out from the cylinder centre - stops them disappearing for thicker rods
+                    mshift = display_radius * mhat
+                    mx = mvec[0] + mshift[0]
+                    my = mvec[1] + mshift[1]
+                    mz = mvec[2] + mshift[2]
+                    line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+mx, mid_y+my, mid_z+mz, display_radius/4.0, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7]
                 # unit vector of steric interaction force - orange
                 if self.display_flags['show_rod_steric_vector'] == 1:
-                    line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+rod.steric_unit_vector[i][j][0], mid_y+rod.steric_unit_vector[i][j][1], mid_z+rod.steric_unit_vector[i][j][2], display_radius/2.0, 1, 0.8, 0, 1, 0.8, 0]
-
-                # attempt to render the 'correct' radius of the rods - purple
-                # first, draw two opposing lines perpendicular to the rod, but with lengths equal to the radius
-                p = np.array(rod.current_r[i][j+1]) - np.array(rod.current_r[i][j])
-                m = np.array(rod.current_m[i][j])
-                steric_radius  = rod.material_params[i][j][2] / 1.7e-10  # FFEA units
-                mhat = m / np.linalg.norm(m)
-                rad_vec = mhat * steric_radius
-                radius_line_pos = [CYLINDER, mid_x, mid_y, mid_z, mid_x+rad_vec[0], mid_y+rad_vec[1], mid_z+rad_vec[2], display_radius/3.0, 1, 0, 1, 1, 0, 1]
-                radius_line_neg = [CYLINDER, mid_x, mid_y, mid_z, mid_x-rad_vec[0], mid_y-rad_vec[1], mid_z-rad_vec[2], display_radius/3.0, 1, 0, 1, 1, 0, 1]
-                # now, estimate the width of the cylinder that will fit within these lines - translucent white
-                radius_try = 3*display_radius
-                estimated_cylinder = [ALPHA, 0.4, CYLINDER, rod.current_r[i][j][0], rod.current_r[i][j][1], rod.current_r[i][j][2], rod.current_r[i][j+1][0], rod.current_r[i][j+1][1], rod.current_r[i][j+1][2], radius_try, 1, 1, 1, 1, 1, 1]
-                line = line + radius_line_pos + radius_line_neg + estimated_cylinder
-
-                # 3 * display_radius = 15 [pymol display units]
-                # rod radius = 2.5 [nm]
-                #            = 14.7 [FFEA units]
-                # So is the scaling factor 1.02 pymol display units per FFEA length unit? (15/2.5 = 6, 6*0.17=1.02)
-                
-
-                print("element radius: ",steric_radius, rod.material_params[i][j][2])
-                print("element length: ", np.linalg.norm(p), np.linalg.norm(p)*1.7e-10)
+                    # scale steric vector to appear the same size as material axes, TODO: scale as repulsive energy
+                    shat = np.array([rod.steric_unit_vector[i][j][0], rod.steric_unit_vector[i][j][1], rod.steric_unit_vector[i][j][2]])
+                    sshift =  display_radius * shat
+                    vecx = shat[0] * mmag  + sshift[0]
+                    vecy = shat[1] * mmag  + sshift[1]
+                    vecz = shat[2] * mmag  + sshift[2]
+                    line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+vecx, mid_y+vecy, mid_z+vecz, display_radius/4.0, 1, 0.8, 0, 1, 0.8, 0]
 
             cmd.load_cgo(line, self.display_flags['system_name']+"_rod_"+str(rod_num), i)
 
