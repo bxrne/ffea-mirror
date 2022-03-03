@@ -1,12 +1,6 @@
 import os
 import tarfile
 
-# compress the contents of a directory given by 'path' into a file 'tar_name'. and store it in the current directory
-def tardir(path, tar_name):
-    with tarfile.open(tar_name, "w:gz") as tar_handle:
-        for root, dirs, files in os.walk(path):
-            for file in files:
-                tar_handle.add(os.path.join(root, file))
 
 software_dir = "/home/ryan/Software"
 ffeatools_dir = os.environ['FFEA_SRC'] + "/ffeatools"
@@ -50,7 +44,8 @@ except OSError:
     pass
 for f in pymol_files:
     os.system("cp -v " + ffeatools_dir + "/" + f + " " + tar_dir + "/")
-    
-tardir("." + tar_dir , tar_dir + ".tar.gz")
-os.system("mv " + tar_dir + ".tar.gz " + pymol_build_dir + "/")
-os.system("rm -r " + tar_dir)
+
+os.system("tar cfzv FFEAplugin.tar.gz FFEAplugin/")
+# os.system("gzip FFEAplugin.tar")
+os.system("mv FFEAplugin.tar.gz " + pymol_build_dir + "/")
+os.system("rm -r FFEAplugin")
