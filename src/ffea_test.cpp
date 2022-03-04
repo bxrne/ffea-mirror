@@ -107,6 +107,10 @@ int ffea_test::do_ffea_test(std::string filename){
         result = ffea_test::rod_neighbour_list_construction();
     }
 
+    if (buffer.str().find("steric_energy_two_rod_elements") != std::string::npos ){
+        result = ffea_test::steric_energy_two_rod_elements();
+    }
+
     return result;
 }
 
@@ -1512,92 +1516,70 @@ int ffea_test::rod_neighbour_list_construction(){
     
 }
 
+// Pass one rod element, b, entirely through another, a, and compute the steric
+// interaction energy on a.
+// Rod a is aligned in the z-axis, and rod b is rotated pi/12 radians in x-z
+// and y-z relative to it.
+int ffea_test::steric_energy_two_rod_elements(){
+    // Test parameters
+    int num_steps = 1000;
+    float radius = 5e-9 / mesoDimensions::length;
+    float rmax = 5 * radius;    // maximum distance
+    float dr = rmax / num_steps;  // step size
+    float rhat[3] = {0, 1, 0};    // direction 
+    // Rods
+    float theta = M_PI/12;  // x-z rotation [radians]
+    float phi = M_PI/12;    // y-z rotation [radians]
+    float p_a[3] = {0, 0, 5*radius};
+    float p_b[3] = {0, 0, 5*radius};
+    float r_a[3] = {0, 0, 0};
+    float r_b[3] = {-0.5f*rmax*rhat[0], -0.5f*rmax*rhat[1], -0.5f*rmax*rhat[2]};
+    // Interaction
+    float c_a[3];  // point of interaction on element a
+    float c_b[3];
+    float delta = 1e-12 / mesoDimensions::length;  // perturbation amount
+    float strength = 1.0;  // strength of repulsive force [force units]
+    // Storage
+    float U_pos_node_0[3*num_steps];  // [Ux, Uy, Uz, ...]
+    float U_pos_node_1[3*num_steps];
+    float U_neg_node_0[3*num_steps];
+    float U_neg_node_1[3*num_steps];
 
-// NOT USED, BUT MIGHT BE LATER
-// // Compute the overlap of two spheres with equivalent and different radii in
-// // the cases they are physically likely to encounter. Compare to volume overlaps
-// // calculated by hand.
-// int ffea_test::two_sphere_volume_intersection(){
-//     float r_a = 1.0;
-//     float r_b = 2.0;
-//     float d[8] = {2.5, 1, 0, 3.5, 2, 1, 0.5, 0};  // distance between sphere centres
-//     float volume = 0.0;  // calculated volume overlap
-//     float answer = 0.0;  // expected volume overlap
-//     int pass_count = 0;  // count number of cases that have passed
+    // rotate b in x-z
+    p_b[0] *= std::sin(theta);
+    p_b[2] *= std::cos(theta);
+    // rotate b in x-y
+    p_b[0] *= std::cos(phi);
+    p_b[1] *= std::sin(phi);
 
-//     for(int i=0; i<8; i++){
-//         if(i < 3){
-//             // r_a = r_b = 1
-//             volume = rod::get_spherical_volume_intersection(d[i], r_a, r_a);
-//         }
-//         else{
-//             // r_a < r_b
-//             volume = rod::get_spherical_volume_intersection(d[i], r_a, r_b);
-//         }
-//         switch(i){
-//             case 0:
-//                 // d>r_a+r_b, d>|r_a-r_b|
-//                 answer = 0.0;         
-//                 break;     
-//             case 1:
-//                 // d<r_a+r_b, d>|r_a-r_b|
-//                 answer = 5.0/12.0*M_PI;
-//                 break; 
-//             case 2:
-//                 // d=|r_a-r_b|=0
-//                 answer = 4.0/3.0*M_PI;
-//                 break; 
-//             case 3:
-//                 // d>r_a+r_b, d>|r_a-r_b|
-//                 answer = 0.0;
-//                 break; 
-//             case 4:
-//                 // d<r_a+r_b, d>|r_a-r_b|
-//                 answer = 13.0/24.0*M_PI;
-//                 break; 
-//             case 5:
-//                 // d=|r_a-r_b|, d>0
-//                 answer = 4.0/3.0*M_PI;
-//                 break; 
-//             case 6:
-//                 // d<|r_a-r_b|, d>0
-//                 answer = 4.0/3.0*M_PI;
-//                 break; 
-//             case 7:
-//                 // d=0
-//                 answer = 4.0/3.0*M_PI;
-//                 break; 
-//             default:
-//                 // return negative if no cases are activating
-//                 std::cout << "Default case reached" << std::endl;
-//                 return 1;
-//         }
-//         if(abs(volume - answer) < 0.01){pass_count++;}
-//         std::cout << "TEST RESULT: case = " << i << ", expected V = " << answer << ", computed V = " << volume << ", pass_count = " << pass_count << std::endl;
-//     }
-//     if(pass_count == 8){
-//         return 0;
-//     }
-//     else{
-//         return 1;
-//     }
-// }
+    for(int step_no=0; step_no<num_steps; step_no++){
+        rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
 
-//    int ffea_test::numerical_stability(){
+        float U_temp[2] = {0, 0};  // nodes 0, 1
+        // positive
+        rod::get_steric_perturbation_energy(delta, 0, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
+        U_pos_node_0[step_no] = U_temp[0];
+        U_pos_node_1[step_no] = U_temp[1];
+        rod::get_steric_perturbation_energy(delta, 1, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
+        U_pos_node_0[step_no+1] = U_temp[0];
+        U_pos_node_1[step_no+1] = U_temp[1];
+        rod::get_steric_perturbation_energy(delta, 2, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
+        U_pos_node_0[step_no+2] = U_temp[0];
+        U_pos_node_1[step_no+2] = U_temp[1];
+        // negative
+        rod::get_steric_perturbation_energy(-delta, 0, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
+        U_neg_node_0[step_no] = U_temp[0];
+        U_neg_node_1[step_no] = U_temp[1];
+        rod::get_steric_perturbation_energy(-delta, 1, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
+        U_neg_node_0[step_no+1] = U_temp[0];
+        U_neg_node_1[step_no+1] = U_temp[1];
+        rod::get_steric_perturbation_energy(-delta, 2, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
+        U_neg_node_0[step_no+2] = U_temp[0];
+        U_neg_node_1[step_no+2] = U_temp[1];
+
+        vec3d(n){r_b[n] += rhat[n] * dr;}
+    }
+
+    return 1;
     
-//    World *world;
-//    world = new World();
-//    if(world->init("ndc80c_mt.ffea", 0, 0, 1) == FFEA_ERROR) {
-//        FFEA_error_text();
-//        cout << "Errors during initialisation mean World cannot be constructed properly." << endl;
-//    }
-//    rod::dbg_print = true;
-//
-//    rod::Rod_blob_interface *interface1 = world->rod_blob_interface_array[0];
-//    rod::Rod_blob_interface *interface2 = world->rod_blob_interface_array[1];
-//
-//    for (int i=0; i<20000; i++){
-//        world->run(); // how about it's only 1 step?
-//
-//        
-//    }
+}

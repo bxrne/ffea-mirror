@@ -93,4 +93,6 @@ struct ffea_test{
 
     static int rod_neighbour_list_construction();
 
+    static int steric_energy_two_rod_elements();
+
 };
