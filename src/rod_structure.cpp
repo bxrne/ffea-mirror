@@ -90,9 +90,10 @@ Rod::Rod(int length, int set_rod_no):
     internal_twisted_energy_negative(new float[length]),
     material_params(new float[length]),
     B_matrix(new float[length+(length/3)]),
-    steric_perturbed_energy_positive(new float[2*(length-3)]),
-    steric_perturbed_energy_negative(new float[2*(length-3)]),
-    steric_unit_vector(new float[length-3]),
+    steric_perturbed_energy_positive(new float[2*length]),
+    steric_perturbed_energy_negative(new float[2*length]),
+    steric_unit_vector(new float[length]),
+    steric_energy_gradient(new float[length]),
     applied_forces(new float[length+(length/3)]),
     pinned_nodes(new bool[length/3])
     {}; 
@@ -390,12 +391,12 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
     float steric_force_scaling = 1;  // Arbitrary value to determine severity of repulsion force [force units]
     if(this->calc_ssint == 1){
         #pragma omp parallel for schedule(dynamic)
-        for(int elem_no = 0; elem_no < end_elem; elem_no++){
-            int num_neighbours = get_num_steric_neighbours(elem_no);
+        for(int node_no = 0; node_no < end_elem; node_no++){
+            int num_neighbours = get_num_steric_neighbours(node_no);
             float c_ab_sum[3] = {0, 0, 0};
             float c_ab_norm[3] = {0, 0, 0};
             
-            if(rod::dbg_print){std::cout << "element: " << elem_no << std::endl;}
+            if(rod::dbg_print){std::cout << "element: " << node_no << std::endl;}
 
             for(int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++){
                 float r_a[3] = {0, 0, 0};
@@ -407,10 +408,10 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 float energies[2] = {0, 0};
                 
                 if(rod::dbg_print){std::cout << "neighbour_no: " << neighbour_no << " of " << num_neighbours << std::endl;}
-                get_r(elem_no, r_a, false);
-                get_p(elem_no, p_a, false);
-                radius_a = get_radius(elem_no);
-                get_steric_interaction_data_slice(elem_no, neighbour_no, c_a, c_b, radius_b);
+                get_r(node_no, r_a, false);
+                get_p(node_no, p_a, false);
+                radius_a = get_radius(node_no);
+                get_steric_interaction_data_slice(node_no, neighbour_no, c_a, c_b, radius_b);
 
                 // positive x
                 rod::get_steric_perturbation_energy(
@@ -425,8 +426,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                     radius_b, 
                     energies);
 
-                steric_perturbed_energy_positive[elem_no*3] += energies[0]; 
-                steric_perturbed_energy_positive[(elem_no*3)+3] += energies[1];
+                steric_perturbed_energy_positive[node_no*3] += energies[0]; 
+                steric_perturbed_energy_positive[(node_no*3)+3] += energies[1];
 
                 // positive y
                 rod::get_steric_perturbation_energy(
@@ -441,8 +442,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                     radius_b, 
                     energies);
 
-                steric_perturbed_energy_positive[(elem_no*3)+1] += energies[0]; 
-                steric_perturbed_energy_positive[(elem_no*3)+1+3] += energies[1];
+                steric_perturbed_energy_positive[(node_no*3)+1] += energies[0]; 
+                steric_perturbed_energy_positive[(node_no*3)+1+3] += energies[1];
                 
 
                 // positive z
@@ -458,8 +459,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                     radius_b, 
                     energies);
 
-                steric_perturbed_energy_positive[(elem_no*3)+2] += energies[0]; 
-                steric_perturbed_energy_positive[(elem_no*3)+2+3] += energies[1];
+                steric_perturbed_energy_positive[(node_no*3)+2] += energies[0]; 
+                steric_perturbed_energy_positive[(node_no*3)+2+3] += energies[1];
 
                 // negative x
                 rod::get_steric_perturbation_energy(
@@ -474,8 +475,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                     radius_b, 
                     energies);
 
-                steric_perturbed_energy_negative[(elem_no*3)] += energies[0]; 
-                steric_perturbed_energy_negative[(elem_no*3)+3] += energies[1];
+                steric_perturbed_energy_negative[(node_no*3)] += energies[0]; 
+                steric_perturbed_energy_negative[(node_no*3)+3] += energies[1];
                 
                 // negative y
                 rod::get_steric_perturbation_energy(
@@ -490,8 +491,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                     radius_b, 
                     energies);
 
-                steric_perturbed_energy_negative[(elem_no*3)+1] += energies[0]; 
-                steric_perturbed_energy_negative[(elem_no*3)+1+3] += energies[1];
+                steric_perturbed_energy_negative[(node_no*3)+1] += energies[0]; 
+                steric_perturbed_energy_negative[(node_no*3)+1+3] += energies[1];
 
                 // negative z
                 rod::get_steric_perturbation_energy(
@@ -506,8 +507,8 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                     radius_b, 
                     energies);
 
-                steric_perturbed_energy_negative[(elem_no*3)+2] += energies[0]; 
-                steric_perturbed_energy_negative[(elem_no*3)+2+3] += energies[1];
+                steric_perturbed_energy_negative[(node_no*3)+2] += energies[0]; 
+                steric_perturbed_energy_negative[(node_no*3)+2+3] += energies[1];
 
                 vec3d(n){c_ab_sum[n] += (c_b[n] - c_a[n]);}
 
@@ -515,7 +516,7 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
 
             // Resultant unit vector on element, from sum over all neighbours
             rod:normalize(c_ab_sum, c_ab_norm);
-            vec3d(n){steric_unit_vector[(elem_no*3)+n] = c_ab_norm[n];}
+            vec3d(n){steric_unit_vector[(node_no*3)+n] = c_ab_norm[n];}
 
         }//exit interaction energy loop
 
@@ -595,24 +596,36 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
                 node_no, 
                 node_min, 
                 end_node, 
-                steric_unit_vector, // L-3 length array
+                steric_unit_vector,
                 unit_vector);
 
-            float x_steric = unit_vector[0] * std::abs(steric_positive[0] - steric_negative[0]) / perturbation_amount;
-            float y_steric = unit_vector[1] * std::abs(steric_positive[0] - steric_negative[0]) / perturbation_amount;
-            float z_steric = unit_vector[2] * std::abs(steric_positive[0] - steric_negative[0]) / perturbation_amount;
-            x_force += x_steric;
-            y_force += y_steric;
-            z_force += z_steric;
+            vec3d(n){steric_energy_gradient[(node_no*3)+n] = (steric_positive[n] - steric_negative[n]) / perturbation_amount;}
+            // ! check energies are correct before bothering with force
+            //float x_steric = unit_vector[0] * steric_energy_gradient[(node_no*3)];
+            //float y_steric = unit_vector[1] * steric_energy_gradient[(node_no*3)+1];
+            //float z_steric = unit_vector[2] * steric_energy_gradient[(node_no*3)+2];
+            //x_force += x_steric;
+            //y_force += y_steric;
+            //z_force += z_steric;
 
-            if(rod::dbg_print){
+            float check = 1000;
+            bool explode = false;
+            if(std::abs(steric_positive[0]) >= check or std::abs(steric_positive[1]) >= check or std::abs(steric_positive[2]) >= check){
                 rod::print_array("steric_energy_positive", steric_positive, 3);
-                rod::print_array("steric_energy_negative", steric_negative, 3);
-                float diff[3] = {0, 0, 0};
-                vec3d(n){diff[n] = std::abs(steric_positive[n] - steric_negative[n]);}
-                rod::print_array("|difference|", diff, 3);
-                std::cout << "force: [" << x_steric << ", " << y_steric << ", " << z_steric << "]" << std::endl;
+                explode = true;
+                
             }
+            if(std::abs(steric_negative[0]) >= check or std::abs(steric_negative[1]) >= check or std::abs(steric_negative[2]) >= check){
+                rod::print_array("steric_energy_negative", steric_negative, 3);
+                explode = true;
+            }
+            if(explode){std::cout << "WARNING: steric energy exceeds 1000 kT!" << std::endl;}
+            if(rod::dbg_print){
+                float grad[3] = {0, 0, 0};
+                vec3d(n){grad[n] = (steric_positive[n] - steric_negative[n]) / perturbation_amount;}
+                rod::print_array("steric energy gradient", grad, 3);
+            }
+
         }
 
         // Get applied force, if any
@@ -635,12 +648,13 @@ Rod Rod::do_timestep(RngStream rng[]){ // Most exciting method
         if(rod::dbg_print){std::cout << "delta_r: [" << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "]" << std::endl;}
                 
         // A wee sanity check to stop your simulations from exploding horribly
-        for (int i=0; i<length; i++){
-            if (std::abs(delta_r_x) >= 800000 or std::abs(delta_r_y) >= 800000 or std::abs(delta_r_z) >= 800000){
-                std::cout << "node " << node_no << " frame " << frame_no << "\n";
-                std::cout << "dynamics: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
-                rod_abort("Rod dynamics explosion. Bring your debugger.");
-            }
+        float p[3] = {0, 0, 0};
+        this->get_p(node_no, p, false);
+        float check = rod::absolute(p) * int(1e3);
+        if (std::abs(delta_r_x) >= check or std::abs(delta_r_y) >= check or std::abs(delta_r_z) >= check){
+            std::cout << "node " << node_no << "\n";
+            std::cout << "dynamics: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
+            rod_abort("Rod dynamics explosion. Bring your debugger.");
         }
         
         // If we're applying delta twist, we must load our new p_i back in
@@ -760,9 +774,10 @@ Rod Rod::load_header(std::string filename){
     internal_twisted_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
     material_params = static_cast<float *>(malloc(sizeof(float) * length));
     B_matrix = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
-    steric_perturbed_energy_positive = static_cast<float *>(malloc(sizeof(float) * 2*(length-3) ));
-    steric_perturbed_energy_negative = static_cast<float *>(malloc(sizeof(float) * 2*(length-3) ));
-    steric_unit_vector = static_cast<float *>(malloc(sizeof(float) * (length-3) ));
+    steric_perturbed_energy_positive = static_cast<float *>(malloc(sizeof(float) * 2*length ));
+    steric_perturbed_energy_negative = static_cast<float *>(malloc(sizeof(float) * 2*length ));
+    steric_energy_gradient = static_cast<float *>(malloc(sizeof(float) * length ));
+    steric_unit_vector = static_cast<float *>(malloc(sizeof(float) * length ));
     applied_forces = static_cast<float *>(malloc(sizeof(float) * (length+(length/3)) ));
     pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length/3));
     steric_interaction_coordinates = std::vector< std::vector<float> > ((length/3)-1);
@@ -855,8 +870,7 @@ Rod Rod::load_contents(std::string filename){
             assert( 
                 (unsigned)length == line_vec_float.size() || 
                 (unsigned)length+(length/3) == line_vec_float.size() || 
-                (unsigned)2*(length-3) == line_vec_float.size() ||
-                (unsigned)length-3 == line_vec_float.size()
+                (unsigned)2*length == line_vec_float.size()
                 ); //it's definitely fine to cast length
             
             /** Set our rod data arrays to the raw .data() from the vector. */
@@ -874,9 +888,10 @@ Rod Rod::load_contents(std::string filename){
             if (n == line_of_last_frame+12){ for (int i=0; i<length; i++) internal_twisted_energy_negative[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+13){ for (int i=0; i<length; i++) material_params[i] = line_vec_float.data()[i];}
             if (n == line_of_last_frame+14){ for (int i=0; i<length+(length/3); i++) B_matrix[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+15){ for (int i=0; i<2*(length-3); i++) steric_perturbed_energy_positive[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+16){ for (int i=0; i<2*(length-3); i++) steric_perturbed_energy_negative[i] = line_vec_float.data()[i];}
-            if (n == line_of_last_frame+17){ for (int i=0; i<length-3; i++) steric_unit_vector[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+15){ for (int i=0; i<2*length; i++) steric_perturbed_energy_positive[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+16){ for (int i=0; i<2*length; i++) steric_perturbed_energy_negative[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+17){ for (int i=0; i<length; i++) steric_unit_vector[i] = line_vec_float.data()[i];}
+            if (n == line_of_last_frame+18){ for (int i=0; i<length; i++) steric_energy_gradient[i] = line_vec_float.data()[i];}
 
         }
         n++;
@@ -908,9 +923,10 @@ Rod Rod::write_frame_to_file(){
     write_array(internal_twisted_energy_negative, length, mesoDimensions::Energy);
     write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
     write_array(B_matrix, length+(length/3), bending_response_factor );
-    write_array(steric_perturbed_energy_positive, 2*(length-3), mesoDimensions::Energy);
-    write_array(steric_perturbed_energy_negative, 2*(length-3), mesoDimensions::Energy);
-    write_array(steric_unit_vector, length-3, 1.0f);
+    write_array(steric_perturbed_energy_positive, 2*length, mesoDimensions::Energy);
+    write_array(steric_perturbed_energy_negative, 2*length, mesoDimensions::Energy);
+    write_array(steric_unit_vector, length, 1.0f);
+    write_array(steric_energy_gradient, length, 1.0f);
     std:fflush(file_ptr);
     return *this;
 }

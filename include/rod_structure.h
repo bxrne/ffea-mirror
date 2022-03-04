@@ -50,7 +50,7 @@ std::vector <float> stof_vec (std::vector <std::string> vec_in, int length);
 struct Rod
 {
   /** Rod metadata **/
-  int length; /** The length of an array in the rod (3x the number of nodes - x, y and z) */
+  int length; /** The length, L, of an array in the rod (x3 the number of nodes, N, in x, y and z) */
   int num_nodes; /** The number of nodes in the rod */
   int num_rods; /** When the system is set up in ffeatools, this will be set */
   int rod_no; /** Each rod will be created with a unique ID */
@@ -69,7 +69,7 @@ struct Rod
   float translational_friction;
   float rotational_friction; /** these will have to be changed when I end up implementing per-element radius, to be computed on-the-fly instead most likely **/
   
-  /** Each set of rod data is stored in a single, c-style array that goes {x,y,z,x,y,z...} */
+  /** Each set of rod data is stored in a single, c-style array, most of which go as {x,y,z,x,y,z...} */
   
   float * equil_r; /** Equilibrium configuration of the rod nodes. */
   float * equil_m; /** Equilibrium configuration of the material frame. */
@@ -85,9 +85,10 @@ struct Rod
   float * internal_twisted_energy_negative;
   float * material_params; /** Stretch, twist, radius, stretch, twist, radius... **/
   float * B_matrix; /** Contents of the bending modulus matrix for each node, as a 1-d array. Given as [a_1_1, a_1_2, a_2,1, a_2_2, a_1_1...]. **/
-  float * steric_perturbed_energy_positive;  /** Energies from steric interactions at each rod node. Given as [x0, y0, z0, x1, y1, z1 ...]**/
+  float * steric_perturbed_energy_positive;  // Length 2L array: energies from steric interactions at the start (0) and end (1) nodes of each rod element, i. Given as [xi0 yi0 zi0, xi1 yi1 zi1, ...]
   float * steric_perturbed_energy_negative;
-  float * steric_unit_vector;
+  float * steric_unit_vector;  // Length L  array: the direction of the steric repulsion force [x, y, z, ...]
+  float * steric_energy_gradient;  // Length L array: gradient of perturbed energies interpolated onto nodes [x, y, z, ...]
 
   float * applied_forces; /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
   bool * pinned_nodes; /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/

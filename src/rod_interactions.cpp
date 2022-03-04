@@ -322,30 +322,28 @@ void get_steric_energy_on_node(
     int node_index, 
     int node_min, 
     int node_max, 
-    float *energy_array_positive,  // 2(L-3) length array
+    float *energy_array_positive,  // length 2L array
     float *energy_array_negative, 
     OUT 
     float energy_positive[3], 
     float energy_negative[3]
     ){
 
-    int i = node_index*6;        // current element
-    int j = (node_index*6) - 3;  // previous element
+    int i = node_index*6;
 
     if (node_index == node_min){
         // End nodes: energy contributions from one element only
-        // TODO: Please write developer documentation explaining this horror
         vec3d(n){energy_positive[n] = energy_array_positive[i+n];}
         vec3d(n){energy_negative[n] = energy_array_negative[i+n];}
     }
     else if (node_index == node_max - 1){
-        vec3d(n){energy_positive[n] = energy_array_positive[j+n];}
-        vec3d(n){energy_negative[n] = energy_array_negative[j+n];}
+        vec3d(n){energy_positive[n] = energy_array_positive[i-3+n];}
+        vec3d(n){energy_negative[n] = energy_array_negative[i-3+n];}
     }
     else{
         // Central nodes: energy contributions from two elements
-        vec3d(n){energy_positive[n] = energy_array_positive[i+n] + energy_array_positive[j+n];}
-        vec3d(n){energy_negative[n] = energy_array_negative[i+n] + energy_array_negative[j+n];}
+        vec3d(n){energy_positive[n] = energy_array_positive[i-3+n] + energy_array_positive[i+n];}
+        vec3d(n){energy_negative[n] = energy_array_negative[i-3+n] + energy_array_negative[i+n];}
     }
 
 }
@@ -356,24 +354,23 @@ void get_unit_vector_on_node(
     int node_index, 
     int node_min, 
     int node_max, 
-    float* unit_vector_array, // L-3 length array
+    float* unit_vector_array, // length L array
     OUT
     float unit_vector[3]
     ){
 
     float sum[3] = {0, 0, 0};
 
-    int i = node_index*3;        // current element
-    int j = (node_index*3) - 3;  // previous element
+    int i = node_index*3;
 
     if (node_index == node_min){
         vec3d(n){unit_vector[n] = unit_vector_array[i+n];}
     }
     else if (node_index == node_max - 1){
-        vec3d(n){unit_vector[n] = unit_vector_array[j+n];}
+        vec3d(n){unit_vector[n] = unit_vector_array[i-3+n];}
     }
     else{
-        vec3d(n){sum[n] = unit_vector_array[i+n] + unit_vector_array[j+n];}
+        vec3d(n){sum[n] = unit_vector_array[i-3+n] + unit_vector_array[i+n];}
         rod::normalize(sum, unit_vector);
     }
 }
