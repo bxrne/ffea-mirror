@@ -155,6 +155,7 @@ void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3], float r_b
 void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3], float r_b[3], OUT float c_a[3], float c_b[3]){
     float l_a[3] = {0.0, 0.0, 0.0};  // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
+    float check[3] = {0, 0, 0};
     float l_a_cross_l_b[3] = {0.0, 0.0, 0.0};
     float n_a[3] = {0.0, 0.0, 0.0};
     float n_b[3] = {0.0, 0.0, 0.0};
@@ -163,6 +164,11 @@ void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3], floa
 
     normalize(p_a,  l_a);
     normalize(p_b,  l_b);
+
+    vec3d(n){check[n] = l_a[n] - l_b[n];}
+    if(rod::absolute(check) < 1e-7){
+        throw std::invalid_argument("Parallel rods detected; distance function will return nan.");
+    }
 
     cross_product(l_a, l_b, l_a_cross_l_b);
 

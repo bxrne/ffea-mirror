@@ -118,7 +118,7 @@ struct Rod
   Rod load_header (std::string filename);
   Rod load_contents (std::string filename);
   Rod write_frame_to_file ();
-  Rod write_array (float * array_ptr, int array_len, float unit_scale_factor);
+  //Rod write_array (float * array_ptr, int array_len, float unit_scale_factor);
   Rod write_mat_params_array(float *array_ptr, int array_len, float stretch_scale_factor, float twist_scale_factor, float length_scale_factor);
   Rod change_filename(std::string new_filename);
   Rod equilibrate_rod(RngStream rng[]);

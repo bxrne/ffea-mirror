@@ -909,24 +909,24 @@ Rod Rod::load_contents(std::string filename){
 Rod Rod::write_frame_to_file(){
     this->frame_no += 1;
     std::fprintf(file_ptr, "FRAME %i ROD %i\n", frame_no, rod_no);
-    write_array(equil_r, length, mesoDimensions::length);
-    write_array(equil_m, length, mesoDimensions::length);
-    write_array(current_r, length, mesoDimensions::length);
-    write_array(current_m, length, mesoDimensions::length);
-    write_array(internal_perturbed_x_energy_positive, length, mesoDimensions::Energy);
-    write_array(internal_perturbed_y_energy_positive, length, mesoDimensions::Energy);
-    write_array(internal_perturbed_z_energy_positive, length, mesoDimensions::Energy);
-    write_array(internal_twisted_energy_positive, length, mesoDimensions::Energy);
-    write_array(internal_perturbed_x_energy_negative, length, mesoDimensions::Energy);
-    write_array(internal_perturbed_y_energy_negative, length, mesoDimensions::Energy);
-    write_array(internal_perturbed_z_energy_negative, length, mesoDimensions::Energy);
-    write_array(internal_twisted_energy_negative, length, mesoDimensions::Energy);
+    write_array(file_ptr, equil_r, length, mesoDimensions::length, true);
+    write_array(file_ptr, equil_m, length, mesoDimensions::length, true);
+    write_array(file_ptr, current_r, length, mesoDimensions::length, true);
+    write_array(file_ptr, current_m, length, mesoDimensions::length, true);
+    write_array(file_ptr, internal_perturbed_x_energy_positive, length, mesoDimensions::Energy, true);
+    write_array(file_ptr, internal_perturbed_y_energy_positive, length, mesoDimensions::Energy, true);
+    write_array(file_ptr, internal_perturbed_z_energy_positive, length, mesoDimensions::Energy, true);
+    write_array(file_ptr, internal_twisted_energy_positive, length, mesoDimensions::Energy, true);
+    write_array(file_ptr, internal_perturbed_x_energy_negative, length, mesoDimensions::Energy, true);
+    write_array(file_ptr, internal_perturbed_y_energy_negative, length, mesoDimensions::Energy, true);
+    write_array(file_ptr, internal_perturbed_z_energy_negative, length, mesoDimensions::Energy, true);
+    write_array(file_ptr, internal_twisted_energy_negative, length, mesoDimensions::Energy, true);
     write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
-    write_array(B_matrix, length+(length/3), bending_response_factor );
-    write_array(steric_perturbed_energy_positive, 2*length, mesoDimensions::Energy);
-    write_array(steric_perturbed_energy_negative, 2*length, mesoDimensions::Energy);
-    write_array(steric_unit_vector, length, 1.0f);
-    write_array(steric_energy_gradient, length, 1.0f);
+    write_array(file_ptr, B_matrix, length+(length/3), bending_response_factor , true);
+    write_array(file_ptr, steric_perturbed_energy_positive, 2*length, mesoDimensions::Energy, true);
+    write_array(file_ptr, steric_perturbed_energy_negative, 2*length, mesoDimensions::Energy, true);
+    write_array(file_ptr, steric_unit_vector, length, 1.0f, true);
+    write_array(file_ptr, steric_energy_gradient, length, 1.0f, true);
     std:fflush(file_ptr);
     return *this;
 }
@@ -939,6 +939,7 @@ Rod Rod::write_frame_to_file(){
   - unit_scale_factor - the unit conversion from the internal FFEA units
     to SI units.
 */
+/**
 Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     for (int i=0; i<array_len; i++){
         if (i<array_len-1){
@@ -951,6 +952,7 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     std::fprintf(file_ptr, "\n");
     return *this;
 }
+*/
 
 /**
  This function is almost identical to the one above, but it appllies

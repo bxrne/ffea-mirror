@@ -35,7 +35,7 @@
 
 namespace rod {
 
-bool dbg_print = false;
+bool dbg_print = true;
     
      /*---------*/
     /* Utility */
@@ -120,6 +120,28 @@ void print_array(std::string array_name, double array[], int length){
         }
         std::cout << "]\n";
     }
+}
+
+/**
+ Write a single 1D array to a file in the CSV format.
+ Parameters:
+  - *file_ptr - the pointer to the file that will be written to.
+  - *array_ptr - the pointer to the array that is to be written.
+  - array_len - the length of the array.
+  - unit_scale_factor - the unit conversion from the internal FFEA units
+    to SI units.
+  - new_line - whether to print a new line after the array is fully written
+*/
+void write_array(FILE *file_ptr, float *array_ptr, int array_len, float unit_scale_factor, bool new_line){
+    for (int i=0; i<array_len; i++){
+        if (i<array_len-1){
+            std::fprintf(file_ptr, "%e,", array_ptr[i]*unit_scale_factor);
+        }
+        else{
+            std::fprintf(file_ptr, "%e", array_ptr[i]*unit_scale_factor);
+        }
+    }
+    if(new_line == true){std::fprintf(file_ptr, "\n");}
 }
 
 /**

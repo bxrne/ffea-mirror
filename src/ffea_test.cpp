@@ -1532,18 +1532,24 @@ int ffea_test::steric_energy_two_rod_elements(){
     float phi = M_PI/12;    // y-z rotation [radians]
     float p_a[3] = {0, 0, 5*radius};
     float p_b[3] = {0, 0, 5*radius};
-    float r_a[3] = {0, 0, 0};
-    float r_b[3] = {-0.5f*rmax*rhat[0], -0.5f*rmax*rhat[1], -0.5f*rmax*rhat[2]};
+    float r_a_0[3] = {0, 0, 0};  // Starting position of node 0
+    float r_b_0[3] = {-0.5f*rmax*rhat[0], -0.5f*rmax*rhat[1], -0.5f*rmax*rhat[2]};
     // Interaction
-    float c_a[3];  // point of interaction on element a
-    float c_b[3];
-    float delta = 1e-12 / mesoDimensions::length;  // perturbation amount
-    float strength = 1.0;  // strength of repulsive force [force units]
+    float c_a[3] = {0, 0, 0};  // point of interaction on element a
+    float c_b[3] = {0, 0, 0};
+    float delta = 1e-12 / mesoDimensions::length;  // perturbation amount [FFEA length units]
+    float strength = 1.0;  // strength of repulsive force [FFEA force units]
     // Storage
-    float U_pos_node_0[3*num_steps];  // [Ux, Uy, Uz, ...]
-    float U_pos_node_1[3*num_steps];
-    float U_neg_node_0[3*num_steps];
-    float U_neg_node_1[3*num_steps];
+    FILE *file_ptr;
+    //int length = 3*num_steps;
+    float r_a_1[3] = {0, 0, 0};
+    float r_b_1[3] = {0, 0, 0};
+    float c_ab[3] = {0, 0, 0};
+    float distance = 0;
+    float U_pos_node_0[3];  // [Ux, Uy, Uz, ...]
+    float U_pos_node_1[3];
+    float U_neg_node_0[3];
+    float U_neg_node_1[3];
 
     // rotate b in x-z
     p_b[0] *= std::sin(theta);
@@ -1552,33 +1558,70 @@ int ffea_test::steric_energy_two_rod_elements(){
     p_b[0] *= std::cos(phi);
     p_b[1] *= std::sin(phi);
 
+    file_ptr = std::fopen("data.txt", "w");
+    std::fprintf(file_ptr, "# r_a_0    r_a_1    r_b_0    r_b_1    |c_ab|    U_pos_0    U_neg_0    U_pos_1    U_neg_1\n");
+
     for(int step_no=0; step_no<num_steps; step_no++){
-        rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
+        try{
+            rod::get_shortest_distance_to_rod(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
+        }
+        catch(const std::invalid_argument& e){
+            std::cout << "\nCaught invalid_argument exception: " << e.what() << std::endl;
+            rod::rod_abort("Exception during test");
+        };
 
         float U_temp[2] = {0, 0};  // nodes 0, 1
         // positive
-        rod::get_steric_perturbation_energy(delta, 0, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
-        U_pos_node_0[step_no] = U_temp[0];
-        U_pos_node_1[step_no] = U_temp[1];
-        rod::get_steric_perturbation_energy(delta, 1, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
-        U_pos_node_0[step_no+1] = U_temp[0];
-        U_pos_node_1[step_no+1] = U_temp[1];
-        rod::get_steric_perturbation_energy(delta, 2, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
-        U_pos_node_0[step_no+2] = U_temp[0];
-        U_pos_node_1[step_no+2] = U_temp[1];
+        rod::get_steric_perturbation_energy(delta, 0, strength, r_a_0, p_a, c_a, c_b, radius, radius, U_temp);
+        U_pos_node_0[0] = U_temp[0];
+        U_pos_node_1[0] = U_temp[1];
+        rod::get_steric_perturbation_energy(delta, 1, strength, r_a_0, p_a, c_a, c_b, radius, radius, U_temp);
+        U_pos_node_0[1] = U_temp[0];
+        U_pos_node_1[1] = U_temp[1];
+        rod::get_steric_perturbation_energy(delta, 2, strength, r_a_0, p_a, c_a, c_b, radius, radius, U_temp);
+        U_pos_node_0[2] = U_temp[0];
+        U_pos_node_1[2] = U_temp[1];
         // negative
-        rod::get_steric_perturbation_energy(-delta, 0, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
-        U_neg_node_0[step_no] = U_temp[0];
-        U_neg_node_1[step_no] = U_temp[1];
-        rod::get_steric_perturbation_energy(-delta, 1, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
-        U_neg_node_0[step_no+1] = U_temp[0];
-        U_neg_node_1[step_no+1] = U_temp[1];
-        rod::get_steric_perturbation_energy(-delta, 2, strength, r_a, p_a, c_a, c_b, radius, radius, U_temp);
-        U_neg_node_0[step_no+2] = U_temp[0];
-        U_neg_node_1[step_no+2] = U_temp[1];
+        rod::get_steric_perturbation_energy(-delta, 0, strength, r_a_0, p_a, c_a, c_b, radius, radius, U_temp);
+        U_neg_node_0[0] = U_temp[0];
+        U_neg_node_1[0] = U_temp[1];
+        rod::get_steric_perturbation_energy(-delta, 1, strength, r_a_0, p_a, c_a, c_b, radius, radius, U_temp);
+        U_neg_node_0[1] = U_temp[0];
+        U_neg_node_1[1] = U_temp[1];
+        rod::get_steric_perturbation_energy(-delta, 2, strength, r_a_0, p_a, c_a, c_b, radius, radius, U_temp);
+        U_neg_node_0[2] = U_temp[0];
+        U_neg_node_1[2] = U_temp[1];
 
-        vec3d(n){r_b[n] += rhat[n] * dr;}
+        // update
+        vec3d(n){r_b_0[n] += rhat[n] * dr;}
+
+        // write stuff, tab-separated columns
+        vec3d(n){r_a_1[n] = r_a_0[n] + p_a[n];}
+        vec3d(n){r_b_1[n] = r_b_0[n] + p_b[n];}
+        vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
+        distance = rod::absolute(c_ab);
+
+        rod::write_array(file_ptr, r_a_0, 3, mesoDimensions::length, false);
+        std::fprintf(file_ptr, "\t");
+        rod::write_array(file_ptr, r_a_1, 3, mesoDimensions::length, false);
+        std::fprintf(file_ptr, "\t");
+        rod::write_array(file_ptr, r_b_0, 3, mesoDimensions::length, false);
+        std::fprintf(file_ptr, "\t");
+        rod::write_array(file_ptr, r_b_1, 3, mesoDimensions::length, false);
+        std::fprintf(file_ptr, "\t");
+        std::fprintf(file_ptr, "%e\t", distance);
+        rod::write_array(file_ptr, U_pos_node_0, 3, mesoDimensions::Energy, false);
+        std::fprintf(file_ptr, "\t");
+        rod::write_array(file_ptr, U_neg_node_0, 3, mesoDimensions::Energy, false);
+        std::fprintf(file_ptr, "\t");
+        rod::write_array(file_ptr, U_pos_node_1, 3, mesoDimensions::Energy, false);
+        std::fprintf(file_ptr, "\t");
+        rod::write_array(file_ptr, U_neg_node_1, 3, mesoDimensions::Energy, false);
+        std::fprintf(file_ptr, "\t");
+        std::fprintf(file_ptr, "\n");
     }
+    std::fflush(file_ptr);
+    std::fclose(file_ptr);
 
     return 1;
     
