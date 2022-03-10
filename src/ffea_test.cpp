@@ -1524,14 +1524,18 @@ int ffea_test::steric_energy_two_rod_elements(){
     // Test parameters
     int num_steps = 1000;
     float radius = 5e-9 / mesoDimensions::length;
-    float rmax = 5 * radius;    // maximum distance
+    float rmax = 5 * radius;      // maximum distance
     float dr = rmax / num_steps;  // step size
     float rhat[3] = {0, 1, 0};    // direction 
     // Rods
     float theta = M_PI/12;  // x-z rotation [radians]
     float phi = M_PI/12;    // y-z rotation [radians]
+    float rm_y[9];
+    float rm_z[9];
+    float rm[9];
     float p_a[3] = {0, 0, 5*radius};
-    float p_b[3] = {0, 0, 5*radius};
+    float p_b_init[3] = {0, 0, 5*radius};
+    float p_b[3];
     float r_a_0[3] = {0, 0, 0};  // Starting position of node 0
     float r_b_0[3] = {-0.5f*rmax*rhat[0], -0.5f*rmax*rhat[1], -0.5f*rmax*rhat[2]};
     // Interaction
@@ -1541,7 +1545,6 @@ int ffea_test::steric_energy_two_rod_elements(){
     float strength = 1.0;  // strength of repulsive force [FFEA force units]
     // Storage
     FILE *file_ptr;
-    //int length = 3*num_steps;
     float r_a_1[3] = {0, 0, 0};
     float r_b_1[3] = {0, 0, 0};
     float c_ab[3] = {0, 0, 0};
@@ -1551,12 +1554,16 @@ int ffea_test::steric_energy_two_rod_elements(){
     float U_neg_node_0[3];
     float U_neg_node_1[3];
 
-    // rotate b in x-z
-    p_b[0] *= std::sin(theta);
-    p_b[2] *= std::cos(theta);
-    // rotate b in x-y
-    p_b[0] *= std::cos(phi);
-    p_b[1] *= std::sin(phi);
+    // rotate b in x-z by theta, then in x-y by phi
+    rod::get_cartesian_rotation_matrix(1, theta, rm_y);
+    rod::get_cartesian_rotation_matrix(2, phi, rm_z);
+    rod::matmul_3x3_3x3(rm_y, rm_z, rm);
+    rod::apply_rotation_matrix(p_b_init, rm, p_b);
+    rod::print_array("rm_y", rm_z, 9);
+    rod::print_array("rm_z", rm_z, 9);
+    rod::print_array("rm", rm, 9);
+    rod::print_array("p_b_init", p_b_init, 3);
+    rod::print_array("p_b", p_b, 3);
 
     file_ptr = std::fopen("data.txt", "w");
     std::fprintf(file_ptr, "# r_a_0    r_a_1    r_b_0    r_b_1    |c_ab|    U_pos_0    U_neg_0    U_pos_1    U_neg_1\n");

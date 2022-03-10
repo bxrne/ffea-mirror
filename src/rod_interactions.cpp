@@ -269,7 +269,7 @@ void assign_neighbours_to_elements(
    - force_constant - arbitrary coefficient used to scale the severity of the steric repulsion [force units]
    - node_a - the 'start' node of the current element on rod a
    - element_a -
-   - point_on_a, point_on_b - the points forming a straight line between two rods, a and b
+   - c_a, c_b - the points forming a straight line between two rods, a and b
    Returns:
    - energies - a 2-element array for energies interpolated onto the start [0] and end [1] nodes of element_a
 */
@@ -288,6 +288,7 @@ void get_steric_perturbation_energy(
     ){
 
     float c_ab[3] = {0, 0, 0};
+    float intersect_distance = 0;
     float energy = 0;
     float displacement[3] = {0, 0, 0};
     float weight_start_node = 0;
@@ -295,7 +296,8 @@ void get_steric_perturbation_energy(
 
     c_b[perturbation_dimension] += perturbation_amount;
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
-    energy = force_constant * (rod::absolute(c_ab) - (radius_a + radius_b));
+    intersect_distance = std::max(0.0f, radius_a + radius_b - rod::absolute(c_ab));
+    energy = force_constant * intersect_distance;
 
     // Energy must be interpolated onto nodes of the element on rod a.
     // E.g. if c is located on the start node, r, then the weighting on 
@@ -313,6 +315,7 @@ void get_steric_perturbation_energy(
         std::cout << "\tforce_constant: " << force_constant << std::endl;
         std::cout << "\t|c_ab|: " << rod::absolute(c_ab) << std::endl;
         std::cout << "\tradius sum: " << radius_a + radius_b << std::endl;
+        std::cout << "\tintersect_distance: " << intersect_distance << std::endl;
         std::cout << "\t|c_a - r_a|: " << rod::absolute(displacement) << std::endl;
         std::cout << "\t|p_a|: " << rod::absolute(p_a) << std::endl;
         std::cout << "\telement energy: " << energy << std::endl;
