@@ -35,7 +35,7 @@
 
 namespace rod {
 
-bool dbg_print = true;
+bool dbg_print = false;
     
      /*---------*/
     /* Utility */
@@ -293,11 +293,9 @@ void get_cartesian_rotation_matrix(int dim, float angle, float rotation_matrix[9
         rotation_matrix[0] = 1;
         rotation_matrix[1] = 0;
         rotation_matrix[2] = 0;
-
         rotation_matrix[3] = 0;
         rotation_matrix[4] = c;
         rotation_matrix[5] = -s;
-
         rotation_matrix[6] = 0;
         rotation_matrix[7] = s;
         rotation_matrix[8] = c;
@@ -307,11 +305,9 @@ void get_cartesian_rotation_matrix(int dim, float angle, float rotation_matrix[9
         rotation_matrix[0] = c;
         rotation_matrix[1] = 0;
         rotation_matrix[2] = s;
-
         rotation_matrix[3] = 0;
         rotation_matrix[4] = 1;
         rotation_matrix[5] = 0;
-
         rotation_matrix[6] = -s;
         rotation_matrix[7] = 0;
         rotation_matrix[8] = c;
@@ -321,11 +317,9 @@ void get_cartesian_rotation_matrix(int dim, float angle, float rotation_matrix[9
         rotation_matrix[0] = c;
         rotation_matrix[1] = -s;
         rotation_matrix[2] = 0;
-
         rotation_matrix[3] = s;
         rotation_matrix[4] = c;
         rotation_matrix[5] = 0;
-
         rotation_matrix[6] = 0;
         rotation_matrix[7] = 0;
         rotation_matrix[8] = 1;
