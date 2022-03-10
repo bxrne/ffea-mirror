@@ -282,6 +282,61 @@ void get_rotation_matrix(float a[3], float b[3], float rotation_matrix[9]){
 }
 
 /**
+  Get the rotation matrix (3x3) that rotates some vector (3x1) by an angle
+  about a given cartesian axis.
+*/
+void get_cartesian_rotation_matrix(int dim, float angle, float rotation_matrix[9]){
+    float s = std::sin(angle);
+    float c = std::cos(angle);
+    // x    
+    if(dim==0){
+        rotation_matrix[0] = 1;
+        rotation_matrix[1] = 0;
+        rotation_matrix[2] = 0;
+
+        rotation_matrix[3] = 0;
+        rotation_matrix[4] = c;
+        rotation_matrix[5] = -s;
+
+        rotation_matrix[6] = 0;
+        rotation_matrix[7] = s;
+        rotation_matrix[8] = c;
+    }
+    // y
+    else if(dim==1){
+        rotation_matrix[0] = c;
+        rotation_matrix[1] = 0;
+        rotation_matrix[2] = s;
+
+        rotation_matrix[3] = 0;
+        rotation_matrix[4] = 1;
+        rotation_matrix[5] = 0;
+
+        rotation_matrix[6] = -s;
+        rotation_matrix[7] = 0;
+        rotation_matrix[8] = c;
+    }
+    // z
+    else if(dim==2){
+        rotation_matrix[0] = c;
+        rotation_matrix[1] = -s;
+        rotation_matrix[2] = 0;
+
+        rotation_matrix[3] = s;
+        rotation_matrix[4] = c;
+        rotation_matrix[5] = 0;
+
+        rotation_matrix[6] = 0;
+        rotation_matrix[7] = 0;
+        rotation_matrix[8] = 1;
+    }
+    else{
+        throw std::invalid_argument("Invalid dimension given for rotation matrix");
+    }
+}
+
+
+/**
  This is just a straight matrix multiplication, multiplyning the a column
  vector by a rotation matrix.
 */
