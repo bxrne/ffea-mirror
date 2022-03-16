@@ -252,9 +252,7 @@ void assign_neighbours_to_elements(
         vec3d(n){element_b_neighbours.push_back(c_a[n]);}
         element_b_neighbours.push_back(radius_a);
     }
-    else{
-        if(rod::dbg_print){std::cout << "no interaction" << std::endl;}
-    }
+    else if(rod::dbg_print){std::cout << "no interaction" << std::endl;}
 }
 
 

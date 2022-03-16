@@ -1565,8 +1565,9 @@ int ffea_test::steric_energy_two_rod_elements(){
     rod::print_array("p_b_init", p_b_init, 3);
     rod::print_array("p_b", p_b, 3);
 
-    file_ptr = std::fopen("data.txt", "w");
-    std::fprintf(file_ptr, "# r_a_0    r_a_1    r_b_0    r_b_1    |c_ab|    U_pos_0    U_neg_0    U_pos_1    U_neg_1\n");
+    file_ptr = std::fopen("log.txt", "w");
+    std::fprintf(file_ptr, "# radius_a: %f nm, radius_b: %f nm\n", radius * mesoDimensions::length * 1e9, radius * mesoDimensions::length * 1e9);
+    std::fprintf(file_ptr, "# r_a_0 [3]    r_a_1 [3]    r_b_0 [3]    r_b_1 [3]    |c_ab|    U_pos_0 [3]    U_neg_0 [3]    U_pos_1 [3]    U_neg_1 [3]\n");
 
     for(int step_no=0; step_no<num_steps; step_no++){
         try{
@@ -1608,23 +1609,15 @@ int ffea_test::steric_energy_two_rod_elements(){
         vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
         distance = rod::absolute(c_ab);
 
-        rod::write_array(file_ptr, r_a_0, 3, mesoDimensions::length, false);
-        std::fprintf(file_ptr, "\t");
-        rod::write_array(file_ptr, r_a_1, 3, mesoDimensions::length, false);
-        std::fprintf(file_ptr, "\t");
-        rod::write_array(file_ptr, r_b_0, 3, mesoDimensions::length, false);
-        std::fprintf(file_ptr, "\t");
-        rod::write_array(file_ptr, r_b_1, 3, mesoDimensions::length, false);
-        std::fprintf(file_ptr, "\t");
-        std::fprintf(file_ptr, "%e\t", distance);
-        rod::write_array(file_ptr, U_pos_node_0, 3, mesoDimensions::Energy, false);
-        std::fprintf(file_ptr, "\t");
-        rod::write_array(file_ptr, U_neg_node_0, 3, mesoDimensions::Energy, false);
-        std::fprintf(file_ptr, "\t");
-        rod::write_array(file_ptr, U_pos_node_1, 3, mesoDimensions::Energy, false);
-        std::fprintf(file_ptr, "\t");
-        rod::write_array(file_ptr, U_neg_node_1, 3, mesoDimensions::Energy, false);
-        std::fprintf(file_ptr, "\t");
+        vec3d(n){std::fprintf(file_ptr, "%e ", r_a_0[n] * mesoDimensions::length);}
+        vec3d(n){std::fprintf(file_ptr, "%e ", r_a_1[n] * mesoDimensions::length);}
+        vec3d(n){std::fprintf(file_ptr, "%e ", r_b_0[n] * mesoDimensions::length);}
+        vec3d(n){std::fprintf(file_ptr, "%e ", r_b_1[n] * mesoDimensions::length);}
+        std::fprintf(file_ptr, "%e ", distance * mesoDimensions::length);
+        vec3d(n){std::fprintf(file_ptr, "%e ", U_pos_node_0[n] * mesoDimensions::Energy);}
+        vec3d(n){std::fprintf(file_ptr, "%e ", U_neg_node_0[n] * mesoDimensions::Energy);}
+        vec3d(n){std::fprintf(file_ptr, "%e ", U_pos_node_1[n] * mesoDimensions::Energy);}
+        vec3d(n){std::fprintf(file_ptr, "%e ", U_neg_node_1[n] * mesoDimensions::Energy);}
         std::fprintf(file_ptr, "\n");
     }
     std::fflush(file_ptr);
