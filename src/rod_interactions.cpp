@@ -307,10 +307,12 @@ void get_steric_perturbation_energy(
     energies[1] = weight_end_node * energy;
 
     if(rod::dbg_print){
-        std::cout << "steric perturbation energy" << std::endl;
+        std::cout << "steric perturbation energy" << std::endl;     
+        std::cout << "\tamount: " << perturbation_amount << std::endl;
+        std::cout << "\tdimension: " << perturbation_dimension << std::endl;
+        std::cout << "\tforce_constant: " << force_constant << std::endl;
         rod::print_array("\tc_a", c_a, 3);
         rod::print_array("\tc_b perturbed", c_b, 3);
-        std::cout << "\tforce_constant: " << force_constant << std::endl;
         std::cout << "\t|c_ab|: " << rod::absolute(c_ab) << std::endl;
         std::cout << "\tradius sum: " << radius_a + radius_b << std::endl;
         std::cout << "\tintersect_distance: " << intersect_distance << std::endl;

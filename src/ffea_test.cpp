@@ -1258,6 +1258,8 @@ int ffea_test::point_lies_within_rod_element(){
     float delta[3] = {0.0, 0.0, 0.0};
     int pass_count = 0;
 
+    rod::dbg_print = true;
+
     for(int i=0; i<6; i++){
         vec3d(n){c_init[n] = r1[n] + p[n] * t[i];}
         // rod::get_shortest_distance_to_rod(c_init, p, r1, c_out);  // test
@@ -1351,6 +1353,8 @@ int ffea_test::line_connecting_rod_elements(){
     float delta_b[3] = {0.0, 0.0, 0.0};
     int num_tests = sizeof(r_b1) / sizeof(r_b1[0]);
     int pass_count = 0;  // count number of cases that have passed
+
+    rod::dbg_print = true;
 
     for(int i=0; i<num_tests; i++){
         vec3d(n){c_a_answer[n] = 0.0;}
@@ -1456,6 +1460,8 @@ int ffea_test::rod_neighbour_list_construction(){
     int num_interactions = 0;
     int expected_num_interactions = 14;
 
+    rod::dbg_print = true;
+
     // Create rods
     std::cout << "ffea_test::rod_neighbour_list_construction() - loading rods" << std::endl;
     rod_array = new rod::Rod*[num_rods];
@@ -1528,8 +1534,8 @@ int ffea_test::steric_energy_two_rod_elements(){
     float dr = rmax / num_steps;  // step size
     float rhat[3] = {0, 1, 0};    // direction 
     // Rods
-    float theta = M_PI/12;  // x-z rotation [radians]
-    float phi = M_PI/12;    // y-z rotation [radians]
+    float theta = M_PI/18;  // x-z rotation [radians], 10 deg
+    float phi = M_PI/6;    // x-y rotation [radians], 30 deg
     float rm_y[9];
     float rm_z[9];
     float rm[9];
@@ -1554,6 +1560,8 @@ int ffea_test::steric_energy_two_rod_elements(){
     float U_neg_node_0[3];
     float U_neg_node_1[3];
 
+    rod::dbg_print = true;
+
     // rotate b in x-z by theta, then in x-y by phi
     rod::get_cartesian_rotation_matrix(1, theta, rm_y);
     rod::get_cartesian_rotation_matrix(2, phi, rm_z);
@@ -1564,6 +1572,8 @@ int ffea_test::steric_energy_two_rod_elements(){
     rod::print_array("rm", rm, 9);
     rod::print_array("p_b_init", p_b_init, 3);
     rod::print_array("p_b", p_b, 3);
+    // shift backwards in z 
+    r_a_0[2] -= 0.25*rmax;
 
     file_ptr = std::fopen("log.txt", "w");
     std::fprintf(file_ptr, "# radius_a: %f nm, radius_b: %f nm\n", radius * mesoDimensions::length * 1e9, radius * mesoDimensions::length * 1e9);

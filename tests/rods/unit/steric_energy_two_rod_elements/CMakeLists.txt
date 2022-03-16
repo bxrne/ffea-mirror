@@ -23,6 +23,6 @@
 
 set (STERICENERGYDIR "${PROJECT_BINARY_DIR}/tests/rods/unit/steric_energy_two_rod_elements/")
 file (COPY steric_energy_two_rod_elements.ffeatest DESTINATION ${STERICENERGYDIR})
-file (COPY plot.py DESTINATION ${STERICENERGYDIR})
-add_test(NAME steric_energy_two_rod_elements COMMAND ${PYTHON_EXECUTABLE} plot.py)
+file (COPY test_and_plot.py DESTINATION ${STERICENERGYDIR})
+add_test(NAME steric_energy_two_rod_elements COMMAND ${PYTHON_EXECUTABLE} test_and_plot.py)
 set_tests_properties(steric_energy_two_rod_elements PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})
