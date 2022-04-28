@@ -144,6 +144,12 @@ class FFEA_pdb:
 
                 fin.seek(check_pos)
 
+            elif line[0:6] == "ANISOU":
+                print("\n" + line)
+                raise Exception("ANISOU field detected. FFEA_pdb is not equipped "
+                                "to read PDB files of this format. Please edit the "
+                                "PDB file and try again!")
+
             elif line[0:3] == "END" or line.strip() == "":
                 break
 
