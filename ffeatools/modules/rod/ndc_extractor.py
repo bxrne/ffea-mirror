@@ -697,11 +697,11 @@ def unroll(analysis, perpendicularize=True, do_complete_parallel_transport=False
 
 def main(prmtop_file, mdcrd_traj_file, inpcrd_file, chain1_end, trj_format="TRJ", inp_format="INPCRD", get_B=True, target_length=15, cluster_size=10, simplify_only=False, rod=None, radius=5e-9, rod_out=None, unroll_rod=True, get_inhomogenous_beta=True, get_inhomogenous_kappa=True):
     """
-    For an atomistic trajectory, this will create an equivalent rod trajectory,
-    and use that trajectory to compute the material parameters of the rod.
-    Cool huh?
+    For an atomistic trajectory of a two-chain coiled-coil, this will create an 
+    equivalent rod trajectory, and use that trajectory to compute the material 
+    parameters of the rod. Cool huh?
     Parameters:
-        prmtop_file, mdcrd_tarj_file, inpcrd_file: paths to AMBER output files
+        prmtop_file, mdcrd_traj_file, inpcrd_file: paths to AMBER output files
         (strings)
         chain1_end: the index of the atom at which the first chain (the first
         coil) in the coiled-coil ends (int)
