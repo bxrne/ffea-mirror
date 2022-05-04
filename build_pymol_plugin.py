@@ -1,11 +1,11 @@
 import os
 import tarfile
 
-
-software_dir = "/home/ryan/Software"
+software_dir = os.environ['HOME'] + "/Software"
 ffeatools_dir = os.environ['FFEA_SRC'] + "/ffeatools"
-tar_dir = software_dir + "/FFEAplugin"
-pymol_build_dir = os.environ['FFEA_BUILD'] + "/share/ffea/plugins/pymol"
+tar_dir = os.environ['FFEA_SRC']  + "/../FFEAplugin"
+ffea_build_pymol = os.environ['FFEA_BUILD'] + "/share/ffea/plugins/pymol"
+ffea_debug_pymol = os.environ['FFEA_BUILD'] + "/share/ffea/plugins/pymol"
 pymol_files =  ["FFEA_analysis/pymol_plugin/Blob.py",
     "FFEA_analysis/pymol_plugin/__init__.py",
     "FFEA_analysis/pymol_plugin/mtTkinter.py",
@@ -46,6 +46,6 @@ for f in pymol_files:
     os.system("cp -v " + ffeatools_dir + "/" + f + " " + tar_dir + "/")
 
 os.system("tar cfzv FFEAplugin.tar.gz FFEAplugin/")
-# os.system("gzip FFEAplugin.tar")
-os.system("mv FFEAplugin.tar.gz " + pymol_build_dir + "/")
-os.system("rm -r FFEAplugin")
+os.system("cp FFEAplugin.tar.gz " + ffea_build_pymol + "/")
+os.system("cp FFEAplugin.tar.gz " + ffea_debug_pymol + "/")
+os.system("rm -r FFEAplugin.tar.gz FFEAplugin")

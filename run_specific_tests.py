@@ -2,10 +2,9 @@
 import os
 
 ffea_build_dir = os.environ["FFEA_BUILD"]
-tests = ["line_connecting_rod_elements",
-         "test_rngStream"]
+tests = ["steric_energy_two_rod_elements"]
 
 os.chdir(ffea_build_dir)
 for t in tests:
-    os.system("ctest -V -R " + str(t))
+    os.system("ctest --verbose -R " + str(t))
     print("")
