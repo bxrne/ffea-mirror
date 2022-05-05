@@ -663,7 +663,7 @@ namespace rod
                 }
                 if (explode)
                 {
-                    std::cout << "WARNING: steric energy exceeds 1000 kT!" << std::endl;
+                    throw std::runtime_error("Steric energy exceeds 1000 kT");
                 }
                 if (rod::dbg_print)
                 {
