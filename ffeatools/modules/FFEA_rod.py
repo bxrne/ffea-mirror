@@ -448,16 +448,23 @@ class FFEA_rod:
             [self.num_frames, self.num_elements, 4])
         for frame in range(len(self.internal_perturbed_x_energy_positive)):
             for node in range(len(self.internal_perturbed_x_energy_positive[frame])):
-                self.unperturbed_energy_type[frame][node] = (self.internal_perturbed_x_energy_positive[frame][node] + self.internal_perturbed_x_energy_negative[frame][node] + self.internal_perturbed_y_energy_positive[frame][node] + self.internal_perturbed_y_energy_negative[frame]
-                                                             [node] + self.internal_perturbed_z_energy_positive[frame][node] + self.internal_perturbed_z_energy_negative[frame][node] + self.twisted_energy_positive[frame][node] + self.twisted_energy_negative[frame][node]) / 8
-                self.unperturbed_energy_dof[frame][node][0] = (np.sum(
-                    self.internal_perturbed_x_energy_positive[frame][node]) + np.sum(self.internal_perturbed_x_energy_negative[frame][node])) / 2
-                self.unperturbed_energy_dof[frame][node][1] = (np.sum(
-                    self.internal_perturbed_y_energy_positive[frame][node]) + np.sum(self.internal_perturbed_y_energy_negative[frame][node])) / 2
-                self.unperturbed_energy_dof[frame][node][2] = (np.sum(
-                    self.internal_perturbed_z_energy_positive[frame][node]) + np.sum(self.internal_perturbed_z_energy_negative[frame][node])) / 2
-                self.unperturbed_energy_dof[frame][node][3] = (np.sum(
-                    self.twisted_energy_positive[frame][node]) + np.sum(self.twisted_energy_negative[frame][node])) / 2
+                self.unperturbed_energy_type[frame][node] = (self.internal_perturbed_x_energy_positive[frame][node]
+                                                             + self.internal_perturbed_x_energy_negative[frame][node]
+                                                             + self.internal_perturbed_y_energy_positive[frame][node]
+                                                             + self.internal_perturbed_y_energy_negative[frame][node]
+                                                             + self.internal_perturbed_z_energy_positive[frame][node]
+                                                             + self.internal_perturbed_z_energy_negative[frame][node]
+                                                             + self.twisted_energy_positive[frame][node]
+                                                             + self.twisted_energy_negative[frame][node]) / 8
+
+                self.unperturbed_energy_dof[frame][node][0] = (np.sum(self.internal_perturbed_x_energy_positive[frame][node])
+                                                               + np.sum(self.internal_perturbed_x_energy_negative[frame][node])) / 2
+                self.unperturbed_energy_dof[frame][node][1] = (np.sum(self.internal_perturbed_y_energy_positive[frame][node])
+                                                               + np.sum(self.internal_perturbed_y_energy_negative[frame][node])) / 2
+                self.unperturbed_energy_dof[frame][node][2] = (np.sum(self.internal_perturbed_z_energy_positive[frame][node])
+                                                               + np.sum(self.internal_perturbed_z_energy_negative[frame][node])) / 2
+                self.unperturbed_energy_dof[frame][node][3] = (np.sum(self.twisted_energy_positive[frame][node])
+                                                               + np.sum(self.twisted_energy_negative[frame][node])) / 2
         self.unperturbed_energy = np.sum(self.unperturbed_energy_type, axis=2)
 
     def scale(self, scale_factor):
@@ -630,7 +637,6 @@ class anal_rod:
             self.rod.equil_r[0][1] - self.rod.equil_r[0][nodes])
         self.EI_from_deflection = np.zeros([frames])
         for frame in range(frames):
-            # beam_length = self.get_absolute_length(1,nodes,frame) # gets a better number but i think not for the right reason, i think the beam length is constant
             self.EI_from_deflection[frame] = (
                 force_applied * (beam_length**3)) / (3 * rod_math.get_length(self.deflections[frame]))
 
@@ -821,7 +827,6 @@ class anal_rod:
 
                 # NOTE TO SELF: ADD NORMALISATION!
 
-                #B_j = np.matrix([[self.rod.B_matrix[frame][element][0], self.rod.B_matrix[0][0][1]], [self.rod.B_matrix[0][0][2], self.rod.B_matrix[0][0][3]]])
                 B = np.matrix([[self.rod.B_matrix[frame][element + 1][0], self.rod.B_matrix[0]
                                 [0][1]], [self.rod.B_matrix[0][0][2], self.rod.B_matrix[0][0][3]]])
 
@@ -949,16 +954,7 @@ class anal_rod:
                     delta_theta = rod_math.get_signed_angle(
                         mim1_transported, rod_math.normalize(mi), rod_math.normalize(pi))
                     self.twist_amount[frame][element] = delta_theta
-                # parallel transport  mi to mip1
-                #mim1_transported = rod_math.parallel_transport(rod_math.normalize(self.rod.current_m[frame][element]), rod_math.normalize(self.p_i[frame][element]), rod_math.normalize(self.p_i[frame][element+1] ))
-                #delta_theta = rod_math.get_twist_angle( mim1_transported, rod_math.normalize(self.rod.current_m[frame][element+1]))
-                #equil_mim1_transported = rod_math.parallel_transport(rod_math.normalize(self.rod.equil_m[frame][element]), rod_math.normalize(self.equil_p_i[frame][element]), rod_math.normalize(self.equil_p_i[frame][element+1] ))
-                #equil_delta_theta = rod_math.get_twist_angle( equil_mim1_transported, rod_math.normalize(self.rod.equil_m[frame][element+1]))
 
-                #self.twist_amount[frame][element] = delta_theta - equil_delta_theta
-
-                #Li = rod_math.get_length(self.equil_p_i[frame][element]) + rod_math.get_length(self.equil_p_i[frame][element+1])
-                # self.rod.material_params[frame][element][1]/Li * np.power(delta_theta-equil_delta_theta, 2)
                 self.twist_energy[frame][element] = twist_energy
 
     def get_equipartition(self):
@@ -969,20 +965,6 @@ class anal_rod:
         """
         self.p_i = self.get_p_i(self.rod.current_r)
         self.equil_p_i = self.get_p_i(self.rod.equil_r)
-
-        #self.p_i_extension= np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        # for frame in range(len(self.p_i)):
-        #    for segment in range(len(self.p_i[frame])):
-        #        self.p_i_extension[frame][segment] = rod_math.get_length(self.equil_p_i[frame][segment]) - rod_math.get_length(self.p_i[frame][segment])
-
-        #self.p_i_extension_x = np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        #self.p_i_extension_y = np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        #self.p_i_extension_z = np.zeros( [len(self.p_i), len(self.p_i[0])] )
-        # for frame in range(len(self.p_i)):
-        #    for segment in range(len(self.p_i[frame])):
-        #        self.p_i_extension_x[frame][segment] = self.equil_p_i[frame][segment][0] - self.p_i[frame][segment][0]
-        #        self.p_i_extension_y[frame][segment] = self.equil_p_i[frame][segment][1] - self.p_i[frame][segment][1]
-        #        self.p_i_extension_z[frame][segment] = self.equil_p_i[frame][segment][2] - self.p_i[frame][segment][2]
 
         self.get_stretch_energy()
 
@@ -1651,9 +1633,6 @@ class anal_rod:
                     self.rod.material_params[0][element], self.rod.material_params[0][element - 1]), axis=0)])
                 self.rod.B_matrix = np.array([np.insert(self.rod.B_matrix[0], element, interp_r(
                     self.rod.B_matrix[0][element], self.rod.B_matrix[0][element - 1]), axis=0)])
-                # self.rod.steric_perturbed_energy_positive = np.array([np.insert(self.rod.steric_perturbed_energy_positive[0], element, 0, axis=0)])
-                # self.rod.steric_perturbed_energy_negative = np.array([np.insert(self.rod.steric_perturbed_energy_negative[0], element, 0, axis=0)])
-                # self.rod.steric_unit_vector = np.array([np.insert(self.rod.steric_unit_vector[0], element, 0, axis=0)])
             self.rod.num_elements = len(self.rod.equil_r[0])
             self.rod.length = 3 * self.rod.num_elements
         return
@@ -2292,14 +2271,15 @@ class rod_creator:
             return surface.face[face_no].n, surface.face[face_no].elindex
 
         def get_element_nodes_face(top, element_no):
-            return top.element[element_no].n, [top.element[element_no].get_linear_face(0), top.element[element_no].get_linear_face(1), top.element[element_no].get_linear_face(2), top.element[element_no].get_linear_face(3)]
+            return top.element[element_no].n, [top.element[element_no].get_linear_face(0),
+                                               top.element[element_no].get_linear_face(
+                                                   1),
+                                               top.element[element_no].get_linear_face(
+                                                   2),
+                                               top.element[element_no].get_linear_face(3)]
 
         surface = script.load_surface(blob_no)
         top = script.load_topology(blob_no)
-
-        # top.isElementInterior(index)
-
-        #linearnodes = top.get_linear_nodes()
 
         if face_no:
             return get_face_node_element(surface, face_no)
@@ -2307,21 +2287,12 @@ class rod_creator:
         if element_no:
             print("Not implemented")
             return
-            #el = top.element[element_no]
-            # if el.interior == True:
-            #    raise IndexError("Interior element shouldn't have rod connection!")
-            #nodes, faces = get_element_nodes_face(top, element_no)
-            # for face in faces:
 
         if nodes:
-            #    for face in range(len(surface.face)):
-            #        if set(surface.face[face].n) == nodes:
-            #            attachment_face_index = face
             for element in range(len(top.element)):
                 elefaces = top.element[element].n
                 if all(elem in elefaces for elem in nodes):
                     attachment_element_index = element
-            # return attachment_face_index, attachment_element_index
             return attachment_element_index
 
         print("Supply a face_no or an element_no.")
@@ -2376,18 +2347,3 @@ def load_grace(filename, comment="#"):
                          skip_header=len(header_columns))
 
     return header_columns, data
-
-# deprecated; will be removed
-
-# def mpt_weight(a, b):
-#    a_length = rod_math.get_length(a)
-#    b_length = rod_math.get_length(b)
-#    vec = rod_math.normalize( (1/a_length)*a + (1/b_length)*b )
-#    return vec
-
-# def mpt_angle(a, b, angle):
-#    a_length = rod_math.get_length(a)
-#    b_length = rod_math.get_length(b)
-#    a_b_ratio = b_length/(b_length+a_length)
-#    angle_to_rotate = a_b_ratio * angle
-#    return angle_to_rotate
