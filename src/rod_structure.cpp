@@ -410,11 +410,11 @@ namespace rod
         // Rod-rod interactions: loop over all elements, interpolate energies onto nodes
         if (rod::dbg_print)
         {
-            std::cout << "rod.calc_ssint: " << this->calc_ssint << std::endl;
+            std::cout << "rod.calc_steric_rod: " << this->calc_steric_rod << std::endl;
         }
         int end_elem = this->get_num_nodes() - 1;
         float steric_force_scaling = 1; // Arbitrary value to determine severity of repulsion force [force units]
-        if (this->calc_ssint == 1)
+        if (this->calc_steric_rod == 1)
         {
 #pragma omp parallel for schedule(dynamic)
             for (int node_no = 0; node_no < end_elem; node_no++)
@@ -620,7 +620,7 @@ namespace rod
             float twist_force = (internal_twisted_energy_negative[node_no * 3] + internal_twisted_energy_negative[(node_no * 3) + 1] + internal_twisted_energy_negative[(node_no * 3) + 2] - (internal_twisted_energy_positive[node_no * 3] + internal_twisted_energy_positive[(node_no * 3) + 1] + internal_twisted_energy_positive[(node_no * 3) + 2])) / twist_perturbation;
 
             // Rod-rod steric interactions
-            if (this->calc_ssint == 1)
+            if (this->calc_steric_rod == 1)
             {
                 float steric_positive[3] = {0, 0, 0}; // x, y, z
                 float steric_negative[3] = {0, 0, 0};
@@ -759,7 +759,7 @@ namespace rod
             step_no += 1; //we just did one timestep so increment this
         }
 
-        if (this->calc_ssint == 1)
+        if (this->calc_steric_rod == 1)
         {
             this->reset_neighbour_list();
         }
@@ -893,7 +893,7 @@ namespace rod
         this->kT = 0;
         this->perturbation_amount = 0.001 * pow(10, -9) / mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
         this->calc_noise = 1;
-        this->calc_ssint = 0;
+        this->calc_steric_rod = 0;
 
         return *this;
     }

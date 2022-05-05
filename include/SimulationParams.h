@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -57,31 +57,32 @@ using namespace std;
 namespace b_fs = boost::filesystem;
 
 /**
- * @detail 
+ * @detail
  * vector<string> types: types of beads present. \n
  * string folder: folder containing the tables. It can be either absolute or relative.\n
  * int inputData: 1 means read .force and .pot files,
  *                 while 2 means read .pot and calculate the forces \n
  */
-struct PreComp_params {
-  vector<string> types; ///< types of beads present 
-  string folder; ///< folder containing the tables. It can be either absolute or relative to the folder containing the ffea input file .
-  int inputData; ///< 1 means read .force and .pot files, while 2 means read .pot and calculate the forces
-  scalar dist_to_m;
-  scalar E_to_J;
+struct PreComp_params
+{
+    vector<string> types; ///< types of beads present
+    string folder;        ///< folder containing the tables. It can be either absolute or relative to the folder containing the ffea input file .
+    int inputData;        ///< 1 means read .force and .pot files, while 2 means read .pot and calculate the forces
+    scalar dist_to_m;
+    scalar E_to_J;
 };
 
-
-class SimulationParams {
+class SimulationParams
+{
 public:
-    scalar dt; ///< time step
-    long long num_steps; ///< Number of time steps to run simulation for
-    int check; ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.
-    int num_blobs; ///< Number of blobs in the system
-    int num_rods; ///< Number of rods in the system
-    int num_interfaces; ///< Number of rod-blob or rod-rod interfaces
+    scalar dt;              ///< time step
+    long long num_steps;    ///< Number of time steps to run simulation for
+    int check;              ///< Every how many steps should the program 'check' the system i.e calculate energies, print snapshots etc.
+    int num_blobs;          ///< Number of blobs in the system
+    int num_rods;           ///< Number of rods in the system
+    int num_interfaces;     ///< Number of rod-blob or rod-rod interfaces
     int *num_conformations; ///< Number of conformations for each blob
-    int *num_states; ///< Number of states for each blob
+    int *num_states;        ///< Number of states for each blob
     int state_array_size;
     int conformation_array_size;
     int rng_seed; ///< Seed for random number generator
@@ -89,36 +90,36 @@ public:
     scalar kT; ///< boltzmann's const times temperature
 
     int max_iterations_cg; ///< Max number of iterations when using conjugate gradient solver
-    scalar epsilon2; ///< The tolerance threshold for CG solver (squared)
+    scalar epsilon2;       ///< The tolerance threshold for CG solver (squared)
 
-    int es_update; ///< Every how many steps should the electrostatic potential be recalculated
-    int es_N_x; ///< X dimension of the 3D lookup grid (in number of cells)
-    int es_N_y; ///< Y dimension of the 3D lookup grid (in number of cells)
-    int es_N_z; ///< Z dimension of the 3D lookup grid (in number of cells)
-    int move_into_box;  ///< If box is set, do we move the world to it's center at the start of a simulation? Default is yes!
+    int es_update;          ///< Every how many steps should the electrostatic potential be recalculated
+    int es_N_x;             ///< X dimension of the 3D lookup grid (in number of cells)
+    int es_N_y;             ///< Y dimension of the 3D lookup grid (in number of cells)
+    int es_N_z;             ///< Z dimension of the 3D lookup grid (in number of cells)
+    int move_into_box;      ///< If box is set, do we move the world to it's center at the start of a simulation? Default is yes!
     int restrict_motion[3]; ///< [x,y,z] array defining whether motion in the given direction should be nullified
-    int num_dimensions;  /// Number of active dimensions after restricted_motion is applied
-    scalar es_h; ///< Dimension of each cell in the lookup grid (in multiples of inverse kappa)
+    int num_dimensions;     /// Number of active dimensions after restricted_motion is applied
+    scalar es_h;            ///< Dimension of each cell in the lookup grid (in multiples of inverse kappa)
 
     scalar kappa; ///< Inverse Debye Screening length
 
-    scalar epsilon_0; ///< Permittivity of free space
+    scalar epsilon_0;  ///< Permittivity of free space
     scalar dielec_ext; ///< Exterior dielectric constant
 
     int restart; ///< Whether or not to restart the simulation from the last available time step
 
-    int calc_ssint; ///< Whether or not to simulate surface-surface interactions between surfaces
-    int inc_self_ssint; ///< Whether or not to include surface-surface interactions derived from faces in the same blob.
-    string ssint_type;  ///<Current possible values: "lennard-jones" (default) or "steric".
-    int calc_es; ///< Whether or not to simulate electrostatic interactions between proteins
-    int calc_noise; ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique
-    int calc_stokes; ///< Whether or not to include local action of the external fluid
-    int calc_kinetics;  ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites  
-    int calc_preComp; ///< Whether or not use preComputed potentials and forces   
-    int calc_springs; ///< Whether or not to include the springs interactions defined in the springs block 
-    int calc_ctforces; ///< Whether or not to include constant forces onto nodes defined in the ctforces block
-    int force_pbc; ///< Whether or not to apply pbc to surface insteractions
-    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high   
+    int calc_ssint;      ///< Whether or not to simulate surface-surface interactions between surfaces
+    int inc_self_ssint;  ///< Whether or not to include surface-surface interactions derived from faces in the same blob.
+    string ssint_type;   ///<Current possible values: "lennard-jones" (default) or "steric".
+    int calc_es;         ///< Whether or not to simulate electrostatic interactions between proteins
+    int calc_noise;      ///< Whether or noise to simulate thermal noise for the system. Kind of the entire point of this simulation technique
+    int calc_stokes;     ///< Whether or not to include local action of the external fluid
+    int calc_kinetics;   ///< Whether or not to calculate kinetic switching between different equilibrium states and binding sites
+    int calc_preComp;    ///< Whether or not use preComputed potentials and forces
+    int calc_springs;    ///< Whether or not to include the springs interactions defined in the springs block
+    int calc_ctforces;   ///< Whether or not to include constant forces onto nodes defined in the ctforces block
+    int force_pbc;       ///< Whether or not to apply pbc to surface insteractions
+    int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high
     int wall_x_1;
     int wall_x_2;
     int wall_y_1;
@@ -130,10 +131,11 @@ public:
 
     scalar stokes_visc;
 
-    int calc_steric; ///< Calculate steric interactions? 
+    int calc_steric;      ///< Calculate steric interactions?
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
-    scalar ssint_cutoff; ///< Cutoff distance for the surface-surface interactions. 
-    geoscalar steric_dr; ///< used to calculate the numerical derivative.
+    scalar ssint_cutoff;  ///< Cutoff distance for the surface-surface interactions.
+    geoscalar steric_dr;  ///< used to calculate the numerical derivative.
+    int calc_steric_rod;  // ! - This needs removing, and the FFEA parameters need an overhaul
 
     string FFEA_script_filename;
     b_fs::path FFEA_script_path, FFEA_script_basename;
@@ -143,10 +145,10 @@ public:
     string detailed_meas_out_fname;
     string ssint_in_fname;
     string bsite_in_fname;
-    string icheckpoint_fname;  ///< Input Checkpoint file name
-    string ocheckpoint_fname;  ///< Output Checkpoint file name
-    string ctforces_fname; ///< Input file containing constant forces onto a list of nodes.
-    string springs_fname; ///< Input file containing the springs details.
+    string icheckpoint_fname;      ///< Input Checkpoint file name
+    string ocheckpoint_fname;      ///< Output Checkpoint file name
+    string ctforces_fname;         ///< Input file containing constant forces onto a list of nodes.
+    string springs_fname;          ///< Input file containing the springs details.
     string trajectory_beads_fname; ///< Output optional file.
 
     SimulationParams();
@@ -175,7 +177,7 @@ public:
 
     /** These set parameters are not private because the World needs them!! */
     int kinetics_out_fname_set;
-    int trajbeads_fname_set; 
+    int trajbeads_fname_set;
 
     /** Writes all params to fout (either a file or stdout) for user's info */
     void write_to_file(FILE *fout, PreComp_params &pc_params);
@@ -188,12 +190,12 @@ private:
     int ssint_in_fname_set;
     int bsite_in_fname_set;
 
-/** Check if the file oFile exists, and if so
+    /** Check if the file oFile exists, and if so
   *     rename it to "__"+oFile+"__bckp.N",
   *     where N is an integer so that the resulting file is new.
   */
     int checkFileName(string oFile);
 
-    string RemoveFileExtension(const string& FileName);
+    string RemoveFileExtension(const string &FileName);
 };
 #endif
