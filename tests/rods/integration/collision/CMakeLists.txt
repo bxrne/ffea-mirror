@@ -1,4 +1,4 @@
-# 
+#
 #  This file is part of the FFEA simulation package
 #  
 #  Copyright (c) by the Theory and Development FFEA teams,
@@ -21,9 +21,5 @@
 #  the research papers on the package.
 #
 
-
-add_subdirectory(symmetry)
-add_subdirectory(equipartition)
-add_subdirectory(connection)
-add_subdirectory(beam)
-add_subdirectory(collision)
+set (STERICDIR "${PROJECT_BINARY_DIR}/tests/rods/integration/collision/")
+add_test(NAME rodInt_stericCollision_pushApart COMMAND ${PROJECT_BINARY_DIR}/src/ffea rodInt_stericCollision_pushApart.ffeatest)
