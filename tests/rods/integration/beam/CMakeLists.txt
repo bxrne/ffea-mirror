@@ -28,5 +28,5 @@ file (COPY beam.rod DESTINATION ${BEAMDIR})
 #file (COPY bend.ffea DESTINATION ${CONNECTIONPROPDIR})
 #file (COPY twist.ffea DESTINATION ${CONNECTIONPROPDIR})
 #add_subdirectory(sphere_structure)
-#add_test(NAME connection_propagation COMMAND ${PROJECT_BINARY_DIR}/src/ffea connection_propagation.ffeatest)
+#add_test(NAME euler_beam COMMAND ${PROJECT_BINARY_DIR}/src/ffea beam.ffeatest)
 
