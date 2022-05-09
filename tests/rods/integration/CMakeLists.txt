@@ -25,5 +25,4 @@
 add_subdirectory(symmetry)
 add_subdirectory(equipartition)
 add_subdirectory(connection)
-add_subdirectory(beam)
 add_subdirectory(collision)

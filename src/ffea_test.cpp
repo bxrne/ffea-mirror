@@ -100,16 +100,6 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::dump_twist_info();
     }
 
-    // if (buffer.str().find("euler_beam") != std::string::npos)
-    // {
-    //     result = ffea_test::euler_beam();
-    // }
-
-    // if (buffer.str().find("twist_bend_coil") != std::string::npos)
-    // {
-    //     result = ffea_test::twist_bend_coil();
-    // }
-
     if (buffer.str().find("lower_sphere") != std::string::npos)
     {
         result = ffea_test::lower_sphere();
@@ -1408,109 +1398,6 @@ int ffea_test::dump_twist_info()
     return 0;
 }
 
-// int ffea_test::euler_beam()
-// { // the euler beam test returns!
-//     RngStream *rng;
-//     rng = new RngStream[omp_get_max_threads()];
-//     int iterations = 5000000 * 30;
-//     rod::Rod bending_beam("beam.rod", 0);
-//     bending_beam.load_header("beam.rod");
-//     bending_beam.load_contents("beam.rod");
-//     bending_beam.set_units();
-//     bending_beam.kT = 0;
-//     bending_beam.timestep *= 2;
-//     bending_beam.change_filename(std::string("beam.rodtraj"));
-//     float force[4] = {0, 2.4364705882352941e-13 * 6, 0, 0};
-//     bending_beam.add_force(force, bending_beam.num_nodes - 1);
-//     bending_beam.pinned_nodes[0] = true;
-//     bending_beam.pinned_nodes[1] = true;
-
-//     for (int step = 0; step < iterations / 10; step++)
-//     {
-//         bending_beam.do_timestep(rng);
-//         if (step % 10000 == 0)
-//         {
-//             bending_beam.write_frame_to_file();
-//             std::cout << "Frame (step " << step << ") written to file.\n";
-//         }
-//     }
-
-//     return 0;
-// }
-
-// int ffea_test::twist_bend_coil()
-// {
-//     RngStream *rng;
-//     rng = new RngStream[omp_get_max_threads()];
-//     // int iterations = 5000000;
-//     rod::Rod bending_beam("beam.rod", 0);
-//     bending_beam.load_header("beam.rod");
-//     bending_beam.load_contents("beam.rod");
-//     bending_beam.set_units();
-//     bending_beam.timestep *= 20;
-//     bending_beam.kT = 1.12e-23 / mesoDimensions::Energy;
-//     bending_beam.viscosity /= 2;
-
-//     int end_index = bending_beam.num_nodes - 2;
-
-//     bending_beam.pinned_nodes[0] = true;
-//     bending_beam.pinned_nodes[1] = true;
-//     bending_beam.pinned_nodes[end_index + 1] = true;
-//     bending_beam.pinned_nodes[end_index] = true;
-
-//     float end_p[3];
-//     float end_m_pre[3];
-//     bending_beam.get_p(end_index, end_p, false);
-//     for (int n = 0; n < 3; n++)
-//     {
-//         end_m_pre[n] = bending_beam.current_m[n];
-//     }
-//     rod::normalize(end_p, end_p);
-//     rod::normalize(end_m_pre, end_m_pre);
-
-//     for (int i = 0; i < 110000; i++)
-//     {
-//         float end_m[3];
-
-//         rod::rodrigues_rotation(end_m_pre, end_p, (M_PI * (float)i) / 100000.0,
-//                                 end_m);
-
-//         for (int n = 0; n < 3; n++)
-//         {
-//             bending_beam.current_m[n + (end_index * 3)] = end_m[n];
-//         }
-//         if (i % 400 == 0)
-//         {
-//             std::cout << "Step " << i << ", m, = [" << end_m[0] << ", " << end_m[1]
-//                       << ", " << end_m[2] << "], angle = " << (M_PI * 2.0) / 10000.0
-//                       << "p, = [" << end_p[0] << ", " << end_p[1] << ", " << end_p[2]
-//                       << "]\n";
-//         }
-
-//         bending_beam.do_timestep(rng);
-//         if (i % 400 == 0)
-//         {
-//             bending_beam.write_frame_to_file();
-//         }
-//     }
-
-//     bending_beam.kT = 0;
-
-//     for (int i = 0; i < 800000; i++)
-//     {
-//         bending_beam.do_timestep(rng);
-//         if (i % 400 == 0)
-//         {
-//             std::cout << "Step " << i + 40000 << "\n";
-//         }
-//         if (i % 400 == 0)
-//         {
-//             bending_beam.write_frame_to_file();
-//         }
-//     }
-
-//     return 0;
-// }
 
 int ffea_test::lower_sphere()
 {
