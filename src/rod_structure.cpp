@@ -94,8 +94,7 @@ namespace rod
                                            B_matrix(new float[length + (length / 3)]),
                                            steric_perturbed_energy_positive(new float[2 * length]),
                                            steric_perturbed_energy_negative(new float[2 * length]),
-                                           steric_unit_vector(new float[length]),
-                                           steric_energy_gradient(new float[length]),
+                                           steric_force(new float[length]),
                                            applied_forces(new float[length + (length / 3)]),
                                            pinned_nodes(new bool[length / 3]){};
 
@@ -549,7 +548,6 @@ namespace rod
 
                 // Resultant unit vector on element, from sum over all neighbours
                 rod::normalize(c_ab_sum, c_ab_norm);
-                vec3d(n) { steric_unit_vector[(node_no * 3) + n] = c_ab_norm[n]; }
 
             } //exit interaction energy loop
 
@@ -632,22 +630,8 @@ namespace rod
                     steric_perturbed_energy_negative,
                     steric_positive,
                     steric_negative);
-                float unit_vector[3] = {0, 0, 0};
-                get_unit_vector_on_node(
-                    node_no,
-                    node_min,
-                    end_node,
-                    steric_unit_vector,
-                    unit_vector);
 
-                vec3d(n) { steric_energy_gradient[(node_no * 3) + n] = (steric_positive[n] - steric_negative[n]) / perturbation_amount; }
-                // ! check energies are correct before bothering with force
-                //float x_steric = unit_vector[0] * steric_energy_gradient[(node_no*3)];
-                //float y_steric = unit_vector[1] * steric_energy_gradient[(node_no*3)+1];
-                //float z_steric = unit_vector[2] * steric_energy_gradient[(node_no*3)+2];
-                //x_force += x_steric;
-                //y_force += y_steric;
-                //z_force += z_steric;
+                vec3d(n) { steric_force[(node_no * 3) + n] = (steric_positive[n] - steric_negative[n]) / perturbation_amount; }
 
                 float check = 1000;
                 bool explode = false;
@@ -870,8 +854,7 @@ namespace rod
         B_matrix = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         steric_perturbed_energy_positive = static_cast<float *>(malloc(sizeof(float) * 2 * length));
         steric_perturbed_energy_negative = static_cast<float *>(malloc(sizeof(float) * 2 * length));
-        steric_energy_gradient = static_cast<float *>(malloc(sizeof(float) * length));
-        steric_unit_vector = static_cast<float *>(malloc(sizeof(float) * length));
+        steric_force = static_cast<float *>(malloc(sizeof(float) * length));
         applied_forces = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length / 3));
         steric_interaction_coordinates = std::vector<std::vector<float>>((length / 3) - 1);
@@ -1063,12 +1046,7 @@ namespace rod
                 if (n == line_of_last_frame + 17)
                 {
                     for (int i = 0; i < length; i++)
-                        steric_unit_vector[i] = line_vec_float.data()[i];
-                }
-                if (n == line_of_last_frame + 18)
-                {
-                    for (int i = 0; i < length; i++)
-                        steric_energy_gradient[i] = line_vec_float.data()[i];
+                        steric_force[i] = line_vec_float.data()[i];
                 }
             }
             n++;
@@ -1103,9 +1081,7 @@ namespace rod
         write_array(file_ptr, B_matrix, length + (length / 3), bending_response_factor, true);
         write_array(file_ptr, steric_perturbed_energy_positive, 2 * length, mesoDimensions::Energy, true);
         write_array(file_ptr, steric_perturbed_energy_negative, 2 * length, mesoDimensions::Energy, true);
-        write_array(file_ptr, steric_unit_vector, length, 1.0f, true);
-        write_array(file_ptr, steric_energy_gradient, length, 1.0f, true);
-    std:
+        write_array(file_ptr, steric_force, length, mesoDimensions::force, true);
         fflush(file_ptr);
         return *this;
     }

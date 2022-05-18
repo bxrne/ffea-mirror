@@ -153,9 +153,7 @@ class FFEA_rod:
                 [self.num_frames, 2 * self.num_elements, 3])
             self.steric_perturbed_energy_negative = np.zeros(
                 [self.num_frames, 2 * self.num_elements, 3])
-            self.steric_unit_vector = np.zeros(
-                [self.num_frames, self.num_elements, 3])
-            self.steric_energy_gradient = np.zeros(
+            self.steric_force = np.zeros(
                 [self.num_frames, self.num_elements, 3])
 
         return
@@ -236,9 +234,7 @@ class FFEA_rod:
             [self.num_frames, 2 * self.num_elements, self.get_num_dimensions(5)])
         self.steric_perturbed_energy_negative = np.empty(
             [self.num_frames, 2 * self.num_elements, self.get_num_dimensions(5)])
-        self.steric_unit_vector = np.empty(
-            [self.num_frames, self.num_elements, self.get_num_dimensions(3)])
-        self.steric_energy_gradient = np.empty(
+        self.steric_force = np.empty(
             [self.num_frames, self.num_elements, self.get_num_dimensions(3)])
 
         # look, this is not pretty but it is really fast
@@ -301,11 +297,8 @@ class FFEA_rod:
                     self.steric_perturbed_energy_negative[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.steric_perturbed_energy_negative[frame_no].shape)
                     line = rod_file.readline()
-                    self.steric_unit_vector[frame_no] = np.fromstring(
-                        line, sep=",").reshape(self.steric_unit_vector[frame_no].shape)
-                    line = rod_file.readline()
-                    self.steric_energy_gradient[frame_no] = np.fromstring(
-                        line, sep=",").reshape(self.steric_energy_gradient[frame_no].shape)
+                    self.steric_force[frame_no] = np.fromstring(
+                        line, sep=",").reshape(self.steric_force[frame_no].shape)
                     frame_no += 1
                 except ValueError as e:
                     raise ValueError(str(e) + "\nError loading frame " +
@@ -344,8 +337,7 @@ class FFEA_rod:
         rod_file.write("row14,B_matrix\n")
         rod_file.write("row15,steric_perturbed_energy_positive\n")
         rod_file.write("row16,steric_perturbed_energy_negative\n")
-        rod_file.write("row17,steric_unit_vector\n")
-        rod_file.write("row18,steric_energy_gradient\n")
+        rod_file.write("row17,steric_force\n")
 
         # Connections (note: this is temporary, it might end up in the .ffea file)
         rod_file.write("CONNECTIONS,ROD,0\n")
@@ -398,8 +390,7 @@ class FFEA_rod:
                 self.steric_perturbed_energy_positive[frame].flatten(), rod_file)
             write_array(
                 self.steric_perturbed_energy_negative[frame].flatten(), rod_file)
-            write_array(self.steric_unit_vector[frame].flatten(), rod_file)
-            write_array(self.steric_energy_gradient[frame].flatten(), rod_file)
+            write_array(self.steric_force[frame].flatten(), rod_file)
 
         rod_file.close()
 
@@ -1479,8 +1470,7 @@ class anal_rod:
             ::interval]
         self.rod.steric_perturbed_energy_negative = self.rod.steric_perturbed_energy_negative[
             ::interval]
-        self.rod.steric_unit_vector = self.rod.steric_unit_vector[::interval]
-        self.rod.steric_energy_gradient = self.rod.steric_energy_gradient[::interval]
+        self.rod.steric_force = self.rod.steric_force[::interval]
         self.rod.num_frames = len(self.rod.current_r)
 
         try:
@@ -1686,10 +1676,8 @@ class anal_rod:
             self.rod.steric_perturbed_energy_positive, target_length, margin)
         self.rod.steric_perturbed_energy_negative = determine_simplification_func(
             self.rod.steric_perturbed_energy_negative, target_length, margin)
-        self.rod.steric_unit_vector = determine_simplification_func(
-            self.rod.steric_unit_vector, target_length, margin)
-        self.rod.steric_energy_gradient = determine_simplification_func(
-            self.rod.steric_energy_gradient, target_length, margin)
+        self.rod.steric_force = determine_simplification_func(
+            self.rod.steric_force, target_length, margin)
         self.rod.num_elements = len(self.rod.equil_r[0])
         self.rod.length = 3 * self.rod.num_elements
 
