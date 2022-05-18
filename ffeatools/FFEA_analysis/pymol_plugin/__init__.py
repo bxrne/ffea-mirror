@@ -217,7 +217,7 @@ class FFEA_viewer_control_window:
         self.om_rod_color.grid(row=7, column=2, sticky=E)
 
     # Show rod steric interaction vector
-        self.check_button_show_rod_steric_vector = Checkbutton(display_flags_frame, text="Rod Steric Vector", variable=self.show_rod_steric_vector, command=lambda:self.update_display_flags("show_rod_steric_vector"))
+        self.check_button_show_rod_steric_vector = Checkbutton(display_flags_frame, text="Rod Steric Force Vector", variable=self.show_rod_steric_vector, command=lambda:self.update_display_flags("show_rod_steric_vector"))
         self.check_button_show_rod_steric_vector.grid(row=8, column=2, sticky=W)
 
 	# # show solid:
@@ -1236,8 +1236,8 @@ class FFEA_viewer_control_window:
                     line = line + [CYLINDER, mid_x, mid_y, mid_z, mid_x+mx, mid_y+my, mid_z+mz, display_radius/4.0, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7]
                 # unit vector of steric interaction force - orange
                 if self.display_flags['show_rod_steric_vector'] == 1:
-                    # scale steric vector to appear the same size as material axes, TODO: scale as repulsive energy
-                    shat = np.array([rod.steric_unit_vector[i][j][0], rod.steric_unit_vector[i][j][1], rod.steric_unit_vector[i][j][2]])
+                    # scale steric force to appear the same size as material axes
+                    shat = np.array([rod.steric_force[i][j][0], rod.steric_force[i][j][1], rod.steric_force[i][j][2]]) / np.linalg.norm(rod.steric_force)
                     sshift =  display_radius * shat
                     vecx = shat[0] * mmag  + sshift[0]
                     vecy = shat[1] * mmag  + sshift[1]
