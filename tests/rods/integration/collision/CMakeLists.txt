@@ -24,7 +24,10 @@
 set (COLLISION_DIR          "${PROJECT_BINARY_DIR}/tests/rods/integration/collision/")
 set (COLLISION_TEST_NAME    int_rodStericCollision_pushApart)
 
-file (COPY run_test.py            DESTINATION ${COLLISION_DIR})
+file (COPY run_test.py                      DESTINATION ${COLLISION_DIR})
+file (COPY create_straight_rod.py           DESTINATION ${COLLISION_DIR})
+file (COPY z-axis.rod                       DESTINATION ${COLLISION_DIR})
+file (COPY collision.ffea                   DESTINATION ${COLLISION_DIR})
 file (COPY ${COLLISION_TEST_NAME}.ffeatest  DESTINATION ${COLLISION_DIR})
 
 # add_test(NAME ${COLLISION_TEST_NAME} COMMAND ${PROJECT_BINARY_DIR}/src/ffea ${COLLISION_TEST_NAME}.ffeatest)

@@ -1907,7 +1907,7 @@ int ffea_test::steric_energy_two_rod_elements()
 }
 
 /**
- * @brief Succeed if two sterically colliding rods push eachother apart.
+ * @brief Succeed if two colliding rods push eachother apart.
  *
  * directory: rods/integration/collision
  *
@@ -1916,9 +1916,18 @@ int ffea_test::steric_energy_two_rod_elements()
 int ffea_test::int_rodStericCollision_pushApart()
 {
 
-    // Is your ending position further away (in correct direction) from where
-    // you started?
-    std::cout << "This is a test.\n";
+    World *world;
+    world = new World();
+    if (world->init("collision.ffea", 0, 0, 2) == FFEA_ERROR)
+    {
+        FFEA_error_text();
+        std::cout << "Errors during initialisation mean World cannot be "
+                     "constructed properly.\n";
+    }
 
-    return 1;
+    rod::dbg_print = true;
+
+    world->run();
+
+    return 0;
 }

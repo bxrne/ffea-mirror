@@ -19,3 +19,4 @@ external/boost/tools/build/src/engine/bootstrap/
 Testing/
 .vscode
 ffea.code-workspace
+*FFEA_meta.json
