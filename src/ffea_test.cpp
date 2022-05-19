@@ -122,10 +122,10 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::steric_energy_two_rod_elements();
     }
 
-    if (buffer.str().find("int_rodStericCollision_pushApart") !=
+    if (buffer.str().find("rod_collision_no_crash") !=
         std::string::npos)
     {
-        result = ffea_test::int_rodStericCollision_pushApart();
+        result = ffea_test::rod_collision_no_crash();
     }
 
     return result;
@@ -1907,18 +1907,14 @@ int ffea_test::steric_energy_two_rod_elements()
 }
 
 /**
- * @brief Succeed if two colliding rods push eachother apart.
- *
- * directory: rods/integration/collision
- *
- * @return int
+ * @brief Pass if a simulation of two colliding rods does not crash.
  */
-int ffea_test::int_rodStericCollision_pushApart()
+int ffea_test::rod_collision_no_crash()
 {
 
     World *world;
     world = new World();
-    if (world->init("collision.ffea", 0, 0, 2) == FFEA_ERROR)
+    if (world->init("collision_two_rods.ffea", 0, 0, 2) == FFEA_ERROR)
     {
         FFEA_error_text();
         std::cout << "Errors during initialisation mean World cannot be "

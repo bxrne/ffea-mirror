@@ -67,12 +67,10 @@ struct ffea_test
     static int connection_propagation(int mode, bool ends_at_rod);
     static int recover_normal();
     static int dump_twist_info();
-    // static int euler_beam();
-    // static int twist_bend_coil();
     static int lower_sphere();
     static int point_lies_within_rod_element();
     static int line_connecting_rod_elements();
     static int rod_neighbour_list_construction();
     static int steric_energy_two_rod_elements();
-    static int int_rodStericCollision_pushApart();
+    static int rod_collision_no_crash();
 };
