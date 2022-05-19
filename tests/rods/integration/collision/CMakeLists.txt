@@ -21,5 +21,12 @@
 #  the research papers on the package.
 #
 
-set (STERICDIR "${PROJECT_BINARY_DIR}/tests/rods/integration/collision/")
-add_test(NAME rodInt_stericCollision_pushApart COMMAND ${PROJECT_BINARY_DIR}/src/ffea rodInt_stericCollision_pushApart.ffeatest)
+set (COLLISION_DIR          "${PROJECT_BINARY_DIR}/tests/rods/integration/collision/")
+set (COLLISION_TEST_NAME    int_rodStericCollision_pushApart)
+
+file (COPY run_test.py            DESTINATION ${COLLISION_DIR})
+file (COPY ${COLLISION_TEST_NAME}.ffeatest  DESTINATION ${COLLISION_DIR})
+
+# add_test(NAME ${COLLISION_TEST_NAME} COMMAND ${PROJECT_BINARY_DIR}/src/ffea ${COLLISION_TEST_NAME}.ffeatest)
+add_test(NAME ${COLLISION_TEST_NAME} COMMAND ${PYTHON_EXECUTABLE} run_test.py)
+# set_tests_properties(${COLLISION_TEST_NAME} PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})

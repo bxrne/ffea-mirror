@@ -74,5 +74,5 @@ struct ffea_test
     static int line_connecting_rod_elements();
     static int rod_neighbour_list_construction();
     static int steric_energy_two_rod_elements();
-    static int rodInt_stericCollision_pushApart();
+    static int int_rodStericCollision_pushApart();
 };

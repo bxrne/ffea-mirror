@@ -122,10 +122,10 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::steric_energy_two_rod_elements();
     }
 
-    if (buffer.str().find("rodInt_stericCollision_pushApart") !=
+    if (buffer.str().find("int_rodStericCollision_pushApart") !=
         std::string::npos)
     {
-        result = ffea_test::rodInt_stericCollision_pushApart();
+        result = ffea_test::int_rodStericCollision_pushApart();
     }
 
     return result;
@@ -1398,7 +1398,6 @@ int ffea_test::dump_twist_info()
     return 0;
 }
 
-
 int ffea_test::lower_sphere()
 {
     World *world;
@@ -1914,11 +1913,12 @@ int ffea_test::steric_energy_two_rod_elements()
  *
  * @return int
  */
-int ffea_test::rodInt_stericCollision_pushApart()
+int ffea_test::int_rodStericCollision_pushApart()
 {
 
     // Is your ending position further away (in correct direction) from where
     // you started?
+    std::cout << "This is a test.\n";
 
-    return 0;
+    return 1;
 }
