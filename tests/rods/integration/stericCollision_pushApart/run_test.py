@@ -4,6 +4,8 @@ import sys
 import glob
 import subprocess
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # enable plotting over SSH
 import matplotlib.pyplot as plt
 import ffeatools.modules.FFEA_rod as FFEA_rod
 
@@ -19,22 +21,32 @@ def check_node_distances():
     rod1 = FFEA_rod.FFEA_rod(filename="outputs/1.rodtraj")
     rod2 = FFEA_rod.FFEA_rod(filename="outputs/2.rodtraj")
 
-    print(rod1.get_trajectory_length())
-    print(rod2.get_trajectory_length())
-
     # measure the node-node distance for like-numbered nodes (0-0, 1-1, etc)
+    r1 = rod1.current_r
+    r2 = rod2.current_r
+    dr = np.linalg.norm(r2 - r1, axis=2)
+    # time averaged
+    means = np.mean(dr, axis=0)
 
-    # compute the mean distance of each node pair with time
-    mean_node_distances = np.zeros((20, 10))
-    # plot (num_nodes lines, distance y-axis, time x-axis)
-    for node, dist in enumerate(mean_node_distances):
-        time = np.arange(0, dist.size)
-        plt.plot(time, dist, label=node)
+    # for node, mean in enumerate(means):
+    #     plt.plot(node, mean*1e9, 'bo')
+
+    radius1 = rod1.material_params[0][0][2]
+    radius2 = rod2.material_params[0][0][2]
+    radius_sum = radius1 + radius2
+
+    plt.plot(np.arange(means.size), means*1e9, 'bo', label="Data")
+    plt.plot(np.arange(means.size), np.ones(means.size)*radius_sum*1e9, 'r--', label="Radius sum")
+    plt.plot(np.arange(means.size), np.zeros(means.size), 'k--', lw=0.5)
 
     plt.legend()
-    plt.xlabel("Simulation step")
-    plt.ylabel("Mean node-node distance")
+    plt.title("Simulation steps: " + str(r1.shape[0]))
+    plt.xlabel("Node index")
+    plt.ylabel("Time-averaged node-node distance (nm)")
     plt.savefig("meanDistance_vs_step.png", dpi=300)
+
+    if (means >= radius_sum).all():
+        return True
 
     return False
 
@@ -58,11 +70,12 @@ def main():
     # test function located in: src/ffea_test.cpp
     ffea_return_status = subprocess.call(["ffea", test_name + ".ffeatest"])
 
-    print("FFEA returned with error code " + str(ffea_return_status))
+    if check_node_distances() and ffea_return_status == 0:
+        return 0
 
-    check_node_distances()
+    print("Some node-node distances are less than the sum of the rod radii")
 
-    return ffea_return_status
+    return 1
 
 
 if __name__ == "__main__":
