@@ -28,15 +28,13 @@ def check_node_distances():
     # time averaged
     means = np.mean(dr, axis=0)
 
-    # for node, mean in enumerate(means):
-    #     plt.plot(node, mean*1e9, 'bo')
-
     radius1 = rod1.material_params[0][0][2]
     radius2 = rod2.material_params[0][0][2]
     radius_sum = radius1 + radius2
 
-    plt.plot(np.arange(means.size), means*1e9, 'bo', label="Data")
-    plt.plot(np.arange(means.size), np.ones(means.size)*radius_sum*1e9, 'r--', label="Radius sum")
+    plt.plot(np.arange(means.size), means * 1e9, 'bo', label="Data")
+    plt.plot(np.arange(means.size), np.ones(means.size) * radius_sum * 1e9,
+             'r--', label="Radius sum")
     plt.plot(np.arange(means.size), np.zeros(means.size), 'k--', lw=0.5)
 
     plt.legend()
