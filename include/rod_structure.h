@@ -65,6 +65,7 @@ namespace rod
         float perturbation_amount = 0.01; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
         int calc_noise = 1;
         int calc_steric_rod = 0;
+        float steric_force_factor = 0;    /** Strength of the repulsive steric interaction force. When two elements fully overlap, the resulting force is equal to this constant. [Force units] **/
 
         float translational_friction;
         float rotational_friction; /** these will have to be changed when I end up implementing per-element radius, to be computed on-the-fly instead most likely **/
@@ -135,6 +136,11 @@ namespace rod
         Rod check_neighbour_list_dimensions();
         Rod reset_neighbour_list();
         Rod print_node_positions();
+        std::array<float, 3> element_steric_force(
+            int element_index,
+            float radius_neighbour,
+            float contact_a[3],
+            float contact_b[3]);
     };
 
     void update_neighbour_lists(Rod *rod_a, Rod *rod_b);

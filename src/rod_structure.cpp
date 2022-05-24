@@ -412,7 +412,6 @@ namespace rod
             std::cout << "rod.calc_steric_rod: " << this->calc_steric_rod << std::endl;
         }
         int end_elem = this->get_num_nodes() - 1;
-        float steric_force_scaling = 1; // Arbitrary value to determine severity of repulsion force [force units]
         if (this->calc_steric_rod == 1)
         {
 #pragma omp parallel for schedule(dynamic)
@@ -448,7 +447,7 @@ namespace rod
                     rod::get_steric_perturbation_energy(
                         perturbation_amount * 0.5,
                         x,
-                        steric_force_scaling,
+                        steric_force_factor,
                         r_a,
                         p_a,
                         c_a,
@@ -464,7 +463,7 @@ namespace rod
                     rod::get_steric_perturbation_energy(
                         perturbation_amount * 0.5,
                         y,
-                        steric_force_scaling,
+                        steric_force_factor,
                         r_a,
                         p_a,
                         c_a,
@@ -480,7 +479,7 @@ namespace rod
                     rod::get_steric_perturbation_energy(
                         perturbation_amount * 0.5,
                         z,
-                        steric_force_scaling,
+                        steric_force_factor,
                         r_a,
                         p_a,
                         c_a,
@@ -496,7 +495,7 @@ namespace rod
                     rod::get_steric_perturbation_energy(
                         perturbation_amount * -0.5,
                         x,
-                        steric_force_scaling,
+                        steric_force_factor,
                         r_a,
                         p_a,
                         c_a,
@@ -512,7 +511,7 @@ namespace rod
                     rod::get_steric_perturbation_energy(
                         perturbation_amount * -0.5,
                         y,
-                        steric_force_scaling,
+                        steric_force_factor,
                         r_a,
                         p_a,
                         c_a,
@@ -528,7 +527,7 @@ namespace rod
                     rod::get_steric_perturbation_energy(
                         perturbation_amount * -0.5,
                         z,
-                        steric_force_scaling,
+                        steric_force_factor,
                         r_a,
                         p_a,
                         c_a,
@@ -850,6 +849,7 @@ namespace rod
         this->perturbation_amount = 0.001 * pow(10, -9) / mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
         this->calc_noise = 1;
         this->calc_steric_rod = 0;
+        this->steric_force_factor = (10 * mesoDimensions::Energy / 1e-9) / mesoDimensions::force;  // maximum at 41 pN (Biotin/streptavidin ~ 160 pN)
 
         return *this;
     }
@@ -1441,6 +1441,31 @@ namespace rod
             rod::print_array(msg, r, 3);
         }
         return *this;
+    }
+
+    /**
+     * @brief Steric repulsive force on a rod element due to its collision with
+     * a neighbouring element.
+     */
+    std::array<float, 3> Rod::element_steric_force(int element_index, float radius_neighbour,
+                                                   float contact_a[3], float contact_b[3])
+    {
+        float energy[6] = {0};
+        float force[3] = {0};
+        float delta = this->perturbation_amount;
+        float force_strength = this->steric_force_factor;
+        float radius_sum = this->get_radius(element_index) + radius_neighbour;
+
+        energy[0] = element_energy_from_perturbation(0,  delta, force_strength, contact_a, contact_b, radius_sum);
+        energy[1] = element_energy_from_perturbation(0, -delta, force_strength, contact_a, contact_b, radius_sum);
+        energy[2] = element_energy_from_perturbation(1,  delta, force_strength, contact_a, contact_b, radius_sum);
+        energy[3] = element_energy_from_perturbation(1, -delta, force_strength, contact_a, contact_b, radius_sum);
+        energy[4] = element_energy_from_perturbation(2,  delta, force_strength, contact_a, contact_b, radius_sum);
+        energy[5] = element_energy_from_perturbation(2, -delta, force_strength, contact_a, contact_b, radius_sum);
+
+        vec3d(n) { force[n] = -(energy[n] - energy[n + 1]) / delta; }
+
+        return std::array<float, 3>{force[0], force[1], force[2]};
     }
 
     /** Construct steric interaction neighbour lists for two rods, a and b.

@@ -368,50 +368,65 @@ namespace rod
     }
 
 
-    float steric_energy_linear(){
-        // scaling_factor * intersection_fraction (0 = none, 1 = full overlap)
-    }
-
     /**
-     * @brief Perturb the distance between two rod centrelines in a single
-     * spatial dimension and return the resulting energy.
-    */
-    float element_energy_from_perturbation(){
-
-
-        // perturb c_b
-
-        // get new c_ab
-
-        // compute energy from function (linear)
-
-        // return energy
-
-    }
-
-    /**
-     * @brief Return the steric repulsive force on a rod element due to its
-     * collision with a neighbouring element.
+     * @brief Linear steric energy between two rod elements.
+     *
+     * Normalises the intersection distance such that the repulsive force is
+     * equal to the force scaling factor when the elements fully intersect.
      */
-    std::array<float, 3> element_steric_force()
+    float steric_energy_linear(float force_scaling_factor, float intersect_distance,
+                               float radius_sum)
     {
+        return force_scaling_factor * intersect_distance / radius_sum;
+    }
 
-        // get location of force on rod ; c_a
+    /**
+     * @brief Steric energy on a rod element from the perturbation of the
+     * distance between two rod centrelines, in a single dimension.
+    */
+    float element_energy_from_perturbation(int perturb_dim, float perturb_delta,
+                                           float force_scaling_factor,
+                                           float contact_a[3], float contact_b[3],
+                                           float radius_sum)
+    {
+        float displacement[3] = {0};
+        float intersect_distance = 0;
 
-        // get distances along rod; L1, L2
+        contact_b[perturb_dim] += perturb_delta;
 
-        // energies:
-        // perturb +x
-        // perturb -x
-        // perturb +y
-        // perturb -y
-        // perturb +z
-        // perturb -z
+        vec3d(n) { displacement[n] = contact_b[n] - contact_a[n]; }
 
-        // get negative energy gradient; F
+        intersect_distance = std::max(0.0f, radius_sum - rod::absolute(displacement));
 
-        // interpolate onto nodes; F1, F2
+        return steric_energy_linear(force_scaling_factor, intersect_distance, radius_sum);
+    }
 
+    /**
+     * @brief Interpolate the steric repulsive force onto both nodes of a rod
+     * element.
+     */
+    std::array<float, 6> node_steric_force_interpolation(float contact[3], float node_1[3],
+                                                         float element_length,
+                                                         float element_force[3])
+    {
+        float d1[3] = {0};
+        float d2[3] = {0};
+        float l1 = 0;
+        float l2 = 0;
+        float F1[3] = {0};
+        float F2[3] = {0};
+
+        // displacement from force contact point to nodes
+        vec3d(n) { d1[n] = contact[n] - node_1[n]; }
+        vec3d(n) { d2[n] = element_length - d1[n]; }
+
+        l1 = rod::absolute(d1);
+        l1 = rod::absolute(d2);
+
+        vec3d(n) { F1[n] = element_force[n] * (element_length - l1) / element_length; }
+        vec3d(n) { F2[n] = element_force[n] * (element_length - l2) / element_length; }
+
+        return std::array<float, 6>{F1[0], F1[1], F1[2], F2[0], F2[1], F2[2]};
     }
 
     //    __      _

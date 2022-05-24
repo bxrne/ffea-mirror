@@ -75,8 +75,23 @@ void get_steric_perturbation_energy(
     float radius_b,
     OUT float energies[2]);
 
-float steric_energy_linear();
-float element_energy_from_perturbation();
-std::array<float, 3> element_steric_force();
+float steric_energy_linear(
+    float force_scaling_factor,
+    float intersect_distance,
+    float radius_sum);
+
+float element_energy_from_perturbation(
+    int perturb_dim,
+    float perturb_delta,
+    float force_scaling_factor,
+    float contact_a[3],
+    float contact_b[3],
+    float radius_sum);
+
+std::array<float, 6> node_steric_force_interpolation(
+    float contact[3],
+    float node_1[3],
+    float element_length,
+    float element_force[3]);
 }
 #endif
