@@ -48,8 +48,8 @@ namespace rod
     /**---------**/
 
     /**
- Convert a vector containing strings to a vector of floats.
-*/
+    Convert a vector containing strings to a vector of floats.
+    */
     std::vector<float> stof_vec(std::vector<std::string> vec_in)
     {
         std::vector<float> vec_out(vec_in.size());
@@ -61,9 +61,9 @@ namespace rod
     }
 
     /**
- Generate a random number between A and B, given an array of RngStream
- objects, and the id of the RngStream objects to be used.
-*/
+    Generate a random number between A and B, given an array of RngStream
+    objects, and the id of the RngStream objects to be used.
+    */
     float random_number(float A, float B, RngStream rng[], int thread_id)
     {
         return ((A) + ((B) - (A)) * (rng[thread_id].RandU01()));
@@ -74,10 +74,10 @@ namespace rod
     /**-----**/
 
     /**
- Create a rod of a known length. The rod_no is an arbitrary identifier.
- Note that this creates a rod without initialising the contents of the
- arrays.
-*/
+    Create a rod of a known length. The rod_no is an arbitrary identifier.
+    Note that this creates a rod without initialising the contents of the
+    arrays.
+    */
     Rod::Rod(int length, int set_rod_no) : equil_r(new float[length]),
                                            equil_m(new float[length]),
                                            current_r(new float[length]),
@@ -99,11 +99,11 @@ namespace rod
                                            pinned_nodes(new bool[length / 3]){};
 
     /**
- Create a rod from a file. This won't do anything other than create the
- object - it won't even set up any arrays, because it doesn't know how
- long they'll have to be. After this, you have to call load_header and
- load_contents, which actually do the dirty work.
-*/
+    Create a rod from a file. This won't do anything other than create the
+    object - it won't even set up any arrays, because it doesn't know how
+    long they'll have to be. After this, you have to call load_header and
+    load_contents, which actually do the dirty work.
+    */
     Rod::Rod(std::string path, int set_rod_no) : /** When we initialize from a file, we don't allocate arrays until we've loaded the file. **/
                                                  line_start(0)
     {
@@ -111,12 +111,12 @@ namespace rod
     };
 
     /**
- The contents of the rod, by default, are specified in SI units. Although
- it's possible to do everything in SI, you'll get more precision out of
- FFEA units. This function will convert all the units into FFEA units.
- When the file is written, the units are converted back automagically.
- The units are specified in mesoDimensions.h.
-*/
+    The contents of the rod, by default, are specified in SI units. Although
+    it's possible to do everything in SI, you'll get more precision out of
+    FFEA units. This function will convert all the units into FFEA units.
+    When the file is written, the units are converted back automagically.
+    The units are specified in mesoDimensions.h.
+    */
     Rod Rod::set_units()
     {
         /** Translate our units into the units specified in FFEA's mesoDimensions header file **/
@@ -177,13 +177,13 @@ namespace rod
     /**---------**/
 
     /**
- Do a timestep.
- This function contains three loops. Two over nodes and one over elements. The
- first loop (nodes) populates the contents of the energy arrays, which we use to
- work out delta E. The second one (elements) works out the energy from all steric
- interactions between neighbouring elements. The third loop (nodes) uses energies
- to compute dynamics and applies those dynamics to the position arrays.
-*/
+    Do a timestep.
+    This function contains three loops. Two over nodes and one over elements. The
+    first loop (nodes) populates the contents of the energy arrays, which we use to
+    work out delta E. The second one (elements) works out the energy from all steric
+    interactions between neighbouring elements. The third loop (nodes) uses energies
+    to compute dynamics and applies those dynamics to the position arrays.
+    */
     Rod Rod::do_timestep(RngStream rng[])
     { // Most exciting method
 
@@ -419,7 +419,6 @@ namespace rod
             for (int node_no = 0; node_no < end_elem; node_no++)
             {
                 int num_neighbours = get_num_steric_neighbours(node_no);
-                float c_ab_sum[3] = {0, 0, 0};
                 float c_ab_norm[3] = {0, 0, 0};
 
                 if (rod::dbg_print)
@@ -542,12 +541,7 @@ namespace rod
                     steric_perturbed_energy_negative[(node_no * 3) + 2] += energies[0];
                     steric_perturbed_energy_negative[(node_no * 3) + 2 + 3] += energies[1];
 
-                    vec3d(n) { c_ab_sum[n] += (c_b[n] - c_a[n]); }
-
                 } // exit steric loop
-
-                // Resultant unit vector on element, from sum over all neighbours
-                rod::normalize(c_ab_sum, c_ab_norm);
 
             } //exit interaction energy loop
 
@@ -756,20 +750,20 @@ namespace rod
     /**----**/
 
     /**
- Load the header info from a .rodtraj file (that's everything before the
- ---END HEADER--- line). Not all the info is read, some of it is for
- clarity. This populates some rod variables:
- - length - total length of the array (normally 3x the number of nodes)
- - num_nodes - number of nodes in the rod
- - num_rods - number of rods in the simulation. Not used right now.
- - line_start - number of the line at which the trajectory begins. This
-   variable is used by load_contents later on, to skip the header.
- - version - which version of the algorithm is this made for?
- This method will also allocate the memory for all the arrays in the
- rod. Descriptions of those array are in rod_structure.h. Finally, it
- sets some default values for global simulation parameters. Eventually,
- these will be overwritten by parameters from the .ffea file.
-*/
+    Load the header info from a .rodtraj file (that's everything before the
+    ---END HEADER--- line). Not all the info is read, some of it is for
+    clarity. This populates some rod variables:
+        - length - total length of the array (normally 3x the number of nodes)
+        - num_nodes - number of nodes in the rod
+        - num_rods - number of rods in the simulation. Not used right now.
+        - line_start - number of the line at which the trajectory begins. This
+        variable is used by load_contents later on, to skip the header.
+        - version - which version of the algorithm is this made for?
+    This method will also allocate the memory for all the arrays in the
+    rod. Descriptions of those array are in rod_structure.h. Finally, it
+    sets some default values for global simulation parameters. Eventually,
+    these will be overwritten by parameters from the .ffea file.
+    */
     Rod Rod::load_header(std::string filename)
     {
         rod_filename = filename;
@@ -882,13 +876,13 @@ namespace rod
     }
 
     /**
- Add a constant force that acts upon the rod every timestep.
- Parameters: force[4], a 4-element array that specifies a 3-D force
- vector, with the last element being a torque instead.
- Node_index: the index of the node to apply these forces on.
- Note: to remove the force, you must call this function again with 0s,
- or it will continue appyling the force.
-*/
+    Add a constant force that acts upon the rod every timestep.
+    Parameters: force[4], a 4-element array that specifies a 3-D force
+    vector, with the last element being a torque instead.
+    Node_index: the index of the node to apply these forces on.
+    Note: to remove the force, you must call this function again with 0s,
+    or it will continue appyling the force.
+    */
     Rod Rod::add_force(float force[4], int node_index)
     {
         this->applied_forces[node_index * 4] = force[0] / mesoDimensions::force;
@@ -899,12 +893,12 @@ namespace rod
     }
 
     /**
- Load the current state of the rod. This function expects that load_header
- has already been called. This populates all of the already-initialised
- arrays containing the state of the rod. Note that it only contains the
- current state of the rod - the FFEA_rod python class is the only one
- that loads the rod trajectory.
-*/
+    Load the current state of the rod. This function expects that load_header
+    has already been called. This populates all of the already-initialised
+    arrays containing the state of the rod. Note that it only contains the
+    current state of the rod - the FFEA_rod python class is the only one
+    that loads the rod trajectory.
+    */
     Rod Rod::load_contents(std::string filename)
     {
 
@@ -1057,10 +1051,10 @@ namespace rod
     }
 
     /**
- Write the current state of the rod to a file specified by the pointer
- *file_ptr. This will convert from MesoDimensions to SI units, so if your
- values are already in SI units, they'll be wrong.
-*/
+    Write the current state of the rod to a file specified by the pointer
+    *file_ptr. This will convert from MesoDimensions to SI units, so if your
+    values are already in SI units, they'll be wrong.
+    */
     Rod Rod::write_frame_to_file()
     {
         this->frame_no += 1;
@@ -1087,32 +1081,9 @@ namespace rod
     }
 
     /**
- Write a single array to a file in the CSV format.
- Parameters:
-  - *array_ptr - the pointer to the array that is to be written.
-  - array_len - the length of the array.
-  - unit_scale_factor - the unit conversion from the internal FFEA units
-    to SI units.
-*/
-    /**
-Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
-    for (int i=0; i<array_len; i++){
-        if (i<array_len-1){
-            std::fprintf(file_ptr, "%e,", array_ptr[i]*unit_scale_factor);
-        }
-        else{
-            std::fprintf(file_ptr, "%e", array_ptr[i]*unit_scale_factor);
-        }
-    }
-    std::fprintf(file_ptr, "\n");
-    return *this;
-}
-*/
-
-    /**
- This function is almost identical to the one above, but it appllies
- different scale factors for objects in the array,
-*/
+    This function is almost identical to the one above, but it appllies
+    different scale factors for objects in the array,
+    */
     Rod Rod::write_mat_params_array(float *array_ptr, int array_len, float stretch_scale_factor, float twist_scale_factor, float length_scale_factor)
     {
         float scale_factors[3] = {stretch_scale_factor, twist_scale_factor, length_scale_factor};
@@ -1132,10 +1103,10 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- Close the previous file and create a new file, assigning that to the rod
- variable *file_ptr. This will also copy the contents of the previous
- file into this one.
-*/
+    Close the previous file and create a new file, assigning that to the rod
+    variable *file_ptr. This will also copy the contents of the previous
+    file into this one.
+    */
     Rod Rod::change_filename(std::string new_filename)
     {
         /** Check if output file exists */
@@ -1173,12 +1144,12 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- Run the simulation for an arbitrary amount of time. If you start a
- rod exactly in its equilibrium state, chances are it's not going to be
- equilibrated, which can throw off some tests. It runs for a totally
- arbitrary 1e-7 seconds and does not save the trajectory from the
- equilibration.
-*/
+    Run the simulation for an arbitrary amount of time. If you start a
+    rod exactly in its equilibrium state, chances are it's not going to be
+    equilibrated, which can throw off some tests. It runs for a totally
+    arbitrary 1e-7 seconds and does not save the trajectory from the
+    equilibration.
+    */
     Rod Rod::equilibrate_rod(RngStream rng[])
     {
         int no_steps = 1e-7 / timestep; // this is arbitrary
@@ -1190,11 +1161,11 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- Translate every node in the rod by a given translation vector,
- translation_vec. The parameter float* r is the pointer to any array of
- node positions, e.g. this->current_r or this->equil_r. No return values,
- it just updates those arrays
- * */
+    Translate every node in the rod by a given translation vector,
+    translation_vec. The parameter float* r is the pointer to any array of
+    node positions, e.g. this->current_r or this->equil_r. No return values,
+    it just updates those arrays
+    */
     Rod Rod::translate_rod(float *r, float translation_vec[3])
     {
         for (int i = 0; i < this->length; i += 3)
@@ -1207,12 +1178,12 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- Rotates the rod by the euler angles alpha, beta and gamma (or x, y
- and z if you prefer. This will update all the node positions AND the
- material frames will rotate as well. The rotations happen relative to
- each centroid, so if current_r and equil_r have different centroids,
- they will be rotated about different points.
-*/
+    Rotates the rod by the euler angles alpha, beta and gamma (or x, y
+    and z if you prefer. This will update all the node positions AND the
+    material frames will rotate as well. The rotations happen relative to
+    each centroid, so if current_r and equil_r have different centroids,
+    they will be rotated about different points.
+    */
     Rod Rod::rotate_rod(float euler_angles[3])
     {
         /** Put rod centroid on 0,0,0 */
@@ -1271,10 +1242,10 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- * Scale the rod by a float. No return values, it just updates the
- * arrays current_r and equil_r. It doesn't modify m, that'll be
- * normalized away anyway.
- */
+     * Scale the rod by a float. No return values, it just updates the
+     * arrays current_r and equil_r. It doesn't modify m, that'll be
+     * normalized away anyway.
+    */
     Rod Rod::scale_rod(float scale)
     {
         for (int i = 0; i < this->length; i += 3)
@@ -1290,9 +1261,9 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- * Get a centroid for the current frame of the rod. Note: you must supply
- * an array (either current_r or equil_r).
- */
+     * Get a centroid for the current frame of the rod. Note: you must supply
+     * an array (either current_r or equil_r).
+    */
     Rod Rod::get_centroid(float *r, OUT float centroid[3])
     {
         vec3d(n) { centroid[n] = 0; }
@@ -1339,9 +1310,9 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- * Get the rod element for the equilibrium or current structure, given
- * an element index.
- */
+     * Get the rod element for the equilibrium or current structure, given
+     * an element index.
+     */
     Rod Rod::get_p(int index, OUT float p[3], bool equil)
     {
         if (equil)
@@ -1373,9 +1344,9 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- * Get the rod node position for the equilibrium or current structure, given
- * a node index.
- */
+     * Get the rod node position for the equilibrium or current structure, given
+     * a node index.
+     */
     Rod Rod::get_r(int node_index, OUT float r_i[3], bool equil)
     {
         if (equil)
@@ -1413,14 +1384,14 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
     }
 
     /**
- * Return data from the 7-element vector segment defining a steric
-   interaction between two rods, a and b.
+    Return data from the 7-element vector segment defining a steric
+    interaction between two rods, a and b.
 
-   Returns:
-     c_a: point lying on rod a (0-2)
-     c_b: point lying on rod b (3-5)
-     radius_b (6)
- */
+    Returns:
+        c_a: point lying on rod a (0-2)
+        c_b: point lying on rod b (3-5)
+        radius_b (6)
+    */
     Rod Rod::get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b)
     {
         std::vector<float> slice;
@@ -1493,14 +1464,14 @@ Rod Rod::write_array(float *array_ptr, int array_len, float unit_scale_factor){
         return *this;
     }
 
-    /* Construct steric interaction neighbour lists for two rods, a and b.
- *   Arguments:
- *   - *rod_a, *rod_b : pointers to rod objects
- *   Changes:
- *   - rod_a,b->steric_interaction_coordinates [std::vector< std::vector<float> >]
- *
- *   Loops over every element of both rods (O(N^2)) and updates their neighbour lists.
- */
+    /** Construct steric interaction neighbour lists for two rods, a and b.
+     * Arguments:
+     *     - *rod_a, *rod_b : pointers to rod objects
+     * Changes:
+     *     - rod_a,b->steric_interaction_coordinates [std::vector< std::vector<float> >]
+     *
+     * Loops over every element of both rods (O(N^2)) and updates their neighbour lists.
+    */
     void update_neighbour_lists(Rod *rod_a, Rod *rod_b)
     {
         float r_a[3] = {0, 0, 0};
