@@ -45,7 +45,7 @@ namespace rod
      * to c_a and c_b: d1 = c_b - r_a d2 = c_b - r_a2 d3 = c_a - r_b d4 = c_a - r_b2
      * Find the smallest vector from these and c_ab, and assign that to be the new
      * interaction vector.
-     */
+    */
     void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3],
                                  float r_b[3], float p_a[3], float p_b[3],
                                  OUT float c_a_out[3], float c_b_out[3])
@@ -160,13 +160,14 @@ namespace rod
     }
 
     /** Compute one of the two points, c_a and c_b, that form the interaction vector
-     joining two rod elements together, where c_a sits
-     * on the element p_a. Element radii are not considered at this stage.
-     \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b -
-     \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p}
-     \ \boldsymbol{l}_a \f|
-     * To account for some bad behaviour arising from the infinite line assumption
-     of this equation, a correction function is also called.
+    joining two rod elements together, where c_a sits
+    on the element p_a. Element radii are not considered at this stage.
+
+    \f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b -
+    \boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p}
+    \ \boldsymbol{l}_a \f|
+
+    To account for the infinite line assumption, a correction is applied.
     */
     void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3],
                                       float r_b[3], OUT float c_a[3],
@@ -233,15 +234,15 @@ namespace rod
     }
 
     /*
-     Check if two rod elements interact by calculating the shortest distance between
-     them and comparing to the sum of their radii. If this passes, the interaction
-     vector and radius are appended to both elements' neighbour lists.
+    Check if two rod elements interact by calculating the shortest distance between
+    them and comparing to the sum of their radii. If this passes, the interaction
+    vector and radius are appended to both elements' neighbour lists.
 
-     Each interaction with a single neighbour takes up 7 places in
-     std::vector<float> associated with a given element in a rod's neighbour list.
-     Indices 0-2 and 3-5 are the points located on itself and the other rod,
-     respectively, that describe the interaction vector, c_ab. Index 6 is the radius
-     of the other element.
+    Each interaction with a single neighbour takes up 7 places in
+    std::vector<float> associated with a given element in a rod's neighbour list.
+    Indices 0-2 and 3-5 are the points located on itself and the other rod,
+    respectively, that describe the interaction vector, c_ab. Index 6 is the radius
+    of the other element.
     */
     void assign_neighbours_to_elements(float p_a[3], float p_b[3], float r_a[3],
                                        float r_b[3], float radius_a, float radius_b,
@@ -295,23 +296,23 @@ namespace rod
     }
 
     /* Perturb the separation between two sterically interacting rod elements in a
-       specific degree of freedom to get the potential energy associated with rod a.
+    specific degree of freedom to get the potential energy associated with rod a.
 
-       \f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)]
-       \f|
+    \f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)]
+    \f|
 
-       Args:
-       - perturbation_amount - the amount of perturbation to do in the numerical
-       differentiation.
-       - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
-       - force_constant - arbitrary coefficient used to scale the severity of the
-       steric repulsion [force units]
-       - node_a - the 'start' node of the current element on rod a
-       - element_a -
-       - c_a, c_b - the points forming a straight line between two rods, a and b
-       Returns:
-       - energies - a 2-element array for energies interpolated onto the start [0]
-       and end [1] nodes of element_a
+    Args:
+    - perturbation_amount - the amount of perturbation to do in the numerical
+    differentiation.
+    - perturbation_dimension - which dimension to get dE/dr in (x,y,z)
+    - force_constant - arbitrary coefficient used to scale the severity of the
+    steric repulsion [force units]
+    - node_a - the 'start' node of the current element on rod a
+    - element_a -
+    - c_a, c_b - the points forming a straight line between two rods, a and b
+    Returns:
+    - energies - a 2-element array for energies interpolated onto the start [0]
+    and end [1] nodes of element_a
     */
     void get_steric_perturbation_energy(float perturbation_amount,
                                         int perturbation_dimension,
