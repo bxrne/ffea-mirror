@@ -333,6 +333,8 @@ namespace rod
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
         intersect_distance =
             std::max(0.0f, radius_a + radius_b - rod::absolute(c_ab));
+
+        // place into energy func
         energy = force_constant * intersect_distance;
 
         // Energy must be interpolated onto nodes of the element on rod a.
@@ -365,70 +367,51 @@ namespace rod
         }
     }
 
-    // Sum steric energy from adjacent elements onto a given node
-    void get_steric_energy_on_node(int node_index, int node_min, int node_max,
-                                   float *energy_array_positive, // length 2L array
-                                   float *energy_array_negative,
-                                   OUT float energy_positive[3],
-                                   float energy_negative[3])
-    {
 
-        int i = node_index * 6;
-
-        if (node_index == node_min)
-        {
-            // End nodes: energy contributions from one element only
-            vec3d(n) { energy_positive[n] = energy_array_positive[i + n]; }
-            vec3d(n) { energy_negative[n] = energy_array_negative[i + n]; }
-        }
-        else if (node_index == node_max - 1)
-        {
-            vec3d(n) { energy_positive[n] = energy_array_positive[i - 3 + n]; }
-            vec3d(n) { energy_negative[n] = energy_array_negative[i - 3 + n]; }
-        }
-        else
-        {
-            // Central nodes: energy contributions from two elements
-            vec3d(n)
-            {
-                energy_positive[n] =
-                    energy_array_positive[i - 3 + n] + energy_array_positive[i + n];
-            }
-            vec3d(n)
-            {
-                energy_negative[n] =
-                    energy_array_negative[i - 3 + n] + energy_array_negative[i + n];
-            }
-        }
+    float steric_energy_linear(){
+        // scaling_factor * intersection_fraction (0 = none, 1 = full overlap)
     }
 
-    // Sum and normalise the two unit vectors from adjacent elements onto a shared
-    // node
-    void get_unit_vector_on_node(int node_index, int node_min, int node_max,
-                                 float *unit_vector_array, // length L array
-                                 OUT float unit_vector[3])
+    /**
+     * @brief Perturb the distance between two rod centrelines in a single
+     * spatial dimension and return the resulting energy.
+    */
+    float element_energy_from_perturbation(){
+
+
+        // perturb c_b
+
+        // get new c_ab
+
+        // compute energy from function (linear)
+
+        // return energy
+
+    }
+
+    /**
+     * @brief Return the steric repulsive force on a rod element due to its
+     * collision with a neighbouring element.
+     */
+    std::array<float, 3> element_steric_force()
     {
 
-        float sum[3] = {0, 0, 0};
+        // get location of force on rod ; c_a
 
-        int i = node_index * 3;
+        // get distances along rod; L1, L2
 
-        if (node_index == node_min)
-        {
-            vec3d(n) { unit_vector[n] = unit_vector_array[i + n]; }
-        }
-        else if (node_index == node_max - 1)
-        {
-            vec3d(n) { unit_vector[n] = unit_vector_array[i - 3 + n]; }
-        }
-        else
-        {
-            vec3d(n)
-            {
-                sum[n] = unit_vector_array[i - 3 + n] + unit_vector_array[i + n];
-            }
-            rod::normalize(sum, unit_vector);
-        }
+        // energies:
+        // perturb +x
+        // perturb -x
+        // perturb +y
+        // perturb -y
+        // perturb +z
+        // perturb -z
+
+        // get negative energy gradient; F
+
+        // interpolate onto nodes; F1, F2
+
     }
 
     //    __      _

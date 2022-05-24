@@ -419,7 +419,6 @@ namespace rod
             for (int node_no = 0; node_no < end_elem; node_no++)
             {
                 int num_neighbours = get_num_steric_neighbours(node_no);
-                float c_ab_norm[3] = {0, 0, 0};
 
                 if (rod::dbg_print)
                 {
@@ -614,40 +613,20 @@ namespace rod
             // Rod-rod steric interactions
             if (this->calc_steric_rod == 1)
             {
-                float steric_positive[3] = {0, 0, 0}; // x, y, z
-                float steric_negative[3] = {0, 0, 0};
-                get_steric_energy_on_node(
-                    node_no,
-                    node_min,
-                    end_node,
-                    steric_perturbed_energy_positive,
-                    steric_perturbed_energy_negative,
-                    steric_positive,
-                    steric_negative);
 
-                vec3d(n) { steric_force[(node_no * 3) + n] = (steric_positive[n] - steric_negative[n]) / perturbation_amount; }
+                float steric_positive[3] = {0};
+                float steric_negative[3] = {0};
 
                 float check = 1000;
-                bool explode = false;
                 if (std::abs(steric_positive[0]) >= check or std::abs(steric_positive[1]) >= check or std::abs(steric_positive[2]) >= check)
                 {
                     rod::print_array("steric_energy_positive", steric_positive, 3);
-                    explode = true;
+                    throw std::runtime_error("Steric energy exceeds 1000 kT");
                 }
                 if (std::abs(steric_negative[0]) >= check or std::abs(steric_negative[1]) >= check or std::abs(steric_negative[2]) >= check)
                 {
                     rod::print_array("steric_energy_negative", steric_negative, 3);
-                    explode = true;
-                }
-                if (explode)
-                {
                     throw std::runtime_error("Steric energy exceeds 1000 kT");
-                }
-                if (rod::dbg_print)
-                {
-                    float grad[3] = {0, 0, 0};
-                    vec3d(n) { grad[n] = (steric_positive[n] - steric_negative[n]) / perturbation_amount; }
-                    rod::print_array("steric energy gradient", grad, 3);
                 }
             }
 
