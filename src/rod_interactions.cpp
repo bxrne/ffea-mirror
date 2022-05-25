@@ -402,31 +402,29 @@ namespace rod
     }
 
     /**
-     * @brief Interpolate the steric repulsive force onto both nodes of a rod
-     * element.
+     * @brief Interpolate an element's steric repulsive force onto both nodes.
      */
     std::array<float, 6> node_steric_force_interpolation(float contact[3], float node_1[3],
                                                          float element_length,
                                                          float element_force[3])
     {
-        float d1[3] = {0};
-        float d2[3] = {0};
+        float d1[3] = { 0 };
+        float d2[3] = { 0 };
         float l1 = 0;
         float l2 = 0;
-        float F1[3] = {0};
-        float F2[3] = {0};
+        std::array<float, 6> force;  // x1, y1, z1, x2, y2, z2
 
         // displacement from force contact point to nodes
         vec3d(n) { d1[n] = contact[n] - node_1[n]; }
         vec3d(n) { d2[n] = element_length - d1[n]; }
 
         l1 = rod::absolute(d1);
-        l1 = rod::absolute(d2);
+        l2 = rod::absolute(d2);
 
-        vec3d(n) { F1[n] = element_force[n] * (element_length - l1) / element_length; }
-        vec3d(n) { F2[n] = element_force[n] * (element_length - l2) / element_length; }
+        vec3d(n) { force[n] = element_force[n] * (element_length - l1) / element_length; }
+        vec3d(n) { force[n + 3] = element_force[n] * (element_length - l2) / element_length; }
 
-        return std::array<float, 6>{F1[0], F1[1], F1[2], F2[0], F2[1], F2[2]};
+        return force;
     }
 
     //    __      _

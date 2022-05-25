@@ -1444,14 +1444,14 @@ namespace rod
     }
 
     /**
-     * @brief Steric repulsive force on a rod element due to its collision with
-     * a neighbouring element.
+     * @brief Steric repulsive force on a rod element, a, due to its collision
+     * with a neighbouring element, b.
      */
     std::array<float, 3> Rod::element_steric_force(int element_index, float radius_neighbour,
-                                                   float contact_a[3], float contact_b[3])
+        float contact_a[3], float contact_b[3])
     {
-        float energy[6] = {0};
-        float force[3] = {0};
+        std::array<float, 6> energy = { 0 };  // +x, -x, +y, -y, +z, -z
+        std::array<float, 3> force = { 0 };   // x, y, z
         float delta = this->perturbation_amount;
         float force_strength = this->steric_force_factor;
         float radius_sum = this->get_radius(element_index) + radius_neighbour;
@@ -1465,7 +1465,7 @@ namespace rod
 
         vec3d(n) { force[n] = -(energy[n] - energy[n + 1]) / delta; }
 
-        return std::array<float, 3>{force[0], force[1], force[2]};
+        return force;
     }
 
     /** Construct steric interaction neighbour lists for two rods, a and b.
@@ -1476,12 +1476,12 @@ namespace rod
      *
      * Loops over every element of both rods (O(N^2)) and updates their neighbour lists.
     */
-    void update_neighbour_lists(Rod *rod_a, Rod *rod_b)
+    void update_neighbour_lists(Rod* rod_a, Rod* rod_b)
     {
-        float r_a[3] = {0, 0, 0};
-        float r_b[3] = {0, 0, 0};
-        float p_a[3] = {0, 0, 0};
-        float p_b[3] = {0, 0, 0};
+        float r_a[3] = { 0 };
+        float r_b[3] = { 0 };
+        float p_a[3] = { 0 };
+        float p_b[3] = { 0 };
 
         rod_a->check_neighbour_list_dimensions();
         rod_b->check_neighbour_list_dimensions();
@@ -1505,13 +1505,13 @@ namespace rod
                 // Distance check
                 // ! pass in steric interactions full instead of specific element - will fail if zero
                 rod::assign_neighbours_to_elements(p_a,
-                                                   p_b,
-                                                   r_a,
-                                                   r_b,
-                                                   rod_a->get_radius(element_a),
-                                                   rod_b->get_radius(element_b),
-                                                   rod_a->steric_interaction_coordinates.at(element_a),
-                                                   rod_b->steric_interaction_coordinates.at(element_b));
+                    p_b,
+                    r_a,
+                    r_b,
+                    rod_a->get_radius(element_a),
+                    rod_b->get_radius(element_b),
+                    rod_a->steric_interaction_coordinates.at(element_a),
+                    rod_b->steric_interaction_coordinates.at(element_b));
             }
         }
     }
