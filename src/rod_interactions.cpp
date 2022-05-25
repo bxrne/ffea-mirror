@@ -315,17 +315,14 @@ namespace rod
     and end [1] nodes of element_a
     */
     void get_steric_perturbation_energy(float perturbation_amount,
-                                        int perturbation_dimension,
-                                        float force_constant, float r_a[3],
-                                        float p_a[3], float c_a[3], float c_b[3],
-                                        float radius_a, float radius_b,
-                                        OUT float energies[2])
+        int perturbation_dimension, float force_constant, float r_a[3],
+        float p_a[3], float c_a[3], float c_b[3], float radius_a, float radius_b,
+        OUT float energies[2])
     {
-
-        float c_ab[3] = {0, 0, 0};
+        float c_ab[3] = { 0 };
         float intersect_distance = 0;
         float energy = 0;
-        float displacement[3] = {0, 0, 0};
+        float displacement[3] = { 0 };
         float weight_start_node = 0;
         float weight_end_node = 0;
 
@@ -375,7 +372,7 @@ namespace rod
      * equal to the force scaling factor when the elements fully intersect.
      */
     float steric_energy_linear(float force_scaling_factor, float intersect_distance,
-                               float radius_sum)
+        float radius_sum)
     {
         return force_scaling_factor * intersect_distance / radius_sum;
     }
@@ -385,9 +382,8 @@ namespace rod
      * distance between two rod centrelines, in a single dimension.
     */
     float element_energy_from_perturbation(int perturb_dim, float perturb_delta,
-                                           float force_scaling_factor,
-                                           float contact_a[3], float contact_b[3],
-                                           float radius_sum)
+        float force_scaling_factor, float contact_a[3], float contact_b[3],
+        float radius_sum)
     {
         float displacement[3] = {0};
         float intersect_distance = 0;
@@ -404,9 +400,8 @@ namespace rod
     /**
      * @brief Interpolate an element's steric repulsive force onto both nodes.
      */
-    std::array<float, 6> node_steric_force_interpolation(float contact[3], float node_1[3],
-                                                         float element_length,
-                                                         float element_force[3])
+    std::array<float, 6> node_steric_force_interpolation(float contact[3],
+        float node_1[3], float element_length, float element_force[3])
     {
         float d1[3] = { 0 };
         float d2[3] = { 0 };
