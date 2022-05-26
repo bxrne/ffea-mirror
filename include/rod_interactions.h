@@ -35,6 +35,16 @@
 namespace rod
 {
 
+struct InteractionData
+{
+    int element_id_self;
+    int element_id_neighb;
+    float radius_self;
+    float radius_neighb;
+    float contact_self[3];
+    float contact_neighb[3];
+};
+
 void rod_distance_correction(
     float c_a[3],
     float c_b[3],
