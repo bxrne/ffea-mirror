@@ -288,6 +288,25 @@ namespace rod
             vec3d(n) { element_b_neighbours.push_back(c_b[n]); }
             vec3d(n) { element_b_neighbours.push_back(c_a[n]); }
             element_b_neighbours.push_back(radius_a);
+
+            // InteractionData stericDataA {};
+            // stericData.element_id_self = element_a_id;
+            // stericData.element_id_neighb = element_b_id;
+            // stericData.radius_self = radius_a;
+            // stericData.radius_neighb = radius_b;
+            // vec3d(n) {stericData.contact_self[n] = c_a[n];}
+            // vec3d(n) {stericData.contact_neighb[n] = c_b[n];}
+            // # element_a.push_back(stericDataB)
+
+            // InteractionData stericDataB {};
+            // stericData.element_id_self = element_b_id;
+            // stericData.element_id_neighb = element_a_id;
+            // stericData.radius_self = radius_b;
+            // stericData.radius_neighb = radius_a;
+            // vec3d(n) {stericData.contact_self[n] = c_b[n];}
+            // vec3d(n) {stericData.contact_neighb[n] = c_a[n];}
+            // # element_b.push_back(stericDataB)
+
         }
         else if (rod::dbg_print)
         {
