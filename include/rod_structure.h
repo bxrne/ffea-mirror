@@ -96,7 +96,7 @@ namespace rod
         bool interface_at_end = false;   /** if this is true, the positioning of the end node is being handled by a rod-blob interface, so its energies will be ignored. **/
         bool restarting = false;         /** If this is true, the rod will skip writing a frame of the trajectory (this is normally done so that the trajectory starts with correct box positioning) **/
 
-        std::vector<std::vector<float>> steric_interaction_coordinates; /** Nearest neighbour coordinates, a 2D vector array **/
+        std::vector<std::vector<InteractionData>> steric_neighbours; /** Steric interaction neighbour list **/
 
         /** Unit conversion factors - the input\output files are in SI, but internally it uses FFEA's units as determined in dimensions.h **/
         float bending_response_factor;
@@ -132,8 +132,12 @@ namespace rod
         float get_radius(int node_index);
         int get_num_steric_neighbours(int element_index);
         int get_num_nodes();
-        Rod get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b);
         Rod check_neighbour_list_dimensions();
+        InteractionData get_interaction_data(
+            int rod_id_self,
+            int rod_id_neighb,
+            int elem_id_self,
+            int elem_id_neighb);
         Rod reset_neighbour_list();
         Rod print_node_positions();
         std::array<float, 3> element_steric_force(

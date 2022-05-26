@@ -1,23 +1,23 @@
-// 
+//
 //  This file is part of the FFEA simulation package
-//  
+//
 //  Copyright (c) by the Theory and Development FFEA teams,
-//  as they appear in the README.md file. 
-// 
+//  as they appear in the README.md file.
+//
 //  FFEA is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  FFEA is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-// 
+//
 //  You should have received a copy of the GNU General Public License
 //  along with FFEA.  If not, see <http://www.gnu.org/licenses/>.
-// 
-//  To help us fund FFEA development, we humbly ask that you cite 
+//
+//  To help us fund FFEA development, we humbly ask that you cite
 //  the research papers on the package.
 //
 
@@ -81,7 +81,7 @@
 using namespace std;
 
 class World {
-friend struct ffea_test; //allow  our unit test class to see ffea_world's private 
+friend struct ffea_test; //allow  our unit test class to see ffea_world's private
 public:
     World();
 
@@ -146,10 +146,10 @@ private:
 
     /** @brief Which conformation is active in each blob */
     Blob **active_blob_array;
-    
+
     /** @brief 1-D array containing pointers to all rod objects */
     rod::Rod **rod_array;
-    
+
     /** @brief 1-D array containing pointers to all rod-blob interfaces */
     rod::Rod_blob_interface **rod_blob_interface_array;
 
@@ -214,12 +214,12 @@ private:
     FILE *detailed_meas_out;
 
     /** @brief Output file for the trajectory beads. Completely optional. */
-    FILE *trajbeads_out; 
+    FILE *trajbeads_out;
 
     /** Reader objects */
     FFEA_input_reader *ffeareader;
     FFEA_input_reader *systemreader;
-    
+
     //@{
     /** Energies */
     scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, ssintenergy, preCompenergy;
@@ -285,10 +285,12 @@ private:
     long long step_initial;
 
     int load_springs(const char *fname);
-    
+
     rod::Rod_blob_interface* rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader, rod::Rod** rod_array, Blob** blob_array);
 
     rod::Rod* rod_from_block(vector<string> block, int block_id, FFEA_input_reader* systemreader);
+
+    void update_rod_neighbour_lists(rod::Rod* rod_a, rod::Rod* rod_b);
 
     void activate_springs();
 
@@ -324,19 +326,19 @@ private:
     void print_trajectory_and_measurement_files(int step, scalar wtime);
     void print_checkpoints();
     void write_pre_print_to_trajfile(int step);
-    void do_nothing(); 
+    void do_nothing();
 
-    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size); 
+    int prebuild_nearest_neighbour_lookup_wrapper(scalar cell_size);
 #ifdef FFEA_PARALLEL_FUTURE
-    std::future<void> thread_writingTraj; 
-    std::future<int> thread_updatingVdWLL; 
-    std::future<int> thread_updatingPCLL; 
+    std::future<void> thread_writingTraj;
+    std::future<int> thread_updatingVdWLL;
+    std::future<int> thread_updatingPCLL;
     bool updatingVdWLL(); ///< check if the thread has been catched.
     bool updatingVdWLL_ready_to_swap(); ///< true if thread waiting to be catched.
-    int catch_thread_updatingVdWLL(int step, scalar wtime, int where); 
+    int catch_thread_updatingVdWLL(int step, scalar wtime, int where);
     bool updatingPCLL(); ///< check if the thread has been catched.
     bool updatingPCLL_ready_to_swap(); ///< true if thread waiting to be catched.
-    int catch_thread_updatingPCLL(int step, scalar wtime, int where); 
+    int catch_thread_updatingPCLL(int step, scalar wtime, int where);
 #endif
 
     void make_measurements();
@@ -356,7 +358,7 @@ private:
 
     scalar *blob_corr;
 
-    int die_with_dignity(int step, scalar wtime); 
+    int die_with_dignity(int step, scalar wtime);
 };
 
 #endif

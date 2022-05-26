@@ -1677,6 +1677,9 @@ int ffea_test::rod_neighbour_list_construction()
 
     rod::dbg_print = true;
 
+    World *world;
+    world = new World();
+
     // Create rods
     std::cout << "ffea_test::rod_neighbour_list_construction() - loading rods"
               << std::endl;
@@ -1700,7 +1703,7 @@ int ffea_test::rod_neighbour_list_construction()
     {
         for (int j = i + 1; j < num_rods; j++)
         {
-            rod::update_neighbour_lists(rod_array[i], rod_array[j]);
+            world->update_rod_neighbour_lists(rod_array[i], rod_array[j]);
         }
     }
 
@@ -1720,12 +1723,12 @@ int ffea_test::rod_neighbour_list_construction()
             rod::print_array("  r2", r2, 3);
             std::cout << "  num_neighbours: "
                       << rod_array[i]->get_num_steric_neighbours(j) << std::endl;
-            rod::print_vector("  all coords: ",
-                              rod_array[i]->steric_interaction_coordinates.at(j));
+            // rod::print_vector("  all coords: ",
+            //                   rod_array[i]->steric_neighbours.at(j));
 
             for (int k = 0; k < rod_array[i]->get_num_steric_neighbours(j); k++)
             {
-                rod_array[i]->get_steric_interaction_data_slice(j, k, c_a, c_b, radius);
+                // ! new data goes here!
                 vec3d(n) { c_ba[n] = c_b[n] - c_a[n]; }
                 distance = rod::absolute(c_ba);
 

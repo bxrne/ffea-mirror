@@ -441,7 +441,7 @@ namespace rod
                     get_r(node_no, r_a, false);
                     get_p(node_no, p_a, false);
                     radius_a = get_radius(node_no);
-                    get_steric_interaction_data_slice(node_no, neighbour_no, c_a, c_b, radius_b);
+                    // ! - implement new neighbour style!
 
                     // positive x
                     rod::get_steric_perturbation_energy(
@@ -829,7 +829,7 @@ namespace rod
         steric_force = static_cast<float *>(malloc(sizeof(float) * length));
         applied_forces = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length / 3));
-        steric_interaction_coordinates = std::vector<std::vector<float>>((length / 3) - 1);
+        steric_neighbours = std::vector<std::vector<InteractionData>>((length / 3) - 1);
 
         for (int i = 0; i < length / 3; i++)
         {
@@ -1344,10 +1344,9 @@ namespace rod
         return material_params[(node_index * 3) + 2];
     }
 
-    // TODO: Implement some check that ensures we don't have too many neighbours
     int Rod::get_num_steric_neighbours(int element_index)
     {
-        return steric_interaction_coordinates.at(element_index).size() / 7;
+        return steric_neighbours.at(element_index).size();
     }
 
     int Rod::get_num_nodes()
@@ -1362,31 +1361,11 @@ namespace rod
         return this->num_nodes;
     }
 
-    /**
-    Return data from the 7-element vector segment defining a steric
-    interaction between two rods, a and b.
-
-    Returns:
-        c_a: point lying on rod a (0-2)
-        c_b: point lying on rod b (3-5)
-        radius_b (6)
-    */
-    Rod Rod::get_steric_interaction_data_slice(int element_index, int neighbour_index, OUT float c_a[3], float c_b[3], float radius_b)
-    {
-        std::vector<float> slice;
-
-        slice = slice_vector(steric_interaction_coordinates.at(element_index), neighbour_index * 7, (neighbour_index * 7) + 6);
-
-        vec3d(n) { c_a[n] = slice.at(n); }
-        vec3d(n) { c_b[n] = slice.at(n + 3); }
-        radius_b = slice.at(6);
-
-        return *this;
-    }
 
     Rod Rod::check_neighbour_list_dimensions()
     {
-        int num_rows = steric_interaction_coordinates.size();
+
+        int num_rows = steric_neighbours.size();
         int num_cols = 0;
         std::string msg;
 
@@ -1396,20 +1375,6 @@ namespace rod
             throw std::logic_error(msg);
         }
 
-        for (int i = 0; i < this->get_num_nodes() - 1; i++)
-        {
-            num_cols = steric_interaction_coordinates.at(i).size();
-            msg = "Number of items (" + std::to_string(num_cols) + ") in row " + std::to_string(i) + " of neighbour list should be a multiple of 7.";
-            if (num_cols % 7 != 0)
-            {
-                throw std::logic_error(msg);
-            }
-            if (rod::dbg_print)
-            {
-                std::cout << "items in row " << i << ": " << num_cols << std::endl;
-            }
-        }
-
         if (rod::dbg_print)
         {
             std::cout << "Neighbour list dimensions of rod " << this->rod_no << " OK" << std::endl;
@@ -1417,11 +1382,39 @@ namespace rod
         return *this;
     }
 
+    InteractionData Rod::get_interaction_data(int rod_id_self, int rod_id_neighb,
+        int elem_id_self, int elem_id_neighb)
+    {
+        InteractionData data = this->steric_neighbours.at(elem_id_self).at(elem_id_neighb);
+
+        if (rod::dbg_print)
+        {
+            bool rod_ok = (rod_id_self == data.rod_id_self) and (rod_id_neighb = data.rod_id_neighb);
+            bool elem_ok = (elem_id_self == data.element_id_self) and (elem_id_neighb = data.element_id_neighb);
+            if (rod_ok and elem_ok)
+            {
+                return data;
+            }
+            else
+            {
+                std::cout << rod_id_self << ", " << data.rod_id_self << "; "
+                          << rod_id_neighb << ", " << data.rod_id_neighb << "; "
+                          << elem_id_self << ", " << data.element_id_self << "; "
+                          << elem_id_neighb << ", " << data.element_id_neighb << "\n";
+                throw std::runtime_error("Inconsistency between vector indexing and struct contents");
+            }
+        }
+        else
+        {
+            return data;
+        }
+    }
+
     Rod Rod::reset_neighbour_list()
     {
         for (int i = 0; i < this->get_num_nodes() - 1; i++)
         {
-            this->steric_interaction_coordinates.at(i).clear();
+            this->steric_neighbours.at(i).clear();
         }
         if (rod::dbg_print)
         {
@@ -1468,52 +1461,5 @@ namespace rod
         return force;
     }
 
-    /** Construct steric interaction neighbour lists for two rods, a and b.
-     * Arguments:
-     *     - *rod_a, *rod_b : pointers to rod objects
-     * Changes:
-     *     - rod_a,b->steric_interaction_coordinates [std::vector< std::vector<float> >]
-     *
-     * Loops over every element of both rods (O(N^2)) and updates their neighbour lists.
-    */
-    void update_neighbour_lists(Rod* rod_a, Rod* rod_b)
-    {
-        float r_a[3] = { 0 };
-        float r_b[3] = { 0 };
-        float p_a[3] = { 0 };
-        float p_b[3] = { 0 };
-
-        rod_a->check_neighbour_list_dimensions();
-        rod_b->check_neighbour_list_dimensions();
-
-        if (rod::dbg_print)
-        {
-            std::cout << "Updating neighbour lists of rods " << rod_a->rod_no << " and " << rod_b->rod_no << std::endl;
-        }
-
-        for (int element_a = 0; element_a < rod_a->get_num_nodes() - 1; element_a++)
-        {
-            for (int element_b = 0; element_b < rod_b->get_num_nodes() - 1; element_b++)
-            {
-
-                rod_a->get_r(element_a, r_a, false);
-                rod_a->get_p(element_a, p_a, false);
-
-                rod_b->get_r(element_b, r_b, false);
-                rod_b->get_p(element_b, p_b, false);
-
-                // Distance check
-                // ! pass in steric interactions full instead of specific element - will fail if zero
-                rod::assign_neighbours_to_elements(p_a,
-                    p_b,
-                    r_a,
-                    r_b,
-                    rod_a->get_radius(element_a),
-                    rod_b->get_radius(element_b),
-                    rod_a->steric_interaction_coordinates.at(element_a),
-                    rod_b->steric_interaction_coordinates.at(element_b));
-            }
-        }
-    }
 
 } //end namespace

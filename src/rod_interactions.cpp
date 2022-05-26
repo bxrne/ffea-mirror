@@ -35,6 +35,19 @@
 namespace rod
 {
 
+    InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
+        int elem_id_b, float rad_a, float rad_b, float c_a[3], float c_b[3])
+    {
+        rod_id_self = rod_id_a;
+        rod_id_neighb = rod_id_b;
+        element_id_self = elem_id_a;
+        element_id_neighb = elem_id_b;
+        radius_self = rad_a;
+        radius_neighb = rad_b;
+        vec3d(n){contact_self[n] = c_a[n];}
+        vec3d(n){contact_neighb[n] = c_b[n];}
+    };
+
     /** 1) Check that the points of the rod interaction vector, c_a and c_b, lie
      * within their respective rod elements. Certain situations (e.g.
      * almost-parallel rods) will mean this correction can be poor (e.g. c being
@@ -234,25 +247,23 @@ namespace rod
     }
 
     /*
-    Check if two rod elements interact by calculating the shortest distance between
-    them and comparing to the sum of their radii. If this passes, the interaction
-    vector and radius are appended to both elements' neighbour lists.
-
-    Each interaction with a single neighbour takes up 7 places in
-    std::vector<float> associated with a given element in a rod's neighbour list.
-    Indices 0-2 and 3-5 are the points located on itself and the other rod,
-    respectively, that describe the interaction vector, c_ab. Index 6 is the radius
-    of the other element.
+    Check if two rod elements, a and b, interact by calculating the shortest
+    distance between them and comparing to the sum of their radii. If this
+    passes, the interaction information is added to both elements' neighbour
+    lists.
     */
-    void assign_neighbours_to_elements(float p_a[3], float p_b[3], float r_a[3],
-                                       float r_b[3], float radius_a, float radius_b,
-                                       std::vector<float> &element_a_neighbours,
-                                       std::vector<float> &element_b_neighbours)
+    void set_element_neighbours(int rod_id_a, int rod_id_b,
+                                int elem_id_a, int elem_id_b,
+                                float p_a[3], float p_b[3],
+                                float r_a[3], float r_b[3],
+                                float radius_a, float radius_b,
+                                std::vector<InteractionData> &neighbours_a,
+                                std::vector<InteractionData> &neighbours_b)
     {
 
-        float c_a[3] = {0, 0, 0};
-        float c_b[3] = {0, 0, 0};
-        float c_ab[3] = {0, 0, 0};
+        float c_a[3] = {0};
+        float c_b[3] = {0};
+        float c_ab[3] = {0};
 
         rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
@@ -274,39 +285,27 @@ namespace rod
                 std::cout << "assigning neighbours" << std::endl;
             }
 
-            // Increase vector capacity before assignment (optional, might help with
-            // memory stuff)
-            element_a_neighbours.reserve(element_a_neighbours.size() + 7);
-            element_b_neighbours.reserve(element_b_neighbours.size() + 7);
+            InteractionData stericDataA(
+                rod_id_a,
+                rod_id_b,
+                elem_id_a,
+                elem_id_b,
+                radius_a,
+                radius_b,
+                c_a,
+                c_b);
+            neighbours_a.push_back(stericDataA);
 
-            // Update both neighbour lists with the interaction vector and the radius of
-            // the 'other' element
-            vec3d(n) { element_a_neighbours.push_back(c_a[n]); }
-            vec3d(n) { element_a_neighbours.push_back(c_b[n]); }
-            element_a_neighbours.push_back(radius_b);
-
-            vec3d(n) { element_b_neighbours.push_back(c_b[n]); }
-            vec3d(n) { element_b_neighbours.push_back(c_a[n]); }
-            element_b_neighbours.push_back(radius_a);
-
-            // InteractionData stericDataA {};
-            // stericData.element_id_self = element_a_id;
-            // stericData.element_id_neighb = element_b_id;
-            // stericData.radius_self = radius_a;
-            // stericData.radius_neighb = radius_b;
-            // vec3d(n) {stericData.contact_self[n] = c_a[n];}
-            // vec3d(n) {stericData.contact_neighb[n] = c_b[n];}
-            // # element_a.push_back(stericDataB)
-
-            // InteractionData stericDataB {};
-            // stericData.element_id_self = element_b_id;
-            // stericData.element_id_neighb = element_a_id;
-            // stericData.radius_self = radius_b;
-            // stericData.radius_neighb = radius_a;
-            // vec3d(n) {stericData.contact_self[n] = c_b[n];}
-            // vec3d(n) {stericData.contact_neighb[n] = c_a[n];}
-            // # element_b.push_back(stericDataB)
-
+            InteractionData stericDataB(
+                rod_id_b,
+                rod_id_a,
+                elem_id_b,
+                elem_id_a,
+                radius_b,
+                radius_a,
+                c_b,
+                c_a);
+            neighbours_b.push_back(stericDataB);
         }
         else if (rod::dbg_print)
         {

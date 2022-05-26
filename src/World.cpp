@@ -2224,7 +2224,7 @@ int World::run()
             {
                 for (int j = i + 1; j < params.num_rods; j++)
                 {
-                    rod::update_neighbour_lists(rod_array[i], rod_array[j]);
+                    update_rod_neighbour_lists(rod_array[i], rod_array[j]);
                 }
             }
             if (rod::dbg_print)
@@ -4428,6 +4428,52 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
     }
 
     return current_rod;
+}
+
+/** Populate neighbour lists of two rods, a and b.
+ *
+ * Loops over every element of both rods; O(N^2).
+*/
+void World::update_rod_neighbour_lists(rod::Rod *rod_a, rod::Rod *rod_b)
+{
+    float r_a[3] = {0};
+    float r_b[3] = {0};
+    float p_a[3] = {0};
+    float p_b[3] = {0};
+
+    rod_a->check_neighbour_list_dimensions();
+    rod_b->check_neighbour_list_dimensions();
+
+    if (rod::dbg_print)
+    {
+        std::cout << "Updating neighbour lists of rods " << rod_a->rod_no << " and " << rod_b->rod_no << std::endl;
+    }
+
+    for (int elem_a = 0; elem_a < rod_a->get_num_nodes() - 1; elem_a++)
+    {
+        for (int elem_b = 0; elem_b < rod_b->get_num_nodes() - 1; elem_b++)
+        {
+            rod_a->get_r(elem_a, r_a, false);
+            rod_b->get_r(elem_b, r_b, false);
+            rod_a->get_p(elem_a, p_a, false);
+            rod_b->get_p(elem_b, p_b, false);
+
+            // assign to both elements
+            rod::set_element_neighbours(
+                rod_a->rod_no,
+                rod_b->rod_no,
+                elem_a,
+                elem_b,
+                p_a,
+                p_b,
+                r_a,
+                r_b,
+                rod_a->get_radius(elem_a),
+                rod_b->get_radius(elem_b),
+                rod_a->steric_neighbours.at(elem_a),
+                rod_b->steric_neighbours.at(elem_b));
+        }
+    }
 }
 
 void World::activate_springs()

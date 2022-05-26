@@ -37,12 +37,24 @@ namespace rod
 
 struct InteractionData
 {
+    int rod_id_self;
+    int rod_id_neighb;
     int element_id_self;
     int element_id_neighb;
     float radius_self;
     float radius_neighb;
     float contact_self[3];
     float contact_neighb[3];
+
+    InteractionData(
+        int rod_id_a,
+        int rod_id_b,
+        int elem_id_a,
+        int elem_id_b,
+        float rad_a,
+        float rad_b,
+        float c_a[3],
+        float c_b[3]);
 };
 
 void rod_distance_correction(
@@ -63,15 +75,19 @@ void get_shortest_distance_to_rod(
     OUT float c_a[3],
     float c_b[3]);
 
-void assign_neighbours_to_elements(
+void set_element_neighbours(
+    int rod_id_a,
+    int rod_id_b,
+    int elem_id_a,
+    int elem_id_b,
     float p_a[3],
     float p_b[3],
     float r_a[3],
     float r_b[3],
     float radius_a,
     float radius_b,
-    std::vector<float> &element_a_neighbours,
-    std::vector<float> &element_b_neighbours);
+    std::vector<InteractionData> &neighbours_a,
+    std::vector<InteractionData> &neighbours_b);
 
 void get_steric_perturbation_energy(
     float perturbation_amount,
