@@ -107,7 +107,7 @@ namespace rod
         std::string rod_filename;
         FILE *file_ptr;
         int frame_no = 0;
-        int step_no = 0;
+        int step_no = 0;  // ! - redundant?
         Rod(int length, int set_rod_no);
         Rod(std::string path, int set_rod_no);
         Rod set_units();
