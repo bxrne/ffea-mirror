@@ -1424,30 +1424,5 @@ namespace rod
         return *this;
     }
 
-    /**
-     * @brief Steric repulsive force on a rod element, a, due to its collision
-     * with a neighbouring element, b.
-     */
-    std::array<float, 3> Rod::element_steric_force(int element_index, float radius_neighbour,
-        float contact_a[3], float contact_b[3])
-    {
-        std::array<float, 6> energy = { 0 };  // +x, -x, +y, -y, +z, -z
-        std::array<float, 3> force = { 0 };   // x, y, z
-        float delta = this->perturbation_amount;
-        float force_strength = this->steric_force_factor;
-        float radius_sum = this->get_radius(element_index) + radius_neighbour;
-
-        energy[0] = element_energy_from_perturbation(0,  delta, force_strength, contact_a, contact_b, radius_sum);
-        energy[1] = element_energy_from_perturbation(0, -delta, force_strength, contact_a, contact_b, radius_sum);
-        energy[2] = element_energy_from_perturbation(1,  delta, force_strength, contact_a, contact_b, radius_sum);
-        energy[3] = element_energy_from_perturbation(1, -delta, force_strength, contact_a, contact_b, radius_sum);
-        energy[4] = element_energy_from_perturbation(2,  delta, force_strength, contact_a, contact_b, radius_sum);
-        energy[5] = element_energy_from_perturbation(2, -delta, force_strength, contact_a, contact_b, radius_sum);
-
-        vec3d(n) { force[n] = -(energy[n] - energy[n + 1]) / delta; }
-
-        return force;
-    }
-
 
 } //end namespace

@@ -106,13 +106,19 @@ float steric_energy_linear(
     float intersect_distance,
     float radius_sum);
 
-float element_energy_from_perturbation(
+float perturbed_intersection_distance(
     int perturb_dim,
     float perturb_delta,
-    float force_scaling_factor,
     float contact_a[3],
     float contact_b[3],
     float radius_sum);
+
+std::array<float, 3> element_steric_force(
+    float delta,
+    float force_strength,
+    float radius_sum,
+    float contact_self[3],
+    float contact_neighb[3]);
 
 std::array<float, 6> node_steric_force_interpolation(
     float contact[3],

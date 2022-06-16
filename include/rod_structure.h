@@ -140,14 +140,7 @@ namespace rod
             int elem_id_neighb);
         Rod reset_neighbour_list();
         Rod print_node_positions();
-        std::array<float, 3> element_steric_force(
-            int element_index,
-            float radius_neighbour,
-            float contact_a[3],
-            float contact_b[3]);
     };
-
-    void update_neighbour_lists(Rod *rod_a, Rod *rod_b);
 
 } //end namespace
 #endif
