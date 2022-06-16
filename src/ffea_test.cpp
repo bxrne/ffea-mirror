@@ -1915,6 +1915,8 @@ int ffea_test::steric_energy_two_rod_elements()
 int ffea_test::rod_collision_no_crash()
 {
 
+    rod::dbg_print = true;
+
     World *world;
     world = new World();
     if (world->init("collision_two_rods.ffea", 0, 0, 2) == FFEA_ERROR)
@@ -1923,8 +1925,6 @@ int ffea_test::rod_collision_no_crash()
         std::cout << "Errors during initialisation mean World cannot be "
                      "constructed properly.\n";
     }
-
-    rod::dbg_print = true;
 
     world->run();
 

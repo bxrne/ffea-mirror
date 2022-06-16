@@ -609,26 +609,6 @@ namespace rod
             float z_force = (internal_perturbed_z_energy_negative[node_no * 3] + internal_perturbed_z_energy_negative[(node_no * 3) + 1] + internal_perturbed_z_energy_negative[(node_no * 3) + 2] - (internal_perturbed_z_energy_positive[node_no * 3] + internal_perturbed_z_energy_positive[(node_no * 3) + 1] + internal_perturbed_z_energy_positive[(node_no * 3) + 2])) / perturbation_amount;
             float twist_force = (internal_twisted_energy_negative[node_no * 3] + internal_twisted_energy_negative[(node_no * 3) + 1] + internal_twisted_energy_negative[(node_no * 3) + 2] - (internal_twisted_energy_positive[node_no * 3] + internal_twisted_energy_positive[(node_no * 3) + 1] + internal_twisted_energy_positive[(node_no * 3) + 2])) / twist_perturbation;
 
-            // Rod-rod steric interactions
-            if (this->calc_steric_rod == 1)
-            {
-
-                float steric_positive[3] = {0};
-                float steric_negative[3] = {0};
-
-                float check = 1000;
-                if (std::abs(steric_positive[0]) >= check or std::abs(steric_positive[1]) >= check or std::abs(steric_positive[2]) >= check)
-                {
-                    rod::print_array("steric_energy_positive", steric_positive, 3);
-                    throw std::runtime_error("Steric energy exceeds 1000 kT");
-                }
-                if (std::abs(steric_negative[0]) >= check or std::abs(steric_negative[1]) >= check or std::abs(steric_negative[2]) >= check)
-                {
-                    rod::print_array("steric_energy_negative", steric_negative, 3);
-                    throw std::runtime_error("Steric energy exceeds 1000 kT");
-                }
-            }
-
             // Get applied force, if any
             float applied_force_x = applied_forces[node_no * 4];
             float applied_force_y = applied_forces[(node_no * 4) + 1];
@@ -652,9 +632,9 @@ namespace rod
             }
 
             // A wee sanity check to stop your simulations from exploding horribly
-            float p[3] = {0, 0, 0};
+            float p[3] = {0};
             this->get_p(node_no, p, false);
-            float check = rod::absolute(p) * int(1e3);
+            float check = 100 * rod::absolute(p);
             if (std::abs(delta_r_x) >= check or std::abs(delta_r_y) >= check or std::abs(delta_r_z) >= check)
             {
                 std::cout << "node " << node_no << "\n";
