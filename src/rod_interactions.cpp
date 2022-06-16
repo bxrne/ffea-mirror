@@ -442,19 +442,20 @@ std::array<float, 3> element_steric_force(float delta, float force_strength,
 }
 
 /**
- * @brief Interpolate an element's steric repulsive force onto both nodes.
+ * @brief Interpolate the force applied to an element onto both nodes.
  */
-std::array<float, 6> node_steric_force_interpolation(float contact[3],
-    float node_1[3], float element_length, float element_force[3])
+std::array<float, 6> node_force_interpolation(float contact[3],
+    float node_start[3], float element_length, float element_force[3])
 {
     float d1[3] = { 0 };
     float d2[3] = { 0 };
     float l1 = 0;
     float l2 = 0;
     std::array<float, 6> force;  // x1, y1, z1, x2, y2, z2
+    float diff[3];
 
-    // displacement from force contact point to nodes
-    vec3d(n) { d1[n] = contact[n] - node_1[n]; }
+    // displacement from force contact point on centreline to nodes
+    vec3d(n) { d1[n] = contact[n] - node_start[n]; }
     vec3d(n) { d2[n] = element_length - d1[n]; }
 
     l1 = rod::absolute(d1);
@@ -462,6 +463,12 @@ std::array<float, 6> node_steric_force_interpolation(float contact[3],
 
     vec3d(n) { force[n] = element_force[n] * (element_length - l1) / element_length; }
     vec3d(n) { force[n + 3] = element_force[n] * (element_length - l2) / element_length; }
+
+    vec3d(n) { diff[n] = force[n] + force[n + 3] - element_force[n]; }
+    if (rod::absolute(diff) > 1e-6)
+    {
+        throw std::runtime_error("Sum of node forces is not equal to element force.");
+    }
 
     return force;
 }

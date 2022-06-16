@@ -120,7 +120,7 @@ std::array<float, 3> element_steric_force(
     float contact_self[3],
     float contact_neighb[3]);
 
-std::array<float, 6> node_steric_force_interpolation(
+std::array<float, 6> node_force_interpolation(
     float contact[3],
     float node_1[3],
     float element_length,
