@@ -1754,10 +1754,17 @@ int ffea_test::rod_neighbour_list_construction()
     return 1;
 }
 
-// Pass one rod element, b, entirely through another, a, and compute the steric
-// interaction energy on a.
-// Rod a is aligned in the z-axis, and rod b is rotated pi/12 radians in x-z
-// and y-z relative to it.
+//
+//
+/**
+ * @brief Pass one rod element, b, entirely through another, a, and compute the
+ * element steric interaction energy on a.
+ *
+ * a is aligned in the z-axis. b is rotated pi/12 radians in x-z and y-z
+ * relative to a.
+ *
+ * @return int
+ */
 int ffea_test::steric_energy_two_rod_elements()
 {
     // Test parameters
@@ -1783,17 +1790,12 @@ int ffea_test::steric_energy_two_rod_elements()
     float c_b[3] = {0, 0, 0};
     float delta =
         1e-12 / mesoDimensions::length; // perturbation amount [FFEA length units]
-    float strength = 1.0;               // strength of repulsive force [FFEA force units]
+    float strength = 10.0;               // strength of repulsive force [FFEA force units]
     // Storage
     FILE *file_ptr;
     float r_a_1[3] = {0, 0, 0};
     float r_b_1[3] = {0, 0, 0};
     float c_ab[3] = {0, 0, 0};
-    float distance = 0;
-    float U_pos_node_0[3]; // [Ux, Uy, Uz, ...]
-    float U_pos_node_1[3];
-    float U_neg_node_0[3];
-    float U_neg_node_1[3];
 
     rod::dbg_print = true;
 
@@ -1816,57 +1818,36 @@ int ffea_test::steric_energy_two_rod_elements()
                  radius * mesoDimensions::length * 1e9);
     std::fprintf(file_ptr,
                  "# r_a_0 [3]    r_a_1 [3]    r_b_0 [3]    r_b_1 [3]    |c_ab|   "
-                 " U_pos_0 [3]    U_neg_0 [3]    U_pos_1 [3]    U_neg_1 [3]\n");
+                 " E_pos [3]    E_neg [3]\n");
 
     for (int step_no = 0; step_no < num_steps; step_no++)
     {
-        try
-        {
-            rod::get_shortest_distance_to_rod(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
-        }
-        catch (const std::invalid_argument &e)
-        {
-            std::cout << "\nCaught invalid_argument exception: " << e.what()
-                      << std::endl;
-            rod::rod_abort("Exception during test");
-        };
+        rod::get_shortest_distance_to_rod(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
 
-        float U_temp[2] = {0, 0}; // nodes 0, 1
-        // positive
-        rod::get_steric_perturbation_energy(delta, 0, strength, r_a_0, p_a, c_a,
-                                            c_b, radius, radius, U_temp);
-        U_pos_node_0[0] = U_temp[0];
-        U_pos_node_1[0] = U_temp[1];
-        rod::get_steric_perturbation_energy(delta, 1, strength, r_a_0, p_a, c_a,
-                                            c_b, radius, radius, U_temp);
-        U_pos_node_0[1] = U_temp[0];
-        U_pos_node_1[1] = U_temp[1];
-        rod::get_steric_perturbation_energy(delta, 2, strength, r_a_0, p_a, c_a,
-                                            c_b, radius, radius, U_temp);
-        U_pos_node_0[2] = U_temp[0];
-        U_pos_node_1[2] = U_temp[1];
-        // negative
-        rod::get_steric_perturbation_energy(-delta, 0, strength, r_a_0, p_a, c_a,
-                                            c_b, radius, radius, U_temp);
-        U_neg_node_0[0] = U_temp[0];
-        U_neg_node_1[0] = U_temp[1];
-        rod::get_steric_perturbation_energy(-delta, 1, strength, r_a_0, p_a, c_a,
-                                            c_b, radius, radius, U_temp);
-        U_neg_node_0[1] = U_temp[0];
-        U_neg_node_1[1] = U_temp[1];
-        rod::get_steric_perturbation_energy(-delta, 2, strength, r_a_0, p_a, c_a,
-                                            c_b, radius, radius, U_temp);
-        U_neg_node_0[2] = U_temp[0];
-        U_neg_node_1[2] = U_temp[1];
+        std::array<float, 6> distance = {0};
+        distance[0] = rod::perturbed_intersection_distance(0,  delta, c_a, c_b, 2*radius);
+        distance[1] = rod::perturbed_intersection_distance(0, -delta, c_a, c_b, 2*radius);
+        distance[2] = rod::perturbed_intersection_distance(1,  delta, c_a, c_b, 2*radius);
+        distance[3] = rod::perturbed_intersection_distance(1, -delta, c_a, c_b, 2*radius);
+        distance[4] = rod::perturbed_intersection_distance(2,  delta, c_a, c_b, 2*radius);
+        distance[5] = rod::perturbed_intersection_distance(2, -delta, c_a, c_b, 2*radius);
 
-        // update
+        std::array<float, 6> energy = {0};
+        energy[0] = rod::steric_energy_linear(strength, distance[0], 2*radius);
+        energy[1] = rod::steric_energy_linear(strength, distance[1], 2*radius);
+        energy[2] = rod::steric_energy_linear(strength, distance[2], 2*radius);
+        energy[3] = rod::steric_energy_linear(strength, distance[3], 2*radius);
+        energy[4] = rod::steric_energy_linear(strength, distance[4], 2*radius);
+        energy[5] = rod::steric_energy_linear(strength, distance[5], 2*radius);
+
+        float positive[3] = {energy[0] , energy[2], energy[4]};
+        float negative[3] = {energy[1] , energy[3], energy[5]};
+
+        // update rod position and distance
         vec3d(n) { r_b_0[n] += rhat[n] * dr; }
-
-        // write stuff, tab-separated columns
         vec3d(n) { r_a_1[n] = r_a_0[n] + p_a[n]; }
         vec3d(n) { r_b_1[n] = r_b_0[n] + p_b[n]; }
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
-        distance = rod::absolute(c_ab);
 
         vec3d(n)
         {
@@ -1884,22 +1865,14 @@ int ffea_test::steric_energy_two_rod_elements()
         {
             std::fprintf(file_ptr, "%e ", r_b_1[n] * mesoDimensions::length);
         }
-        std::fprintf(file_ptr, "%e ", distance * mesoDimensions::length);
+        std::fprintf(file_ptr, "%e ", rod::absolute(c_ab) * mesoDimensions::length);
         vec3d(n)
         {
-            std::fprintf(file_ptr, "%e ", U_pos_node_0[n] * mesoDimensions::Energy);
+            std::fprintf(file_ptr, "%e ", positive[n] * mesoDimensions::Energy);
         }
         vec3d(n)
         {
-            std::fprintf(file_ptr, "%e ", U_neg_node_0[n] * mesoDimensions::Energy);
-        }
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", U_pos_node_1[n] * mesoDimensions::Energy);
-        }
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", U_neg_node_1[n] * mesoDimensions::Energy);
+            std::fprintf(file_ptr, "%e ", negative[n] * mesoDimensions::Energy);
         }
         std::fprintf(file_ptr, "\n");
     }
