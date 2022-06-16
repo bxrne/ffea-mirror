@@ -38,13 +38,13 @@ namespace rod
 struct InteractionData
 {
     int rod_id_self;
-    int rod_id_neighb;
+    int rod_id_nbr;
     int element_id_self;
-    int element_id_neighb;
+    int element_id_nbr;
     float radius_self;
-    float radius_neighb;
+    float radius_nbr;
     float contact_self[3];
-    float contact_neighb[3];
+    float contact_nbr[3];
 
     InteractionData(
         int rod_id_a,
@@ -89,18 +89,6 @@ void set_element_neighbours(
     std::vector<InteractionData> &neighbours_a,
     std::vector<InteractionData> &neighbours_b);
 
-void get_steric_perturbation_energy(
-    float perturbation_amount,
-    int perturbation_dimension,
-    float force_constant,
-    float r_a[3],
-    float p_a[3],
-    float c_a[3],
-    float c_b[3],
-    float radius_a,
-    float radius_b,
-    OUT float energies[2]);
-
 float steric_energy_linear(
     float force_scaling_factor,
     float intersect_distance,
@@ -124,6 +112,6 @@ std::array<float, 6> node_force_interpolation(
     float contact[3],
     float node_1[3],
     float element_length,
-    float element_force[3]);
+    std::array<float, 3> element_force);
 }
 #endif

@@ -39,13 +39,13 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3])
 {
     rod_id_self = rod_id_a;
-    rod_id_neighb = rod_id_b;
+    rod_id_nbr = rod_id_b;
     element_id_self = elem_id_a;
-    element_id_neighb = elem_id_b;
+    element_id_nbr = elem_id_b;
     radius_self = radius_a;
-    radius_neighb = radius_b;
+    radius_nbr = radius_b;
     vec3d(n){contact_self[n] = c_a[n];}
-    vec3d(n){contact_neighb[n] = c_b[n];}
+    vec3d(n){contact_nbr[n] = c_b[n];}
 };
 
 /** 1) Check that the points of the rod interaction vector, c_a and c_b, lie
@@ -313,76 +313,6 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
     }
 }
 
-/* Perturb the separation between two sterically interacting rod elements in a
-specific degree of freedom to get the potential energy associated with rod a.
-
-\f| U_{int,ab} = \alpha[|\boldsymbol{c}_b - \boldsymbol{c}_a| - (R_a + R_b)]
-\f|
-
-Args:
-- perturbation_amount - the amount of perturbation to do in the numerical
-differentiation.
-- perturbation_dimension - which dimension to get dE/dr in (x,y,z)
-- force_constant - arbitrary coefficient used to scale the severity of the
-steric repulsion [force units]
-- node_a - the 'start' node of the current element on rod a
-- element_a -
-- c_a, c_b - the points forming a straight line between two rods, a and b
-Returns:
-- energies - a 2-element array for energies interpolated onto the start [0]
-and end [1] nodes of element_a
-*/
-void get_steric_perturbation_energy(float perturbation_amount,
-    int perturbation_dimension, float force_constant, float r_a[3],
-    float p_a[3], float c_a[3], float c_b[3], float radius_a, float radius_b,
-    OUT float energies[2])
-{
-    float c_ab[3] = { 0 };
-    float intersect_distance = 0;
-    float energy = 0;
-    float displacement[3] = { 0 };
-    float weight_start_node = 0;
-    float weight_end_node = 0;
-
-    c_b[perturbation_dimension] += perturbation_amount;
-    vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
-    intersect_distance =
-        std::max(0.0f, radius_a + radius_b - rod::absolute(c_ab));
-
-    // place into energy func
-    energy = force_constant * intersect_distance;
-
-    // Energy must be interpolated onto nodes of the element on rod a.
-    // E.g. if c is located on the start node, r, then the weighting on
-    // the start node is 1.
-    vec3d(n) { displacement[n] = c_a[n] - r_a[n]; }
-    weight_end_node = rod::absolute(displacement) / rod::absolute(p_a);
-    weight_start_node = std::max(0.0f, 1 - weight_end_node);
-    energies[0] = weight_start_node * energy;
-    energies[1] = weight_end_node * energy;
-
-    if (rod::dbg_print)
-    {
-        std::cout << "steric perturbation energy" << std::endl;
-        std::cout << "\tamount: " << perturbation_amount << std::endl;
-        std::cout << "\tdimension: " << perturbation_dimension << std::endl;
-        std::cout << "\tforce_constant: " << force_constant << std::endl;
-        rod::print_array("\tc_a", c_a, 3);
-        rod::print_array("\tc_b perturbed", c_b, 3);
-        std::cout << "\t|c_ab|: " << rod::absolute(c_ab) << std::endl;
-        std::cout << "\tradius sum: " << radius_a + radius_b << std::endl;
-        std::cout << "\tintersect_distance: " << intersect_distance << std::endl;
-        std::cout << "\t|c_a - r_a|: " << rod::absolute(displacement) << std::endl;
-        std::cout << "\t|p_a|: " << rod::absolute(p_a) << std::endl;
-        std::cout << "\telement energy: " << energy << std::endl;
-        std::cout << "\tnode weights: " << weight_start_node << ", "
-                    << weight_end_node << std::endl;
-        std::cout << "\tinterpolated node energies: " << energies[0] << ", "
-                    << energies[1] << std::endl;
-    }
-}
-
-
 /**
  * @brief Linear steric energy between two rod elements.
  *
@@ -444,8 +374,8 @@ std::array<float, 3> element_steric_force(float delta, float force_strength,
 /**
  * @brief Interpolate the force applied to an element onto both nodes.
  */
-std::array<float, 6> node_force_interpolation(float contact[3],
-    float node_start[3], float element_length, float element_force[3])
+std::array<float, 6> node_force_interpolation(float contact[3], float node_start[3],
+    float element_length, std::array<float, 3> element_force)
 {
     float d1[3] = { 0 };
     float d2[3] = { 0 };
@@ -463,12 +393,6 @@ std::array<float, 6> node_force_interpolation(float contact[3],
 
     vec3d(n) { force[n] = element_force[n] * (element_length - l1) / element_length; }
     vec3d(n) { force[n + 3] = element_force[n] * (element_length - l2) / element_length; }
-
-    vec3d(n) { diff[n] = force[n] + force[n + 3] - element_force[n]; }
-    if (rod::absolute(diff) > 1e-6)
-    {
-        throw std::runtime_error("Sum of node forces is not equal to element force.");
-    }
 
     return force;
 }

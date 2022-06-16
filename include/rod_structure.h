@@ -133,13 +133,11 @@ namespace rod
         int get_num_steric_neighbours(int element_index);
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();
-        InteractionData get_interaction_data(
-            int rod_id_self,
-            int rod_id_neighb,
-            int elem_id_self,
-            int elem_id_neighb);
+        InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr);
         Rod reset_neighbour_list();
         Rod print_node_positions();
+        std::array<float, 6> steric_force_sum_neighbours(int elem_id);
+        void do_steric();
     };
 
 } //end namespace

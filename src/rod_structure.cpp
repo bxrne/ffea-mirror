@@ -406,10 +406,13 @@ namespace rod
 
         } // exit internal energy loop
 
-        // Rod-rod interactions: loop over all elements, interpolate energies onto nodes
+        // steric collisions with neighbouring elements
+        do_steric();
+
+        // ! - Rod-rod interactions: loop over all elements, interpolate energies onto nodes
         if (rod::dbg_print)
         {
-            std::cout << "rod.calc_steric_rod: " << this->calc_steric_rod << std::endl;
+            std::cout << "calculate steric interactions: " << this->calc_steric_rod << std::endl;
         }
         int end_elem = this->get_num_nodes() - 1;
         if (this->calc_steric_rod == 1)
@@ -443,101 +446,7 @@ namespace rod
                     radius_a = get_radius(node_no);
                     // ! - implement new neighbour style!
 
-                    // positive x
-                    rod::get_steric_perturbation_energy(
-                        perturbation_amount * 0.5,
-                        x,
-                        steric_force_factor,
-                        r_a,
-                        p_a,
-                        c_a,
-                        c_b,
-                        radius_a,
-                        radius_b,
-                        energies);
 
-                    steric_perturbed_energy_positive[node_no * 3] += energies[0];
-                    steric_perturbed_energy_positive[(node_no * 3) + 3] += energies[1];
-
-                    // positive y
-                    rod::get_steric_perturbation_energy(
-                        perturbation_amount * 0.5,
-                        y,
-                        steric_force_factor,
-                        r_a,
-                        p_a,
-                        c_a,
-                        c_b,
-                        radius_a,
-                        radius_b,
-                        energies);
-
-                    steric_perturbed_energy_positive[(node_no * 3) + 1] += energies[0];
-                    steric_perturbed_energy_positive[(node_no * 3) + 1 + 3] += energies[1];
-
-                    // positive z
-                    rod::get_steric_perturbation_energy(
-                        perturbation_amount * 0.5,
-                        z,
-                        steric_force_factor,
-                        r_a,
-                        p_a,
-                        c_a,
-                        c_b,
-                        radius_a,
-                        radius_b,
-                        energies);
-
-                    steric_perturbed_energy_positive[(node_no * 3) + 2] += energies[0];
-                    steric_perturbed_energy_positive[(node_no * 3) + 2 + 3] += energies[1];
-
-                    // negative x
-                    rod::get_steric_perturbation_energy(
-                        perturbation_amount * -0.5,
-                        x,
-                        steric_force_factor,
-                        r_a,
-                        p_a,
-                        c_a,
-                        c_b,
-                        radius_a,
-                        radius_b,
-                        energies);
-
-                    steric_perturbed_energy_negative[(node_no * 3)] += energies[0];
-                    steric_perturbed_energy_negative[(node_no * 3) + 3] += energies[1];
-
-                    // negative y
-                    rod::get_steric_perturbation_energy(
-                        perturbation_amount * -0.5,
-                        y,
-                        steric_force_factor,
-                        r_a,
-                        p_a,
-                        c_a,
-                        c_b,
-                        radius_a,
-                        radius_b,
-                        energies);
-
-                    steric_perturbed_energy_negative[(node_no * 3) + 1] += energies[0];
-                    steric_perturbed_energy_negative[(node_no * 3) + 1 + 3] += energies[1];
-
-                    // negative z
-                    rod::get_steric_perturbation_energy(
-                        perturbation_amount * -0.5,
-                        z,
-                        steric_force_factor,
-                        r_a,
-                        p_a,
-                        c_a,
-                        c_b,
-                        radius_a,
-                        radius_b,
-                        energies);
-
-                    steric_perturbed_energy_negative[(node_no * 3) + 2] += energies[0];
-                    steric_perturbed_energy_negative[(node_no * 3) + 2 + 3] += energies[1];
 
                 } // exit steric loop
 
@@ -1370,32 +1279,9 @@ namespace rod
         return *this;
     }
 
-    InteractionData Rod::get_interaction_data(int rod_id_self, int rod_id_neighb,
-        int elem_id_self, int elem_id_neighb)
+    InteractionData Rod::get_interaction_data(int elem_id_self, int elem_id_nbr)
     {
-        InteractionData data = this->steric_neighbours.at(elem_id_self).at(elem_id_neighb);
-
-        if (rod::dbg_print)
-        {
-            bool rod_ok = (rod_id_self == data.rod_id_self) and (rod_id_neighb = data.rod_id_neighb);
-            bool elem_ok = (elem_id_self == data.element_id_self) and (elem_id_neighb = data.element_id_neighb);
-            if (rod_ok and elem_ok)
-            {
-                return data;
-            }
-            else
-            {
-                std::cout << rod_id_self << ", " << data.rod_id_self << "; "
-                          << rod_id_neighb << ", " << data.rod_id_neighb << "; "
-                          << elem_id_self << ", " << data.element_id_self << "; "
-                          << elem_id_neighb << ", " << data.element_id_neighb << "\n";
-                throw std::runtime_error("Inconsistency between vector indexing and struct contents");
-            }
-        }
-        else
-        {
-            return data;
-        }
+        return this->steric_neighbours.at(elem_id_self).at(elem_id_nbr);
     }
 
     Rod Rod::reset_neighbour_list()
@@ -1422,6 +1308,72 @@ namespace rod
             rod::print_array(msg, r, 3);
         }
         return *this;
+    }
+
+    /**
+     * @brief Return the sum of the steric interaction forces on the nodes of a
+     * given element due to neighbouring elements.
+     *
+     * @param elem_id
+     * @return std::array<float, 6> - force on nodes [x0, y0, z0, x1, y1, z1]
+     */
+    std::array<float, 6> Rod::steric_force_sum_neighbours(int elem_id)
+    {
+        std::array<float, 3> element_force = { 0 };
+        std::array<float, 6> node_force = { 0 };
+        std::array<float, 6> node_force_sum = { 0 };
+        float r_self[3] = { 0 };
+        float p_self[3] = { 0 };
+        float diff[3] = { 0 };
+
+        for (int nbr_id;nbr_id < this->get_num_steric_neighbours(elem_id); nbr_id++)
+        {
+            rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id);
+            element_force = element_steric_force(
+                this->perturbation_amount,
+                this->steric_force_factor,
+                stericInt.radius_self + stericInt.radius_nbr,
+                stericInt.contact_self,
+                stericInt.contact_nbr);
+
+            this->get_r(elem_id, r_self, false);
+            this->get_p(elem_id, p_self, false);
+            node_force = node_force_interpolation(
+                stericInt.contact_self,
+                r_self,
+                rod::absolute(p_self),
+                element_force);
+
+            vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
+            if (rod::absolute(diff) > 1e-6)
+            {
+                throw std::runtime_error("Sum of node forces is not equal to element force.");
+            }
+
+            // sum over all neighbours
+            vec3d(n) { node_force_sum[n] += node_force[n]; }
+            vec3d(n) { node_force_sum[n + 3] += node_force[n + 3]; }
+        }
+
+        return node_force_sum;
+    }
+
+    /**
+     * @brief Compute steric interactions for the whole rod
+     */
+    void Rod::do_steric()
+    {
+        std::array<float, 6> node_force = { 0 };
+
+        for (int elem_id; elem_id < this->get_num_nodes() - 1; elem_id++)
+        {
+            node_force = steric_force_sum_neighbours(elem_id);
+            // ! parallel-unfriendly assignment
+            // start node
+            vec3d(n) { this->steric_force[elem_id + n] += node_force[elem_id + n]; }
+            // end node
+            vec3d(n) { this->steric_force[elem_id + n + 3] += node_force[elem_id + n + 3]; }
+        }
     }
 
 
