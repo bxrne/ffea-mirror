@@ -632,14 +632,21 @@ namespace rod
             }
 
             // A wee sanity check to stop your simulations from exploding horribly
-            float p[3] = {0};
+            float p[3] = { 0 };
             this->get_p(node_no, p, false);
             float check = 100 * rod::absolute(p);
             if (std::abs(delta_r_x) >= check or std::abs(delta_r_y) >= check or std::abs(delta_r_z) >= check)
             {
                 std::cout << "node " << node_no << "\n";
                 std::cout << "dynamics: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
-                rod_abort("Rod dynamics explosion. Bring your debugger.");
+                if (rod::dbg_print)
+                {
+                    std::cout << "WARNING: Rod dynamics explosion\n";
+                }
+                else
+                {
+                    rod_abort("Rod dynamics explosion. Bring your debugger.");
+                }
             }
 
             // If we're applying delta twist, we must load our new p_i back in
@@ -692,8 +699,9 @@ namespace rod
                 current_m[(node_no * 3) + 2] = m_i_prime[2]; // back into the data structure you go
             }
 
-            step_no += 1; //we just did one timestep so increment this
-        }
+            // ! - redundant?
+            step_no += 1;
+        }  // end node loop
 
         if (this->calc_steric_rod == 1)
         {
@@ -701,7 +709,7 @@ namespace rod
         }
 
         return *this;
-    }
+    }  // end timestep
 
     /**----**/
     /** IO **/
