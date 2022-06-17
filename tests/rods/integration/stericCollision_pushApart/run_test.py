@@ -17,10 +17,6 @@ def check_node_distances():
     upper limit.
     """
 
-    # load both rod trajectories
-    rod1 = FFEA_rod.FFEA_rod(filename="outputs/1.rodtraj")
-    rod2 = FFEA_rod.FFEA_rod(filename="outputs/2.rodtraj")
-
     # measure the node-node distance for like-numbered nodes (0-0, 1-1, etc)
     r1 = rod1.current_r
     r2 = rod2.current_r
@@ -49,6 +45,57 @@ def check_node_distances():
     return False
 
 
+def plot_displacement(rod1, rod2):
+
+    # Displacement from initial position
+    disp1 = rod1.current_r - rod1.current_r[0]
+    disp2 = rod2.current_r - rod2.current_r[0]
+
+    marker_rod1 = 'o'
+    marker_rod2 = 'D'
+    colors_elements = ['r', 'c', 'm', 'g', 'b']
+    size=0.5
+
+    frames = rod1.num_frames
+    elems = rod1.num_elements  # actually the number of nodes
+
+    for fr in rod1.num_frames:
+        for el in rod1.num_elements:
+            displacement_rod1 = np.linalg.norm(disp1[fr, el])
+            displacement_rod2 = np.linalg.norm(disp2[fr, el])
+            plt.plot(fr, displacement_rod1, marker=marker_rod1, color=colors_elements[el], ms=size)
+            plt.plot(fr, displacement_rod2, marker=marker_rod2, color=colors_elements[el], ms=size)
+
+    plt.xlabel("Step")
+    plt.ylabel("Distance of node from initial position (m)")
+
+    plt.savefig("Distance_vs_Time.png", dpi=300)
+
+def plot_force(rod1, rod2):
+
+    force1 = rod1.steric_force
+    force2 = rod2.steric_force
+
+    marker_rod1 = 'o'
+    marker_rod2 = 'D'
+    colors_elements = ['r', 'c', 'm', 'g', 'b']
+    size=0.5
+
+    frames = rod1.num_frames
+    elems = rod1.num_elements  # actually the number of nodes
+
+    for fr in rod1.num_frames:
+        for el in rod1.num_elements:
+            force_rod1 = np.linalg.norm(force1[fr, el])
+            force_rod2 = np.linalg.norm(force2[fr, el])
+            plt.plot(fr, force_rod1, marker=marker_rod1, color=colors_elements[el], ms=size)
+            plt.plot(fr, force_rod2, marker=marker_rod2, color=colors_elements[el], ms=size)
+
+    plt.xlabel("Step")
+    plt.ylabel("Steric force on node (N)")
+
+    plt.savefig("StericForce_vs_Time.png", dpi=300)
+
 def main():
 
     shutil.rmtree("outputs", ignore_errors=True)
@@ -67,6 +114,13 @@ def main():
 
     # test function located in: src/ffea_test.cpp
     ffea_return_status = subprocess.call(["ffea", test_name + ".ffeatest"])
+
+    # load both rod trajectories
+    rod1 = FFEA_rod.FFEA_rod(filename="outputs/1.rodtraj")
+    rod2 = FFEA_rod.FFEA_rod(filename="outputs/2.rodtraj")
+
+    plot_displacement(rod1, rod2)
+    plot_force(rod1, rod2)
 
     if check_node_distances() and ffea_return_status == 0:
         return 0

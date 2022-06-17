@@ -1888,7 +1888,6 @@ int ffea_test::steric_energy_two_rod_elements()
 int ffea_test::rod_collision_no_crash()
 {
 
-    rod::dbg_print = true;
 
     World *world;
     world = new World();

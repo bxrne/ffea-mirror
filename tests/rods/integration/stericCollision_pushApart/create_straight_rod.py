@@ -3,7 +3,7 @@ import ffeatools.modules.FFEA_rod as rod
 from ffeatools.modules.FFEA_rod import rod_creator as rc
 
 # Default rod parameters
-num_nodes = 10
+num_nodes = 6
 stretch = 3.5e-11  # N
 twist = 5e-29  # N.m^2
 bend = 3.5e-29  # m^4.Pa
@@ -31,11 +31,11 @@ def main():
 
     my_rod.current_m[0], my_rod.equil_m[0] = rc.create_material_frame(my_rod)
 
-    rc.set_params(rod=my_rod, stretch_constant=stretch, 
-                torsion_constant=twist, radius=radius, 
+    rc.set_params(rod=my_rod, stretch_constant=stretch,
+                torsion_constant=twist, radius=radius,
                 bending_modulus=bend)
 
     my_rod.write_rod("z-axis.rod")
-    
+
 if __name__ == "__main__":
     main()
