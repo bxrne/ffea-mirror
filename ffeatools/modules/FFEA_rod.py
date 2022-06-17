@@ -149,10 +149,6 @@ class FFEA_rod:
             self.material_params = np.zeros(
                 [self.num_frames, self.num_elements, 3])
             self.B_matrix = np.zeros([self.num_frames, self.num_elements, 4])
-            self.steric_perturbed_energy_positive = np.zeros(
-                [self.num_frames, 2 * self.num_elements, 3])
-            self.steric_perturbed_energy_negative = np.zeros(
-                [self.num_frames, 2 * self.num_elements, 3])
             self.steric_force = np.zeros(
                 [self.num_frames, self.num_elements, 3])
 
@@ -230,10 +226,6 @@ class FFEA_rod:
             [self.num_frames, self.num_elements, self.get_num_dimensions(13)])
         self.B_matrix = np.empty(
             [self.num_frames, self.num_elements, self.get_num_dimensions(14)])
-        self.steric_perturbed_energy_positive = np.empty(
-            [self.num_frames, 2 * self.num_elements, self.get_num_dimensions(5)])
-        self.steric_perturbed_energy_negative = np.empty(
-            [self.num_frames, 2 * self.num_elements, self.get_num_dimensions(5)])
         self.steric_force = np.empty(
             [self.num_frames, self.num_elements, self.get_num_dimensions(3)])
 
@@ -291,12 +283,6 @@ class FFEA_rod:
                     self.B_matrix[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.B_matrix[frame_no].shape)
                     line = rod_file.readline()
-                    self.steric_perturbed_energy_positive[frame_no] = np.fromstring(
-                        line, sep=",").reshape(self.steric_perturbed_energy_positive[frame_no].shape)
-                    line = rod_file.readline()
-                    self.steric_perturbed_energy_negative[frame_no] = np.fromstring(
-                        line, sep=",").reshape(self.steric_perturbed_energy_negative[frame_no].shape)
-                    line = rod_file.readline()
                     self.steric_force[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.steric_force[frame_no].shape)
                     frame_no += 1
@@ -335,9 +321,7 @@ class FFEA_rod:
         rod_file.write("row12,twisted_energy_negative\n")
         rod_file.write("row13,material_params\n")
         rod_file.write("row14,B_matrix\n")
-        rod_file.write("row15,steric_perturbed_energy_positive\n")
-        rod_file.write("row16,steric_perturbed_energy_negative\n")
-        rod_file.write("row17,steric_force\n")
+        rod_file.write("row15,steric_force\n")
 
         # Connections (note: this is temporary, it might end up in the .ffea file)
         rod_file.write("CONNECTIONS,ROD,0\n")
@@ -386,10 +370,6 @@ class FFEA_rod:
                 self.twisted_energy_negative[frame].flatten(), rod_file)
             write_array(self.material_params[frame].flatten(), rod_file)
             write_array(self.B_matrix[frame].flatten(), rod_file)
-            write_array(
-                self.steric_perturbed_energy_positive[frame].flatten(), rod_file)
-            write_array(
-                self.steric_perturbed_energy_negative[frame].flatten(), rod_file)
             write_array(self.steric_force[frame].flatten(), rod_file)
 
         rod_file.close()
@@ -1466,10 +1446,6 @@ class anal_rod:
         self.rod.twisted_energy_negative = self.rod.twisted_energy_negative[::interval]
         self.rod.material_params = self.rod.material_params[::interval]
         self.rod.B_matrix = self.rod.B_matrix[::interval]
-        self.rod.steric_perturbed_energy_positive = self.rod.steric_perturbed_energy_positive[
-            ::interval]
-        self.rod.steric_perturbed_energy_negative = self.rod.steric_perturbed_energy_negative[
-            ::interval]
         self.rod.steric_force = self.rod.steric_force[::interval]
         self.rod.num_frames = len(self.rod.current_r)
 
@@ -1671,11 +1647,6 @@ class anal_rod:
             self.rod.material_params, target_length, margin)
         self.rod.B_matrix = determine_simplification_func(
             self.rod.B_matrix, target_length, margin)
-        print("WARNING: arrays that are based on element, rather than nodes, may cause this function to break.")
-        self.rod.steric_perturbed_energy_positive = determine_simplification_func(
-            self.rod.steric_perturbed_energy_positive, target_length, margin)
-        self.rod.steric_perturbed_energy_negative = determine_simplification_func(
-            self.rod.steric_perturbed_energy_negative, target_length, margin)
         self.rod.steric_force = determine_simplification_func(
             self.rod.steric_force, target_length, margin)
         self.rod.num_elements = len(self.rod.equil_r[0])

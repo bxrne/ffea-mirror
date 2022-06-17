@@ -92,8 +92,6 @@ namespace rod
                                            internal_twisted_energy_negative(new float[length]),
                                            material_params(new float[length]),
                                            B_matrix(new float[length + (length / 3)]),
-                                           steric_perturbed_energy_positive(new float[2 * length]),
-                                           steric_perturbed_energy_negative(new float[2 * length]),
                                            steric_force(new float[length]),
                                            applied_forces(new float[length + (length / 3)]),
                                            pinned_nodes(new bool[length / 3]){};
@@ -139,6 +137,7 @@ namespace rod
             internal_perturbed_y_energy_negative[i] /= mesoDimensions::Energy;
             internal_perturbed_z_energy_negative[i] /= mesoDimensions::Energy;
             internal_twisted_energy_negative[i] /= mesoDimensions::Energy;
+            steric_force[i] /= mesoDimensions::force;
 
             if (i % 3 == 0)
             {
@@ -161,13 +160,7 @@ namespace rod
             B_matrix[i] /= bending_response_factor;
         }
 
-        for (int i = 0; i < 2 * length; i++)
-        {
-            steric_perturbed_energy_positive[i] /= mesoDimensions::Energy;
-            steric_perturbed_energy_negative[i] /= mesoDimensions::Energy;
-        }
-
-        std::cout << "Set units of rod" << this->rod_no << "\n";
+        std::cout << "Set units of rod " << this->rod_no << "\n";
 
         return *this; /** Return a pointer to the object itself instead of void. Allows for method chaining! **/
     }
@@ -406,53 +399,14 @@ namespace rod
 
         } // exit internal energy loop
 
-        // steric collisions with neighbouring elements
-        do_steric();
-
-        // ! - Rod-rod interactions: loop over all elements, interpolate energies onto nodes
         if (rod::dbg_print)
         {
             std::cout << "calculate steric interactions: " << this->calc_steric_rod << std::endl;
         }
-        int end_elem = this->get_num_nodes() - 1;
         if (this->calc_steric_rod == 1)
         {
-#pragma omp parallel for schedule(dynamic)
-            for (int node_no = 0; node_no < end_elem; node_no++)
-            {
-                int num_neighbours = get_num_steric_neighbours(node_no);
-
-                if (rod::dbg_print)
-                {
-                    std::cout << "element: " << node_no << std::endl;
-                }
-
-                for (int neighbour_no = 0; neighbour_no < num_neighbours; neighbour_no++)
-                {
-                    float r_a[3] = {0, 0, 0};
-                    float p_a[3] = {0, 0, 0};
-                    float radius_a = 0;
-                    float radius_b = 0;
-                    float c_a[3] = {0, 0, 0};
-                    float c_b[3] = {0, 0, 0};
-                    float energies[2] = {0, 0};
-
-                    if (rod::dbg_print)
-                    {
-                        std::cout << "neighbour_no: " << neighbour_no << " of " << num_neighbours << std::endl;
-                    }
-                    get_r(node_no, r_a, false);
-                    get_p(node_no, p_a, false);
-                    radius_a = get_radius(node_no);
-                    // ! - implement new neighbour style!
-
-
-
-                } // exit steric loop
-
-            } //exit interaction energy loop
-
-        } //exit steric if-statement
+            do_steric();
+        }
 
         //This loop is for the dynamics
         for (int node_no = 0; node_no < end_node; node_no++)
@@ -721,8 +675,6 @@ namespace rod
         internal_twisted_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
         material_params = static_cast<float *>(malloc(sizeof(float) * length));
         B_matrix = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
-        steric_perturbed_energy_positive = static_cast<float *>(malloc(sizeof(float) * 2 * length));
-        steric_perturbed_energy_negative = static_cast<float *>(malloc(sizeof(float) * 2 * length));
         steric_force = static_cast<float *>(malloc(sizeof(float) * length));
         applied_forces = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length / 3));
@@ -905,16 +857,6 @@ namespace rod
                 }
                 if (n == line_of_last_frame + 15)
                 {
-                    for (int i = 0; i < 2 * length; i++)
-                        steric_perturbed_energy_positive[i] = line_vec_float.data()[i];
-                }
-                if (n == line_of_last_frame + 16)
-                {
-                    for (int i = 0; i < 2 * length; i++)
-                        steric_perturbed_energy_negative[i] = line_vec_float.data()[i];
-                }
-                if (n == line_of_last_frame + 17)
-                {
                     for (int i = 0; i < length; i++)
                         steric_force[i] = line_vec_float.data()[i];
                 }
@@ -949,8 +891,6 @@ namespace rod
         write_array(file_ptr, internal_twisted_energy_negative, length, mesoDimensions::Energy, true);
         write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
         write_array(file_ptr, B_matrix, length + (length / 3), bending_response_factor, true);
-        write_array(file_ptr, steric_perturbed_energy_positive, 2 * length, mesoDimensions::Energy, true);
-        write_array(file_ptr, steric_perturbed_energy_negative, 2 * length, mesoDimensions::Energy, true);
         write_array(file_ptr, steric_force, length, mesoDimensions::force, true);
         fflush(file_ptr);
         return *this;
@@ -1359,7 +1299,9 @@ namespace rod
     }
 
     /**
-     * @brief Compute steric interactions for the whole rod
+     * @brief Compute steric interactions for the whole rod.
+     *
+     * ! Currently parallel-unfriendly
      */
     void Rod::do_steric()
     {
@@ -1368,7 +1310,6 @@ namespace rod
         for (int elem_id; elem_id < this->get_num_nodes() - 1; elem_id++)
         {
             node_force = steric_force_sum_neighbours(elem_id);
-            // ! parallel-unfriendly assignment
             // start node
             vec3d(n) { this->steric_force[elem_id + n] += node_force[elem_id + n]; }
             // end node
