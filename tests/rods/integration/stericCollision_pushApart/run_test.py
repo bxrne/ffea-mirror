@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import ffeatools.modules.FFEA_rod as FFEA_rod
 
 
-def check_node_distances():
+def check_node_distances(rod1, rod2):
     """
     Return true if the average node-node distance is greater than the radius
     sum of both rods for most of the trajectory duration, but within a sensible
@@ -53,23 +53,23 @@ def plot_displacement(rod1, rod2):
 
     marker_rod1 = 'o'
     marker_rod2 = 'D'
-    colors_elements = ['r', 'c', 'm', 'g', 'b']
+    colors_nodes = ['r', 'c', 'm', 'g', 'b', 'k']
     size=0.5
 
-    frames = rod1.num_frames
-    elems = rod1.num_elements  # actually the number of nodes
-
-    for fr in rod1.num_frames:
-        for el in rod1.num_elements:
-            displacement_rod1 = np.linalg.norm(disp1[fr, el])
-            displacement_rod2 = np.linalg.norm(disp2[fr, el])
-            plt.plot(fr, displacement_rod1, marker=marker_rod1, color=colors_elements[el], ms=size)
-            plt.plot(fr, displacement_rod2, marker=marker_rod2, color=colors_elements[el], ms=size)
+    print("Plotting displacement...")
+    for frame in range(rod1.num_frames):
+        for node in range(rod1.num_elements):
+            displacement_rod1 = np.linalg.norm(disp1[frame, node])
+            displacement_rod2 = np.linalg.norm(disp2[frame, node])
+            plt.plot(frame, displacement_rod1*1e9, marker=marker_rod1, color=colors_nodes[node], ms=size)
+            plt.plot(frame, displacement_rod2*1e9, marker=marker_rod2, color=colors_nodes[node], ms=size)
 
     plt.xlabel("Step")
-    plt.ylabel("Distance of node from initial position (m)")
+    plt.ylabel("Distance of node from initial position (nm)")
 
     plt.savefig("Distance_vs_Time.png", dpi=300)
+    plt.close()
+    print("Done")
 
 def plot_force(rod1, rod2):
 
@@ -78,23 +78,23 @@ def plot_force(rod1, rod2):
 
     marker_rod1 = 'o'
     marker_rod2 = 'D'
-    colors_elements = ['r', 'c', 'm', 'g', 'b']
+    colors_nodes = ['r', 'c', 'm', 'g', 'b', 'k']
     size=0.5
 
-    frames = rod1.num_frames
-    elems = rod1.num_elements  # actually the number of nodes
-
-    for fr in rod1.num_frames:
-        for el in rod1.num_elements:
-            force_rod1 = np.linalg.norm(force1[fr, el])
-            force_rod2 = np.linalg.norm(force2[fr, el])
-            plt.plot(fr, force_rod1, marker=marker_rod1, color=colors_elements[el], ms=size)
-            plt.plot(fr, force_rod2, marker=marker_rod2, color=colors_elements[el], ms=size)
+    print("Plotting force...")
+    for frame in range(rod1.num_frames):
+        for node in range(rod1.num_elements):
+            force_rod1 = np.linalg.norm(force1[frame, node])
+            force_rod2 = np.linalg.norm(force2[frame, node])
+            plt.plot(frame, force_rod1*1e12, marker=marker_rod1, color=colors_nodes[node], ms=size)
+            plt.plot(frame, force_rod2*1e12, marker=marker_rod2, color=colors_nodes[node], ms=size)
 
     plt.xlabel("Step")
-    plt.ylabel("Steric force on node (N)")
+    plt.ylabel("Steric force on node (pN)")
 
     plt.savefig("StericForce_vs_Time.png", dpi=300)
+    plt.close()
+    print("Done")
 
 def main():
 
@@ -122,7 +122,7 @@ def main():
     plot_displacement(rod1, rod2)
     plot_force(rod1, rod2)
 
-    if check_node_distances() and ffea_return_status == 0:
+    if check_node_distances(rod1, rod2) and ffea_return_status == 0:
         return 0
 
     print("Some node-node distances are less than the sum of the rod radii")
