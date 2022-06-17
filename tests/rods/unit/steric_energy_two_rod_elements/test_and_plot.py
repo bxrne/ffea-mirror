@@ -137,8 +137,8 @@ def auto():
         print("FAIL - Gradient of rod-rod distance vs. energy plot should be negative")
         test_pass = False
 
-    print("\tMaximum energy: {0:e} J ({1:.1f} kT)".format(u.max(), u.max()/kT))
-    print("\tMean gradient on element: {0:e} J/m ({1:.1f} kT / nm)".format(slope, slope/(kT/1e-9)))
+    print("\tMaximum energy: {0:e} J | {1:.2f} kT".format(u.max(), u.max()/kT))
+    print("\tMean gradient on element: {0:e} J/m | {1:.2f} pN | {2:.2f} kT / nm".format(slope, slope*1e12, slope/(kT/1e-9)))
 
     if test_pass:
         return 0
