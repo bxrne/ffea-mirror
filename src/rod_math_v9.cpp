@@ -174,9 +174,8 @@ namespace rod
     }
 
     /**
- Print the contents of a float vector to stdout.
- TODO: generalise to all vector types
-*/
+     Print the contents of a float vector to stdout.
+    */
     void print_vector(std::string vector_name, std::vector<float> vec)
     {
 
@@ -1143,7 +1142,8 @@ float safe_cos(float in){
  Where \f$ \Delta \underline{r}_i  \f$ is the change in r (either x, y, z or \f$ \theta \f$, \f$ S \f$ is the viscous drag (derived from viscosity), \f$ F_C  \f$ is the force (or torque) due to the energy, \f$ F_{ext} \f$ is the external force being applied (if any) and \f$ f_i \f$ is the random force or torque.
  This expression is a rearrangement of the first order equation of motion for an object with viscous drag.
 */
-    float get_delta_r(float friction, float timestep, float force, float noise, float external_force)
+    float get_delta_r(float friction, float timestep, float force, float noise,
+        float external_force)
     { // In a given dimension!
         float result = (timestep / friction) * (force + external_force + noise);
         not_simulation_destroying(result, "get_delta_x is simulation destroying.");

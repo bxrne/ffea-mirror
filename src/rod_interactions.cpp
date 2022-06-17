@@ -345,12 +345,12 @@ float perturbed_intersection_distance(int perturb_dim, float perturb_delta,
  * @brief Steric repulsive force on a rod element due to its collision
  * with a neighbouring element.
  */
-std::array<float, 3> element_steric_force(float delta, float force_strength,
+std::vector<float> element_steric_force(float delta, float force_strength,
     float radius_sum, float contact_self[3], float contact_neighb[3])
 {
-    std::array<float, 6> distance = { 0 };  // +x, -x, +y, -y, +z, -z
-    std::array<float, 6> energy = { 0 };
-    std::array<float, 3> force = { 0 };   // x, y, z
+    float distance[6] = { 0 };  // +x, -x, +y, -y, +z, -z
+    float energy[6] = { 0 };
+    std::vector<float> force(3, 0);   // x, y, z
 
     distance[0] = perturbed_intersection_distance(0,  delta, contact_self, contact_neighb, radius_sum);
     distance[1] = perturbed_intersection_distance(0, -delta, contact_self, contact_neighb, radius_sum);
@@ -368,21 +368,34 @@ std::array<float, 3> element_steric_force(float delta, float force_strength,
 
     vec3d(n) { force[n] = -(energy[n] - energy[n + 1]) / delta; }
 
+    if (rod::dbg_print)
+    {
+        std::cout << "element steric force:\n";
+        std::cout << "  delta : " << delta << "\n";
+        std::cout << "  force_strength : " << force_strength << "\n";
+        std::cout << "  radius_sum : " << radius_sum << "\n";
+        print_array("  contact_self", contact_self, 3);
+        print_array("  contact_neighb", contact_neighb, 3);
+        std::cout << "---\n";
+        print_array("  perturbed distance", distance, 6);
+        print_array("  perturbed element energy", energy, 6);
+        print_vector("  element force", force);
+    }
+
     return force;
 }
 
 /**
  * @brief Interpolate the force applied to an element onto both nodes.
  */
-std::array<float, 6> node_force_interpolation(float contact[3], float node_start[3],
-    float element_length, std::array<float, 3> element_force)
+std::vector<float> node_force_interpolation(float contact[3], float node_start[3],
+    float element_length, std::vector<float> element_force)
 {
     float d1[3] = { 0 };
     float d2[3] = { 0 };
     float l1 = 0;
     float l2 = 0;
-    std::array<float, 6> force;  // x1, y1, z1, x2, y2, z2
-    float diff[3];
+    std::vector<float> force(6, 0);  // x1, y1, z1, x2, y2, z2
 
     // displacement from force contact point on centreline to nodes
     vec3d(n) { d1[n] = contact[n] - node_start[n]; }
@@ -393,6 +406,23 @@ std::array<float, 6> node_force_interpolation(float contact[3], float node_start
 
     vec3d(n) { force[n] = element_force[n] * (element_length - l1) / element_length; }
     vec3d(n) { force[n + 3] = element_force[n] * (element_length - l2) / element_length; }
+
+    if (rod::dbg_print)
+    {
+        std::cout << "node force interpolation:\n";
+        print_array("  contact", contact, 3);
+        print_array("  node_start", node_start, 3);
+        std::cout << "  element_length : " << element_length << "\n";
+        print_vector("  element_force", element_force);
+        std::cout << "---\n";
+        print_array("  contact -> start node", d1, 3);
+        print_array("  contact -> end node", d2, 3);
+        std::cout << "  |d1| : " << l1 << "\n";
+        std::cout << "  |d2| : " << l2 << "\n";
+        std::cout << "  (L - l1) / L : " << (element_length - l1) / element_length << "\n";
+        std::cout << "  (L - l2) / L : " << (element_length - l2) / element_length << "\n";
+        print_vector("  node force", force);
+    }
 
     return force;
 }

@@ -457,6 +457,7 @@ namespace rod
             float y_noise = 0;
             float z_noise = 0;
             float twist_noise = 0;
+
             if (this->calc_noise == 1)
             {
                 x_noise = get_noise(timestep, kT, translational_friction, random_number(-0.5, 0.5, rng, thread_id));
@@ -478,11 +479,18 @@ namespace rod
             float applied_force_z = applied_forces[(node_no * 4) + 2];
             float applied_force_twist = applied_forces[(node_no * 4) + 3];
 
+            if (this->calc_steric_rod)
+            {
+                x_force += steric_force[node_no];
+                y_force += steric_force[node_no + 1];
+                z_force += steric_force[node_no + 2];
+            }
+
             // Get delta r and delta twist
-            float delta_r_x = get_delta_r(translational_friction, timestep, x_force, x_noise, applied_force_x); //from rod_math
-            float delta_r_y = get_delta_r(translational_friction, timestep, y_force, y_noise, applied_force_y);
-            float delta_r_z = get_delta_r(translational_friction, timestep, z_force, z_noise, applied_force_z);
-            float delta_twist = get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
+            float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force, x_noise, applied_force_x); //from rod_math
+            float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force, y_noise, applied_force_y);
+            float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force, z_noise, applied_force_z);
+            float delta_twist = rod::get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
             //std::cout << "delta_twist: " << delta_twist << "\n";
 
             // Apply our delta x
@@ -1255,13 +1263,13 @@ namespace rod
      * given element due to neighbouring elements.
      *
      * @param elem_id
-     * @return std::array<float, 6> - force on nodes [x0, y0, z0, x1, y1, z1]
+     * @return std::vector<float, 6> - force on nodes [x0, y0, z0, x1, y1, z1]
      */
-    std::array<float, 6> Rod::steric_force_sum_neighbours(int elem_id)
+    std::vector<float> Rod::steric_force_sum_neighbours(int elem_id)
     {
-        std::array<float, 3> element_force = { 0 };
-        std::array<float, 6> node_force = { 0 };
-        std::array<float, 6> node_force_sum = { 0 };
+        std::vector<float> element_force(3, 0);
+        std::vector<float> node_force(6, 0);
+        std::vector<float> node_force_sum(6, 0);
         float r_self[3] = { 0 };
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
@@ -1287,6 +1295,9 @@ namespace rod
             vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
             if (rod::absolute(diff) > 1e-6)
             {
+                rod::print_vector("element_force", element_force);
+                rod::print_vector("node_force", node_force);
+                std::cout << "|diff| : " << diff << "\n";
                 throw std::runtime_error("Sum of node forces is not equal to element force.");
             }
 
@@ -1305,7 +1316,7 @@ namespace rod
      */
     void Rod::do_steric()
     {
-        std::array<float, 6> node_force = { 0 };
+        std::vector<float> node_force(6, 0);
 
         for (int elem_id; elem_id < this->get_num_nodes() - 1; elem_id++)
         {

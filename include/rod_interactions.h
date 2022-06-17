@@ -101,17 +101,17 @@ float perturbed_intersection_distance(
     float contact_b[3],
     float radius_sum);
 
-std::array<float, 3> element_steric_force(
+std::vector<float> element_steric_force(
     float delta,
     float force_strength,
     float radius_sum,
     float contact_self[3],
     float contact_neighb[3]);
 
-std::array<float, 6> node_force_interpolation(
+std::vector<float> node_force_interpolation(
     float contact[3],
     float node_1[3],
     float element_length,
-    std::array<float, 3> element_force);
+    std::vector<float> element_force);
 }
 #endif
