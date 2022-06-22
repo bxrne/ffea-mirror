@@ -35,7 +35,7 @@
 namespace rod
 {
 
-    bool dbg_print = true;
+    bool dbg_print = false;
 
     /*---------*/
     /* Utility */
@@ -1138,23 +1138,33 @@ float safe_cos(float in){
     }
 
     /**
- \f[ \Delta \underline{r}_i = \frac{\Delta t}{S} (F_c + F_{ext} + f_i) \f]
- Where \f$ \Delta \underline{r}_i  \f$ is the change in r (either x, y, z or \f$ \theta \f$, \f$ S \f$ is the viscous drag (derived from viscosity), \f$ F_C  \f$ is the force (or torque) due to the energy, \f$ F_{ext} \f$ is the external force being applied (if any) and \f$ f_i \f$ is the random force or torque.
- This expression is a rearrangement of the first order equation of motion for an object with viscous drag.
-*/
+     \f[ \Delta \underline{r}_i = \frac{\Delta t}{S} (F_c + F_{ext} + f_i) \f]
+    Where \f$ \Delta \underline{r}_i  \f$ is the change in r (either x, y, z or \f$ \theta \f$, \f$ S \f$ is the viscous drag (derived from viscosity), \f$ F_C  \f$ is the force (or torque) due to the energy, \f$ F_{ext} \f$ is the external force being applied (if any) and \f$ f_i \f$ is the random force or torque.
+    This expression is a rearrangement of the first order equation of motion for an object with viscous drag.
+    */
     float get_delta_r(float friction, float timestep, float force, float noise,
         float external_force)
     { // In a given dimension!
         float result = (timestep / friction) * (force + external_force + noise);
-        not_simulation_destroying(result, "get_delta_x is simulation destroying.");
+        not_simulation_destroying(result, "get_delta_r is simulation destroying.");
+        return result;
+    }
+
+    float get_delta_r(float friction, float timestep, const std::vector<float> &forces)
+    { // In a given dimension!
+        float force_sum = 0;
+        for (auto& f : forces)
+            force_sum += f;
+        float result = (timestep / friction) * force_sum;
+        not_simulation_destroying(result, "get_delta_r is simulation destroying.");
         return result;
     }
 
     /**
- \f[ g = \sqrt{ \frac{24k_B T \delta t }{S} } \f]
- Where \f$ g  \f$ is the force due to the thermal noise, \f$ T \f$ is the temperature of the system, and \f$ S \f$ is the viscous drag, derived from the viscosity.
- This expression is derived from the fluctuation dissipation relation for the langevin equation of the  .
-*/
+     \f[ g = \sqrt{ \frac{24k_B T \delta t }{S} } \f]
+    Where \f$ g  \f$ is the force due to the thermal noise, \f$ T \f$ is the temperature of the system, and \f$ S \f$ is the viscous drag, derived from the viscosity.
+    This expression is derived from the fluctuation dissipation relation for the langevin equation of the  .
+    */
     float get_noise(float timestep, float kT, float friction, float random_number)
     { // in a given dimension/DOF!
         float result = std::sqrt((24 * kT * friction) / timestep);

@@ -479,19 +479,27 @@ namespace rod
             float applied_force_z = applied_forces[(node_no * 4) + 2];
             float applied_force_twist = applied_forces[(node_no * 4) + 3];
 
+            float x_steric = 0;
+            float y_steric = 0;
+            float z_steric = 0;
             if (this->calc_steric_rod)
             {
-                x_force += steric_force[node_no];
-                y_force += steric_force[node_no + 1];
-                z_force += steric_force[node_no + 2];
+                x_steric = steric_force[node_no];
+                y_steric = steric_force[node_no + 1];
+                z_steric = steric_force[node_no + 2];
             }
 
             // Get delta r and delta twist
-            float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force, x_noise, applied_force_x); //from rod_math
-            float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force, y_noise, applied_force_y);
-            float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force, z_noise, applied_force_z);
+            // float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force + x_steric, x_noise, applied_force_x); //from rod_math
+            // float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force + y_steric, y_noise, applied_force_y);
+            // float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force + z_steric, z_noise, applied_force_z);
+            std::vector<float> x_force_vector{x_force, x_noise, applied_force_x, x_steric};
+            std::vector<float> y_force_vector{y_force, y_noise, applied_force_y, y_steric};
+            std::vector<float> z_force_vector{z_force, z_noise, applied_force_z, z_steric};
+            float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force_vector);
+            float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force_vector);
+            float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force_vector);
             float delta_twist = rod::get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
-            //std::cout << "delta_twist: " << delta_twist << "\n";
 
             // Apply our delta x
             current_r[node_no * 3] += delta_r_x;
@@ -1316,7 +1324,7 @@ namespace rod
      */
     void Rod::do_steric()
     {
-        std::vector<float> node_force(6, 0);
+        std::vector<float> node_force(6, 0);  // x0, y0, z0, x1, y1, z1
 
         for (int elem_id; elem_id < this->get_num_nodes() - 1; elem_id++)
         {
