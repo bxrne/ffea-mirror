@@ -35,7 +35,7 @@
 namespace rod
 {
 
-    bool dbg_print = false;
+    bool dbg_print = true;
 
     /*---------*/
     /* Utility */
@@ -1533,6 +1533,10 @@ float safe_cos(float in){
         float stretch_energy = 0;
         float twist_energy = 0;
 
+        // ! hack to get rid of ridiculous amount of stdout
+        bool dbg_old = dbg_print;
+        dbg_print = false;
+
         if (start_cutoff == 0 and end_cutoff == 0)
         {
             bend_energy += get_bend_energy_mutual_parallel_transport(p[im2], p[im1], p_equil[im2], p_equil[im1], n[im2], m[im2], n_equil[im2], m_equil[im2], n[im1], m[im1], n_equil[im1], m_equil[im1], B_equil[im1], B_equil[im2]);
@@ -1578,6 +1582,8 @@ float safe_cos(float in){
         {
             throw std::invalid_argument("Length of the rod must be larger than 3");
         }
+
+        dbg_print = dbg_old;
 
         energies[0] = bend_energy;
         energies[1] = stretch_energy;
