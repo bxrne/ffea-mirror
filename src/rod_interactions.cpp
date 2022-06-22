@@ -267,15 +267,23 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
     float c_b[3] = {0};
     float c_ab[3] = {0};
 
+    if (rod::dbg_print)
+    {
+        std::cout << "Element neighbour assignment:\n";
+        std::cout << "  rods:     " << rod_id_a << ", " << rod_id_b << "\n";
+        std::cout << "  elements: " << elem_id_a << ", " << elem_id_b << "\n";
+
+    }
+
     rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
     vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
 
     if (rod::dbg_print)
     {
-        std::cout << "|c_ab|: "
+        std::cout << "  |c_ab|: "
                     << rod::absolute(c_ab) * mesoDimensions::length * 1e9 << " nm"
                     << std::endl;
-        std::cout << "radius_a + radius_b: "
+        std::cout << "  radius_a + radius_b: "
                     << (radius_a + radius_b) * mesoDimensions::length * 1e9 << " nm"
                     << std::endl;
     }
@@ -283,9 +291,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
     if (rod::absolute(c_ab) < (radius_a + radius_b))
     {
         if (rod::dbg_print)
-        {
-            std::cout << "assigning neighbours" << std::endl;
-        }
+            std::cout << "  Elements overlap. Assigning neighbours..." << std::endl;
 
         InteractionData stericDataA(
             rod_id_a,
@@ -309,10 +315,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
             c_a);
         neighbours_b.push_back(stericDataB);
     }
-    else if (rod::dbg_print)
-    {
-        std::cout << "no interaction" << std::endl;
-    }
+
 }
 
 /**
@@ -378,10 +381,8 @@ std::vector<float> element_steric_force(float delta, float force_strength,
         std::cout << "  radius_sum : " << radius_sum << "\n";
         print_array("  contact_self", contact_self, 3);
         print_array("  contact_neighb", contact_neighb, 3);
-        std::cout << "  -----\n";
         print_array("  perturbed distance", distance, 6);
-        print_array("  element energy", energy, 6);
-        std::cout << "  dimensions : [+x, -x, y, -y, z, -z]\n";
+        print_array("  element energy [+x, -x, y, -y, z, -z]", energy, 6);
         print_vector("  element force", force);
         std::cout << "\n";
     }
