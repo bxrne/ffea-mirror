@@ -112,6 +112,6 @@ std::vector<float> node_force_interpolation(
     float contact[3],
     float node_1[3],
     float element_length,
-    std::vector<float> element_force);
+    const std::vector<float> &element_force);
 }
 #endif

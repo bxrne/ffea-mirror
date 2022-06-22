@@ -393,7 +393,7 @@ std::vector<float> element_steric_force(float delta, float force_strength,
  * @brief Interpolate the force applied to an element onto both nodes.
  */
 std::vector<float> node_force_interpolation(float contact[3], float node_start[3],
-    float element_length, std::vector<float> element_force)
+    float element_length, const std::vector<float> &element_force)
 {
     float displacement[3] = { 0 };
     float l1 = 0;

@@ -1282,8 +1282,18 @@ namespace rod
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
 
+        if (rod::dbg_print)
+            std::cout << "Rod " << this->rod_no << " steric interactions:\n";
+
         for (int nbr_id;nbr_id < this->get_num_steric_neighbours(elem_id); nbr_id++)
         {
+            if (rod::dbg_print)
+            {
+                std::cout << "  Computing force on element" << elem_id << " from "
+                    << this->get_num_steric_neighbours(elem_id)
+                    << " neighbours.\n";
+            }
+
             rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id);
             element_force = element_steric_force(
                 this->perturbation_amount,
@@ -1300,19 +1310,26 @@ namespace rod
                 rod::absolute(p_self),
                 element_force);
 
+            vec3d(n) { node_force_sum[n] += node_force[n]; }
+            vec3d(n) { node_force_sum[n + 3] += node_force[n + 3]; }
+
+            if (rod::dbg_print)
+            {
+                rod::print_vector("  element_force", element_force);
+                rod::print_vector("  node_force", node_force);
+            }
+
             vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
             if (rod::absolute(diff) > 1e-6)
             {
-                rod::print_vector("element_force", element_force);
-                rod::print_vector("node_force", node_force);
-                std::cout << "|diff| : " << diff << "\n";
-                throw std::runtime_error("Sum of node forces is not equal to element force.");
+                std::cout << "  |diff| : " << diff << "\n";
+                throw std::runtime_error("Sum of node forces not equal to element force.");
             }
 
-            // sum over all neighbours
-            vec3d(n) { node_force_sum[n] += node_force[n]; }
-            vec3d(n) { node_force_sum[n + 3] += node_force[n + 3]; }
         }
+
+        if (rod::dbg_print)
+            rod::print_vector("  node_force_sum", node_force_sum);
 
         return node_force_sum;
     }
