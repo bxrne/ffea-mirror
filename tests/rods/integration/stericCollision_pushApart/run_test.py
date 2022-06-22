@@ -113,6 +113,7 @@ def main():
         test_name = glob.glob("*.ffeatest")[0].split(".")[0]
 
     # test function located in: src/ffea_test.cpp
+    print("Calling FFEA from Python script")
     ffea_return_status = subprocess.call(["ffea", test_name + ".ffeatest"])
 
     # load both rod trajectories
@@ -127,7 +128,7 @@ def main():
 
     print("THIS TEST IS INCOMPLETE")
 
-    return 0
+    return 1
 
     print("Some node-node distances are less than the sum of the rod radii")
 
