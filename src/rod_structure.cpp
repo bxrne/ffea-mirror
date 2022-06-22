@@ -511,20 +511,16 @@ namespace rod
             }
 
             // A wee sanity check to stop your simulations from exploding horribly
-            float p[3] = { 0 };
-            this->get_p(node_no, p, false);
-            float check = 100 * rod::absolute(p);
-            if (std::abs(delta_r_x) >= check or std::abs(delta_r_y) >= check or std::abs(delta_r_z) >= check)
+            for (int i = 0; i < length; i++)
             {
-                std::cout << "node " << node_no << "\n";
-                std::cout << "dynamics: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
-                if (rod::dbg_print)
+                if (std::abs(delta_r_x) >= 800000 or std::abs(delta_r_y) >= 800000 or std::abs(delta_r_z) >= 800000)
                 {
-                    std::cout << "WARNING: Rod dynamics explosion\n";
-                }
-                else
-                {
-                    rod_abort("Rod dynamics explosion. Bring your debugger.");
+                    std::cout << "node " << node_no << " frame " << frame_no << "\n";
+                    std::cout << "delta_r: " << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "\n";
+                    if (rod::dbg_print)
+                        std::cout << "WARNING: Rod dynamics explosion\n";
+                    else
+                        rod_abort("Rod dynamics explosion. Bring your debugger.");
                 }
             }
 
