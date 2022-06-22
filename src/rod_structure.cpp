@@ -1240,7 +1240,7 @@ namespace rod
         return this->steric_neighbours.at(elem_id_self).at(elem_id_nbr);
     }
 
-    Rod Rod::reset_neighbour_list()
+    void Rod::reset_neighbour_list()
     {
         for (int i = 0; i < this->get_num_nodes() - 1; i++)
         {
@@ -1250,7 +1250,6 @@ namespace rod
         {
             std::cout << "Reset neighbour list of rod " << this->rod_no << std::endl;
         }
-        return *this;
     }
 
     // Just a silly debug function that prints all the positional data of the rod
@@ -1351,6 +1350,7 @@ namespace rod
             // end node
             vec3d(n) { this->steric_force[elem_id + n + 3] += node_force[elem_id + n + 3]; }
         }
+        rod::print_array("steric_force", this->steric_force, this->get_num_nodes());
     }
 
 

@@ -134,7 +134,7 @@ namespace rod
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();
         InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr);
-        Rod reset_neighbour_list();
+        void reset_neighbour_list();
         Rod print_node_positions();
         std::vector<float> steric_force_sum_neighbours(int elem_id);
         void do_steric();
