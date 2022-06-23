@@ -321,13 +321,16 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
 /**
  * @brief Linear steric energy between two rod elements.
  *
- * Normalises the intersection distance such that the repulsive force is
- * equal to the force scaling factor when the elements fully intersect.
+ * Normalises the intersection distance such that the energy is equal to the
+ * force scaling factor when elements fully intersect.
  */
 float steric_energy_linear(float force_scaling_factor, float intersect_distance,
     float radius_sum)
 {
-    return force_scaling_factor * intersect_distance / radius_sum;
+    float energy = force_scaling_factor * intersect_distance / radius_sum;
+    if (intersect_distance > radius_sum)
+        throw std::runtime_error("Intersection distance must be smaller than radius sum");
+    return energy;
 }
 
 /**
@@ -338,11 +341,8 @@ float perturbed_intersection_distance(int perturb_dim, float perturb_delta,
     float contact_self[3], float contact_neighb[3], float radius_sum)
 {
     float displacement[3] = { 0 };
-
     contact_neighb[perturb_dim] += perturb_delta;
-
     vec3d(n) { displacement[n] = contact_neighb[n] - contact_self[n]; }
-
     return std::max(0.0f, radius_sum - rod::absolute(displacement));
 }
 
@@ -353,9 +353,9 @@ float perturbed_intersection_distance(int perturb_dim, float perturb_delta,
 std::vector<float> element_steric_force(float delta, float force_strength,
     float radius_sum, float contact_self[3], float contact_neighb[3])
 {
-    float distance[6] = { 0 };  // +x, -x, +y, -y, +z, -z
-    float energy[6] = { 0 };
-    std::vector<float> force(3, 0);   // x, y, z
+    float distance[6] = { 0 };      // +x, -x, +y, -y, +z, -z
+    float energy[6] = { 0 };        // +x, -x, +y, -y, +z, -z
+    std::vector<float> force(3, 0); // x, y, z
 
     distance[0] = perturbed_intersection_distance(0,  delta, contact_self, contact_neighb, radius_sum);
     distance[1] = perturbed_intersection_distance(0, -delta, contact_self, contact_neighb, radius_sum);
@@ -371,7 +371,9 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     energy[4] = steric_energy_linear(force_strength, distance[4], radius_sum);
     energy[5] = steric_energy_linear(force_strength, distance[5], radius_sum);
 
-    vec3d(n) { force[n] = -(energy[n] - energy[n + 1]) / delta; }
+    force[0] = -(energy[0] - energy[1]) / delta;
+    force[1] = -(energy[2] - energy[3]) / delta;
+    force[2] = -(energy[4] - energy[5]) / delta;
 
     if (rod::dbg_print)
     {
