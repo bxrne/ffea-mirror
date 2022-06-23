@@ -168,7 +168,7 @@ void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3],
         printf("  |d4| : %.3e\n", d4_mag);
         print_array("  c_a (corrected)", c_a_out, 3);
         print_array("  c_b (corrected)", c_b_out, 3);
-        std::cout << std::endl;
+        std::cout << "\n";
     }
 }
 
@@ -241,7 +241,7 @@ void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3],
         print_array("  r_ba", r_ba, 3);
         print_array("  c_a (initial)", c_a, 3);
         print_array("  c_b (initial)", c_b, 3);
-        std::cout << std::endl;
+        std::cout << "\n";
     }
 
     // Apply corrections to c_a and/or c_b if appropriate
@@ -270,9 +270,6 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
     if (rod::dbg_print)
     {
         std::cout << "Element neighbour assignment:\n";
-        std::cout << "  rods:     " << rod_id_a << ", " << rod_id_b << "\n";
-        std::cout << "  elements: " << elem_id_a << ", " << elem_id_b << "\n";
-
     }
 
     rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
@@ -283,7 +280,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
         std::cout << "  |c_ab|: "
                     << rod::absolute(c_ab) * mesoDimensions::length * 1e9 << " nm"
                     << std::endl;
-        std::cout << "  radius_a + radius_b: "
+        std::cout << "  radius sum: "
                     << (radius_a + radius_b) * mesoDimensions::length * 1e9 << " nm"
                     << std::endl;
     }
@@ -291,7 +288,11 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
     if (rod::absolute(c_ab) < (radius_a + radius_b))
     {
         if (rod::dbg_print)
-            std::cout << "  Elements overlap. Assigning neighbours..." << std::endl;
+        {
+            std::cout << "  neighbours: rod " << rod_id_a << " elem "
+                << elem_id_a << ", rod " << rod_id_b << " elem " << elem_id_b
+                << "\n\n";
+        }
 
         InteractionData stericDataA(
             rod_id_a,
@@ -429,7 +430,8 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
         std::cout << "  l2 : " << l2 << "\n";
         std::cout << "  weight start node : " << (element_length - l1) / element_length << "\n";
         std::cout << "  weight end node : " << (element_length - l2) / element_length << "\n";
-        print_vector("  node force", force);
+        print_vector("  force start node", std::vector<float>(force.begin(), std::next(force.begin(), 3)) );
+        print_vector("  force end node", std::vector<float>(std::next(force.begin(), 3), force.end()) );
         std::cout << "\n";
     }
 
