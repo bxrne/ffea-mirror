@@ -159,15 +159,15 @@ void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3],
     if (rod::dbg_print)
     {
         std::cout << "correction to rod-rod distance" << std::endl;
-        printf("\tp_a.(c_a - r_a) : %.3e\n", dot_a);
-        printf("\tp_b.(c_b - r_b) : %.3e\n", dot_b);
-        printf("\t|c_ab| : %.3e\n", rod::absolute(c_ab));
-        printf("\t|d1| : %.3e\n", d1_mag);
-        printf("\t|d2| : %.3e\n", d2_mag);
-        printf("\t|d3| : %.3e\n", d3_mag);
-        printf("\t|d4| : %.3e\n", d4_mag);
-        print_array("\tc_a (corrected)", c_a_out, 3);
-        print_array("\tc_b (corrected)", c_b_out, 3);
+        printf("  p_a.(c_a - r_a) : %.3e\n", dot_a);
+        printf("  p_b.(c_b - r_b) : %.3e\n", dot_b);
+        printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
+        printf("  |d1| : %.3e\n", d1_mag);
+        printf("  |d2| : %.3e\n", d2_mag);
+        printf("  |d3| : %.3e\n", d3_mag);
+        printf("  |d4| : %.3e\n", d4_mag);
+        print_array("  c_a (corrected)", c_a_out, 3);
+        print_array("  c_b (corrected)", c_b_out, 3);
         std::cout << std::endl;
     }
 }
@@ -228,19 +228,19 @@ void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3],
     if (rod::dbg_print)
     {
         std::cout << "shortest rod-rod distance" << std::endl;
-        print_array("\tp_a", p_a, 3);
-        print_array("\tp_b", p_b, 3);
-        print_array("\tl_a", l_a, 3);
-        print_array("\tl_b", l_b, 3);
-        print_array("\tl_a x l_b", l_a_cross_l_b, 3);
-        print_array("\tn_b", n_a, 3);
-        print_array("\tn_b", n_b, 3);
-        print_array("\tr_a", r_a, 3);
-        print_array("\tr_b", r_b, 3);
-        print_array("\tr_ab", r_ab, 3);
-        print_array("\tr_ba", r_ba, 3);
-        print_array("\tc_a (initial)", c_a, 3);
-        print_array("\tc_b (initial)", c_b, 3);
+        print_array("  p_a", p_a, 3);
+        print_array("  p_b", p_b, 3);
+        print_array("  l_a", l_a, 3);
+        print_array("  l_b", l_b, 3);
+        print_array("  l_a x l_b", l_a_cross_l_b, 3);
+        print_array("  n_b", n_a, 3);
+        print_array("  n_b", n_b, 3);
+        print_array("  r_a", r_a, 3);
+        print_array("  r_b", r_b, 3);
+        print_array("  r_ab", r_ab, 3);
+        print_array("  r_ba", r_ba, 3);
+        print_array("  c_a (initial)", c_a, 3);
+        print_array("  c_b (initial)", c_b, 3);
         std::cout << std::endl;
     }
 
@@ -329,7 +329,8 @@ float steric_energy_linear(float force_scaling_factor, float intersect_distance,
 {
     float energy = force_scaling_factor * intersect_distance / radius_sum;
     if (intersect_distance > radius_sum)
-        throw std::runtime_error("Intersection distance must be smaller than radius sum");
+        throw std::invalid_argument("Intersection distance must be smaller than radius sum");
+
     return energy;
 }
 
@@ -343,6 +344,7 @@ float perturbed_intersection_distance(int perturb_dim, float perturb_delta,
     float displacement[3] = { 0 };
     contact_neighb[perturb_dim] += perturb_delta;
     vec3d(n) { displacement[n] = contact_neighb[n] - contact_self[n]; }
+
     return std::max(0.0f, radius_sum - rod::absolute(displacement));
 }
 
@@ -401,7 +403,7 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
     float displacement[3] = { 0 };
     float l1 = 0;
     float l2 = 0;
-    std::vector<float> force(6, 0);  // x1, y1, z1, x2, y2, z2
+    std::vector<float> force(6, 0);  // x0, y0, z0, x1, y1, z1
 
     vec3d(n) { displacement[n] = contact[n] - node_start[n]; }
 
@@ -418,7 +420,6 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
         print_array("  node_start", node_start, 3);
         std::cout << "  element_length, L : " << element_length << "\n";
         print_vector("  element_force", element_force);
-        std::cout << "  -----\n";
         print_array("  displacement", displacement, 3);
         std::cout << "  l1 : " << l1 << "\n";
         std::cout << "  l2 : " << l2 << "\n";
