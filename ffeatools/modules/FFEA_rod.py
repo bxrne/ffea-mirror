@@ -227,7 +227,7 @@ class FFEA_rod:
         self.B_matrix = np.empty(
             [self.num_frames, self.num_elements, self.get_num_dimensions(14)])
         self.steric_force = np.empty(
-            [self.num_frames, self.num_elements, self.get_num_dimensions(3)])
+            [self.num_frames, self.num_elements, self.get_num_dimensions(15)])
 
         # look, this is not pretty but it is really fast
         # Hard-coded some shapes at the end because I wasn't following the previous convention
@@ -240,55 +240,71 @@ class FFEA_rod:
                 break
             if line.split(" ")[0] == "FRAME":
                 try:
+                    row = 1
                     line = rod_file.readline()
                     self.equil_r[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.equil_r[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.equil_m[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.equil_m[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.current_r[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.current_r[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.current_m[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.current_m[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.internal_perturbed_x_energy_positive[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.internal_perturbed_x_energy_positive[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.internal_perturbed_y_energy_positive[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.internal_perturbed_y_energy_positive[frame_no].shape)
                     line = rod_file.readline()
+                    row += 1
                     self.internal_perturbed_z_energy_positive[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.internal_perturbed_z_energy_positive[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.twisted_energy_positive[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.twisted_energy_positive[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.internal_perturbed_x_energy_negative[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.internal_perturbed_x_energy_negative[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.internal_perturbed_y_energy_negative[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.internal_perturbed_y_energy_negative[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.internal_perturbed_z_energy_negative[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.internal_perturbed_z_energy_negative[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.twisted_energy_negative[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.twisted_energy_negative[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.material_params[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.material_params[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.B_matrix[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.B_matrix[frame_no].shape)
+                    row += 1
                     line = rod_file.readline()
                     self.steric_force[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.steric_force[frame_no].shape)
                     frame_no += 1
                 except ValueError as e:
                     raise ValueError(str(e) + "\nError loading frame " +
-                                     str(frame_no) + "\nProblem line: " + str(line))
+                                     str(frame_no) + ", header row " + str(row) +
+                                     "\nProblem line: " + str(line))
         # self.set_avg_energies()
         return
 
