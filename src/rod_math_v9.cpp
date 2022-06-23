@@ -124,6 +124,30 @@ namespace rod
         }
     }
 
+    // Print array slice from start to end (inclusive).
+    void print_array(std::string array_name, float array[], int start, int end)
+    {
+        if (rod::dbg_print)
+        {
+            if (start >= end)
+                throw std::invalid_argument("Invalid index range to print_array.");
+
+            std::cout << array_name << " : [";
+            for (int i = start; i < end + 1; i++)
+            {
+                if (i != end)
+                {
+                    std::cout << array[i] << ", ";
+                }
+                else
+                {
+                    std::cout << array[i];
+                }
+            }
+            std::cout << "]\n";
+        }
+    }
+
     void print_array(std::string array_name, double array[], int length)
     {
         if (rod::dbg_print)

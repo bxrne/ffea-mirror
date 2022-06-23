@@ -385,8 +385,12 @@ std::vector<float> element_steric_force(float delta, float force_strength,
         std::cout << "  radius_sum : " << radius_sum << "\n";
         print_array("  contact_self", contact_self, 3);
         print_array("  contact_neighb", contact_neighb, 3);
-        print_array("  perturbed distance", distance, 6);
-        print_array("  element energy [+x, -x, y, -y, z, -z]", energy, 6);
+        print_array("  perturbed distance x", distance, 0, 1);
+        print_array("  perturbed distance y", distance, 2, 3);
+        print_array("  perturbed distance z", distance, 4, 5);
+        print_array("  element energy x", energy, 0, 1);
+        print_array("  element energy y", energy, 2, 3);
+        print_array("  element energy z", energy, 4, 5);
         print_vector("  element force", force);
         std::cout << "\n";
     }
