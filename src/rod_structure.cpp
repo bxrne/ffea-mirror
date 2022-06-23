@@ -1285,12 +1285,19 @@ namespace rod
 
         if (rod::dbg_print)
         {
-            std::cout << "summing force on element " << elem_id << " from "
-                << this->get_num_steric_neighbours(elem_id)
-                << " neighbours:\n";
+            if (this->get_num_steric_neighbours(elem_id) > 0)
+            {
+                std::cout << "summing force on element " << elem_id << " from "
+                    << this->get_num_steric_neighbours(elem_id)
+                    << " neighbours:\n";
+            }
+            else
+            {
+                std::cout << "element " << elem_id << " has no neighbours:\n";
+            }
         }
 
-        for (int nbr_id;nbr_id < this->get_num_steric_neighbours(elem_id); nbr_id++)
+        for (int nbr_id; nbr_id < this->get_num_steric_neighbours(elem_id); nbr_id++)
         {
             rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id);
             element_force = element_steric_force(
@@ -1323,14 +1330,13 @@ namespace rod
         if (rod::dbg_print)
         {
             print_vector(
-                "  node_force_sum start",
+                "  force sum start node",
                 std::vector<float>(node_force_sum.begin(), std::next(node_force_sum.begin(), 3)));
             print_vector(
-                "  node_force_sum end",
+                "  force sum end node",
                 std::vector<float>(std::next(node_force_sum.begin(), 3), node_force_sum.end()));
             std::cout << "\n";
         }
-
 
         return node_force_sum;
     }
@@ -1350,15 +1356,12 @@ namespace rod
         for (int node_no; node_no < this->get_num_nodes() - 1; node_no++)
         {
             node_force = steric_force_sum_neighbours(node_no);
-            // start node
             this->steric_force[node_no * 3] += node_force[0];
             this->steric_force[(node_no * 3) + 1] += node_force[1];
             this->steric_force[(node_no * 3) + 2] += node_force[2];
-            // end node
             this->steric_force[(node_no * 3) + 3] += node_force[3];
             this->steric_force[(node_no * 3) + 4] += node_force[4];
             this->steric_force[(node_no * 3) + 5] += node_force[5];
-
         }
 
         if (rod::dbg_print)
