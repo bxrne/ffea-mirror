@@ -8,6 +8,7 @@ stretch = 3.5e-11  # N
 twist = 5e-29  # N.m^2
 bend = 3.5e-29  # m^4.Pa
 radius = 2.5e-9  # m
+diameter = 2 * radius
 
 # Straight line in z-axis
 def x_func(t):
@@ -24,7 +25,7 @@ def main():
     # Blank rod
     my_rod = rod.FFEA_rod(num_elements=num_nodes)
 
-    my_nodes = rc.create_rod_parametric(x_func, y_func, z_func, 0, 1e-8, num_nodes)
+    my_nodes = rc.create_rod_parametric(x_func, y_func, z_func, 0, 10*diameter, num_nodes)
 
     my_rod.current_r[0] = my_nodes
     my_rod.equil_r[0] = my_nodes
