@@ -51,50 +51,44 @@ def plot_displacement(rod1, rod2):
     disp1 = rod1.current_r - rod1.current_r[0]
     disp2 = rod2.current_r - rod2.current_r[0]
 
-    marker_rod1 = 'o'
-    marker_rod2 = 'D'
-    colors_nodes = ['r', 'c', 'm', 'g', 'b', 'k']
-    size=0.5
-
     print("Plotting displacement...")
     for frame in range(rod1.num_frames):
         for node in range(rod1.num_elements):
             displacement_rod1 = np.linalg.norm(disp1[frame, node])
             displacement_rod2 = np.linalg.norm(disp2[frame, node])
-            plt.plot(frame, displacement_rod1*1e9, marker=marker_rod1, color=colors_nodes[node], ms=size)
-            plt.plot(frame, displacement_rod2*1e9, marker=marker_rod2, color=colors_nodes[node], ms=size)
+            plt.plot(frame, displacement_rod1*1e9, marker='o', color='red', ms=0.8)
+            plt.plot(frame, displacement_rod2*1e9, marker='o', color='blue', ms=0.8)
 
     plt.xlabel("Step")
     plt.ylabel("Distance of node from initial position (nm)")
 
     plt.savefig("Distance_vs_Time.png", dpi=300)
+    print("Saved figure 'Distance_vs_Time.png'")
     plt.close()
     print("Done")
+
 
 def plot_force(rod1, rod2):
 
     force1 = rod1.steric_force
     force2 = rod2.steric_force
 
-    marker_rod1 = 'o'
-    marker_rod2 = 'D'
-    colors_nodes = ['r', 'c', 'm', 'g', 'b', 'k']
-    size=0.5
-
     print("Plotting force...")
     for frame in range(rod1.num_frames):
         for node in range(rod1.num_elements):
             force_rod1 = np.linalg.norm(force1[frame, node])
             force_rod2 = np.linalg.norm(force2[frame, node])
-            plt.plot(frame, force_rod1*1e12, marker=marker_rod1, color=colors_nodes[node], ms=size)
-            plt.plot(frame, force_rod2*1e12, marker=marker_rod2, color=colors_nodes[node], ms=size)
+            plt.plot(frame, force_rod1*1e12, marker='o', color='red', ms=0.8)
+            plt.plot(frame, force_rod2*1e12, marker='o', color='blue', ms=0.8)
 
     plt.xlabel("Step")
     plt.ylabel("Steric force on node (pN)")
 
     plt.savefig("StericForce_vs_Time.png", dpi=300)
+    print("Saved figure 'StericForce_vs_Time.png'")
     plt.close()
     print("Done")
+
 
 def main():
 
@@ -127,10 +121,6 @@ def main():
     #     return 0
 
     print("THIS TEST IS INCOMPLETE")
-
-    return 1
-
-    print("Some node-node distances are less than the sum of the rod radii")
 
     return 1
 

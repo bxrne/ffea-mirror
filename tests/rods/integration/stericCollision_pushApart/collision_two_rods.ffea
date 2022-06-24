@@ -51,8 +51,8 @@
     <rod>
             <input = z-axis.rod>
             <output = outputs/2.rodtraj>
-            <centroid_pos = (1, 0.0, 0.0)>
-            <rotation = (1.57, 0.00, 0,00)>  < ! -- 1/2 pi rad -- >
+            <centroid_pos = (14.7, 0.0, 0.0)>   < ! -- 2.5 nm radius [FFEA units] -- >
+            <rotation = (1.57, 0.00, 0,00)>     < ! -- 1/2 pi rad -- >
             <scale = 1>
     </rod>
 </system>
