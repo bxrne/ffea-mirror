@@ -1833,12 +1833,12 @@ int ffea_test::steric_energy_two_rod_elements()
         distance[5] = rod::perturbed_intersection_distance(2, -delta, c_a, c_b, 2*radius);
 
         std::array<float, 6> energy = {0};
-        energy[0] = rod::steric_energy_linear(strength, distance[0], 2*radius);
-        energy[1] = rod::steric_energy_linear(strength, distance[1], 2*radius);
-        energy[2] = rod::steric_energy_linear(strength, distance[2], 2*radius);
-        energy[3] = rod::steric_energy_linear(strength, distance[3], 2*radius);
-        energy[4] = rod::steric_energy_linear(strength, distance[4], 2*radius);
-        energy[5] = rod::steric_energy_linear(strength, distance[5], 2*radius);
+        energy[0] = rod::steric_energy_linear(strength, distance[0]);
+        energy[1] = rod::steric_energy_linear(strength, distance[1]);
+        energy[2] = rod::steric_energy_linear(strength, distance[2]);
+        energy[3] = rod::steric_energy_linear(strength, distance[3]);
+        energy[4] = rod::steric_energy_linear(strength, distance[4]);
+        energy[5] = rod::steric_energy_linear(strength, distance[5]);
 
         float positive[3] = {energy[0] , energy[2], energy[4]};
         float negative[3] = {energy[1] , energy[3], energy[5]};
