@@ -1300,6 +1300,7 @@ namespace rod
         for (int nbr_id; nbr_id < this->get_num_steric_neighbours(elem_id); nbr_id++)
         {
             rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id);
+
             element_force = element_steric_force(
                 this->perturbation_amount,
                 this->steric_force_factor,

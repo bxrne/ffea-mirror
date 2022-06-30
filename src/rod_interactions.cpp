@@ -319,34 +319,23 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
 
 }
 
-/**
- * @brief Linear steric energy between two rod elements.
- *
- * Normalises the intersection distance such that the energy is equal to the
- * force scaling factor when elements fully intersect.
- */
-float steric_energy_linear(float force_scaling_factor, float intersect_distance,
-    float radius_sum)
+float steric_energy_linear(float force_scaling_factor, float intersect_distance)
 {
-    float energy = force_scaling_factor * intersect_distance / radius_sum;
-    if (intersect_distance > radius_sum)
-        throw std::invalid_argument("Intersection distance must be smaller than radius sum");
-
-    return energy;
+    return force_scaling_factor * intersect_distance;
 }
 
 /**
  * @brief Apply a spatial perturbation to the centreline displacement between
- * two rod elements, and return the intersection distance.
+ * two rod elements, then return the intersection distance.
 */
 float perturbed_intersection_distance(int perturb_dim, float perturb_delta,
     float contact_self[3], float contact_neighb[3], float radius_sum)
 {
-    float displacement[3] = { 0 };
+    float centreline_displacement[3] = {0};
     contact_neighb[perturb_dim] += perturb_delta;
-    vec3d(n) { displacement[n] = contact_neighb[n] - contact_self[n]; }
+    vec3d(n) { centreline_displacement[n] = contact_neighb[n] - contact_self[n]; }
 
-    return std::max(0.0f, radius_sum - rod::absolute(displacement));
+    return std::abs(rod::absolute(centreline_displacement) - radius_sum);
 }
 
 /**
@@ -360,32 +349,38 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     float energy[6] = { 0 };        // +x, -x, +y, -y, +z, -z
     std::vector<float> force(3, 0); // x, y, z
 
-    distance[0] = perturbed_intersection_distance(0,  delta, contact_self, contact_neighb, radius_sum);
-    distance[1] = perturbed_intersection_distance(0, -delta, contact_self, contact_neighb, radius_sum);
-    distance[2] = perturbed_intersection_distance(1,  delta, contact_self, contact_neighb, radius_sum);
-    distance[3] = perturbed_intersection_distance(1, -delta, contact_self, contact_neighb, radius_sum);
-    distance[4] = perturbed_intersection_distance(2,  delta, contact_self, contact_neighb, radius_sum);
-    distance[5] = perturbed_intersection_distance(2, -delta, contact_self, contact_neighb, radius_sum);
+    distance[0] = perturbed_intersection_distance(0,  0.5 * delta, contact_self, contact_neighb, radius_sum);
+    distance[1] = perturbed_intersection_distance(0, -0.5 * delta, contact_self, contact_neighb, radius_sum);
+    distance[2] = perturbed_intersection_distance(1,  0.5 * delta, contact_self, contact_neighb, radius_sum);
+    distance[3] = perturbed_intersection_distance(1, -0.5 * delta, contact_self, contact_neighb, radius_sum);
+    distance[4] = perturbed_intersection_distance(2,  0.5 * delta, contact_self, contact_neighb, radius_sum);
+    distance[5] = perturbed_intersection_distance(2, -0.5 * delta, contact_self, contact_neighb, radius_sum);
 
-    energy[0] = steric_energy_linear(force_strength, distance[0], radius_sum);
-    energy[1] = steric_energy_linear(force_strength, distance[1], radius_sum);
-    energy[2] = steric_energy_linear(force_strength, distance[2], radius_sum);
-    energy[3] = steric_energy_linear(force_strength, distance[3], radius_sum);
-    energy[4] = steric_energy_linear(force_strength, distance[4], radius_sum);
-    energy[5] = steric_energy_linear(force_strength, distance[5], radius_sum);
+    energy[0] = steric_energy_linear(force_strength, distance[0]);
+    energy[1] = steric_energy_linear(force_strength, distance[1]);
+    energy[2] = steric_energy_linear(force_strength, distance[2]);
+    energy[3] = steric_energy_linear(force_strength, distance[3]);
+    energy[4] = steric_energy_linear(force_strength, distance[4]);
+    energy[5] = steric_energy_linear(force_strength, distance[5]);
 
-    force[0] = -(energy[0] - energy[1]) / delta;
-    force[1] = -(energy[2] - energy[3]) / delta;
-    force[2] = -(energy[4] - energy[5]) / delta;
+    // ! gradient implicitly negative due to use of intersection distance, rather
+    // than centreline distance? See notes 30/6/22.
+    force[0] = (energy[0] - energy[1]) / delta;
+    force[1] = (energy[2] - energy[3]) / delta;
+    force[2] = (energy[4] - energy[5]) / delta;
 
     if (rod::dbg_print)
     {
+        float centreline_displacement[3] = {0};
+        vec3d(n) { centreline_displacement[n] = contact_neighb[n] - contact_self[n]; }
+
         std::cout << "element steric force:\n";
         std::cout << "  delta : " << delta << "\n";
         std::cout << "  force_strength : " << force_strength << "\n";
         std::cout << "  radius_sum : " << radius_sum << "\n";
         print_array("  contact_self", contact_self, 3);
         print_array("  contact_neighb", contact_neighb, 3);
+        std::cout << "  centreline distance : " << rod::absolute(centreline_displacement) << "\n";
         print_array("  perturbed distance x", distance, 0, 1);
         print_array("  perturbed distance y", distance, 2, 3);
         print_array("  perturbed distance z", distance, 4, 5);
@@ -394,6 +389,13 @@ std::vector<float> element_steric_force(float delta, float force_strength,
         print_array("  element energy z", energy, 4, 5);
         print_vector("  element force", force);
         std::cout << "\n";
+
+        // ! sanity check
+        if (rod::absolute(centreline_displacement) > radius_sum)
+        {
+            throw std::runtime_error("Unperturbed centreline distance cannot be "
+                "greater than radius sum when calculating steric energy.");
+        }
     }
 
     return force;
