@@ -91,8 +91,7 @@ void set_element_neighbours(
 
 float steric_energy_linear(
     float force_scaling_factor,
-    float intersect_distance,
-    float radius_sum);
+    float intersect_distance);
 
 float perturbed_intersection_distance(
     int perturb_dim,
