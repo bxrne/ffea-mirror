@@ -198,25 +198,37 @@ namespace rod
     }
 
     /**
-     Print the contents of a float vector to stdout.
+     Print a float vector to stdout.
     */
-    void print_vector(std::string vector_name, std::vector<float> vec)
+    void print_vector(std::string vector_name, const std::vector<float> &vec)
     {
+        std::cout << vector_name << ": (";
+        int i = 0;
+        for (auto &item : vec)
+        {
+            if (i++ < vec.size() - 1)
+                std::cout << item << ", ";
+            else
+                std::cout << item;
+        }
+        std::cout << ")\n";
+    }
 
-        std::cout << vector_name;
-        std::cout << ": ( ";
-        for (auto item : vec)
+    /**
+     * Print a slice of a float vector to stdout
+    */
+    void print_vector(std::string vector_name, std::vector<float>::iterator start,
+        std::vector<float>::iterator end)
+    {
+        std::cout << vector_name << " : (";
+        for (auto iter = start; iter != end; iter++)
         {
-            std::cout << item << ", ";
+            if (std::distance(iter, end) > 1)
+                std::cout << *iter << ", ";
+            else
+                std::cout << *iter;
         }
-        if (vec.size() > 1)
-        {
-            std::cout << "\b\b )" << std::endl;
-        }
-        else
-        {
-            std::cout << ")" << std::endl;
-        }
+        std::cout << ")\n";
     }
 
     /**
