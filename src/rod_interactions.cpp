@@ -48,128 +48,125 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     vec3d(n){contact_nbr[n] = c_b[n];}
 };
 
-/** 1) Check that the points of the rod interaction vector, c_a and c_b, lie
- * within their respective rod elements. Certain situations (e.g.
- * almost-parallel rods) will mean this correction can be poor (e.g. c being
- * corrected to completely the wrong end of the rod), so a secondary correction
- * is required.
- *
- * 2) Compare the rod interaction vector, c_ab, to distances measured from nodes
- * to c_a and c_b: d1 = c_b - r_a d2 = c_b - r_a2 d3 = c_a - r_b d4 = c_a - r_b2
- * Find the smallest vector from these and c_ab, and assign that to be the new
- * interaction vector.
-*/
-void rod_distance_correction(float c_a[3], float c_b[3], float r_a[3],
-                                float r_b[3], float p_a[3], float p_b[3],
-                                OUT float c_a_out[3], float c_b_out[3])
+/**
+ * @brief If either interaction point, c_a or c_b, lies outside the finite
+ * length of its respective rod element, replace its value with the nearest
+ * node.
+ */
+std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
+    float r_b[3], float p_a[3], float p_b[3])
 {
-    float r_a2[3] = {0, 0, 0};
-    float r_b2[3] = {0, 0, 0};
-    float rc_a[3] = {0, 0, 0};
-    float rc_b[3] = {0, 0, 0};
+    float rc_a[3] = {0};
+    float rc_b[3] = {0};
     float dot_a = 0;
     float dot_b = 0;
-    float p_a_sq = 0;
-    float p_b_sq = 0;
 
-    float c_ab[3] = {0, 0, 0};
-    float d1[3] = {0, 0, 0};
-    float d2[3] = {0, 0, 0};
-    float d3[3] = {0, 0, 0};
-    float d4[3] = {0, 0, 0};
-    float d1_mag = 0;
-    float d2_mag = 0;
-    float d3_mag = 0;
-    float d4_mag = 0;
-
-    vec3d(n) { r_a2[n] = r_a[n] + p_a[n]; }
-    vec3d(n) { r_b2[n] = r_b[n] + p_b[n]; }
-
-    // Ensure the points defining the vector lie on their respective finite rods.
-    // This part can mis-correct if rods are almost parallel with some tiny angle
-    // between them.
-    vec3d(n) { rc_a[n] = c_a[n] - r_a[n]; }
-    vec3d(n) { rc_b[n] = c_b[n] - r_b[n]; }
-
+    vec3d(n) { rc_a[n] = c_ab.at(n) - r_a[n]; }
+    vec3d(n) { rc_b[n] = c_ab.at(n + 3) - r_b[n]; }
     dot_a = dot_product_3x1(p_a, rc_a);
     dot_b = dot_product_3x1(p_b, rc_b);
 
-    p_a_sq = rod::absolute(p_a) * rod::absolute(p_a);
-    p_b_sq = rod::absolute(p_b) * rod::absolute(p_b);
-
     if (dot_a <= 0)
     {
-        vec3d(n) { c_a[n] = r_a[n]; }
+        vec3d(n) { c_ab.at(n) = r_a[n]; }
     }
-    else if (dot_a >= p_a_sq)
+    else if (dot_a >= rod::absolute(p_a) * rod::absolute(p_a))
     {
-        vec3d(n) { c_a[n] = r_a2[n]; }
+        vec3d(n) { c_ab.at(n) = r_a[n] + p_a[n]; }
     }
 
     if (dot_b <= 0)
     {
-        vec3d(n) { c_b[n] = r_b[n]; }
+        vec3d(n) { c_ab.at(n + 3) = r_b[n]; }
     }
-    else if (dot_a >= p_b_sq)
+    else if (dot_a >= rod::absolute(p_b) * rod::absolute(p_b))
     {
-        vec3d(n) { c_b[n] = r_b2[n]; }
+        vec3d(n) { c_ab.at(n + 3) = r_b[n] + p_b[n]; }
     }
-
-    // Compare c_ab to vectors pointing from the nodes on one rod to the
-    // interaction point on the opposing rod.
-    // This part accounts for the mis-correction of the previous section by
-    // explicitly working out the shortest distance between the two rods.
-    vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
-    vec3d(n) { d1[n] = c_b[n] - r_a[n]; }
-    vec3d(n) { d2[n] = c_b[n] - r_a2[n]; }
-    vec3d(n) { d3[n] = c_a[n] - r_b[n]; }
-    vec3d(n) { d4[n] = c_a[n] - r_b2[n]; }
-
-    d1_mag = rod::absolute(d1);
-    d2_mag = rod::absolute(d2);
-    d3_mag = rod::absolute(d3);
-    d4_mag = rod::absolute(d4);
-
-    // TODO: use std::map trick here to bypass if statements (see Jacan)
-    // Replace c_ab with the smallest vector. Do nothing if c_ab is already
-    // the smallest.
-    if (rod::absolute(c_ab) > 0.99 * std::min({d1_mag, d2_mag, d3_mag, d4_mag}))
-    {
-        if (d1_mag <= std::min({d2_mag, d3_mag, d4_mag}))
-        {
-            vec3d(n) { c_a[n] = r_a[n]; }
-        }
-        else if (d2_mag <= std::min(d3_mag, d4_mag))
-        {
-            vec3d(n) { c_a[n] = r_a2[n]; }
-        }
-        else if (d3_mag <= d4_mag)
-        {
-            vec3d(n) { c_b[n] = r_b[n]; }
-        }
-        else
-        {
-            vec3d(n) { c_b[n] = r_b2[n]; }
-        }
-    }
-
-    vec3d(n) { c_a_out[n] = c_a[n]; }
-    vec3d(n) { c_b_out[n] = c_b[n]; }
 
     if (rod::dbg_print)
     {
-        std::cout << "correction to rod-rod distance" << std::endl;
+        std::cout << "snap to nodes:\n";
         printf("  p_a.(c_a - r_a) : %.3e\n", dot_a);
         printf("  p_b.(c_b - r_b) : %.3e\n", dot_b);
-        printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
-        printf("  |d1| : %.3e\n", d1_mag);
-        printf("  |d2| : %.3e\n", d2_mag);
-        printf("  |d3| : %.3e\n", d3_mag);
-        printf("  |d4| : %.3e\n", d4_mag);
-        print_array("  c_a (corrected)", c_a_out, 3);
-        print_array("  c_b (corrected)", c_b_out, 3);
+    }
+
+    return c_ab;
+}
+
+
+/** @brief 1) Check that the points of the rod interaction vector, c_a and c_b,
+ * lie within their respective rod elements. Certain situations (e.g.
+ * almost-parallel rods) will mean this correction can be poor (e.g. c being
+ * corrected to completely the wrong end of the rod), so a secondary correction
+ * is required.
+ *
+ * 2) Compare the centreline displacement, c_ab, to distances measured from nodes
+ * to c_a and c_b: d1 = c_b - r_a d2 = c_b - r_a2 d3 = c_a - r_b d4 = c_a - r_b2
+ * Find the smallest vector from these and c_ab, and assign that to be the new
+ * interaction vector.
+ *
+ * @return: 6-element std::vector containing c_a and c_b
+*/
+std::vector<float> rod_distance_correction(std::vector<float> c_ab, float r_a[3],
+    float r_b[3], float p_a[3], float p_b[3])
+{
+    float displacements[5][3] = {0};
+    std::vector<float> distances(5, 0);
+
+    c_ab = snap_to_nodes(c_ab, r_a, r_b, p_a, p_b);
+
+    // compare c_ab to displacements from both rod nodes to the interaction
+    // point on the opposing rod
+    // ! put the stuff below in a function
+    vec3d(n) { displacements[0][n] = c_ab.at(n + 3) - c_ab.at(n); }       // c_ab
+    vec3d(n) { displacements[1][n] = c_ab.at(n + 3) - r_a[n]; }           // r_a1 to c_b
+    vec3d(n) { displacements[2][n] = c_ab.at(n + 3) - r_a[n] + p_a[n]; }  // r_a2 to c_b
+    vec3d(n) { displacements[3][n] = c_ab.at(n) - r_b[n]; }               // r_b1 to c_a
+    vec3d(n) { displacements[4][n] = c_ab.at(n) - r_b[n] + p_b[n]; }      // r_b2 to c_a
+
+    int i = 0;
+    for (auto &d : distances)
+        d = rod::absolute(displacements[i++]);
+
+    // index corresponding to the smallest distance
+    auto iter = std::min_element(distances.begin(), distances.end());
+    int index_min = std::distance(distances.begin(), iter);
+
+    // adjust c_ab if it is not the smallest displacement
+    switch (index_min)
+    {
+    case 0:
+        break;
+    case 1:
+        vec3d(n) { c_ab.at(n) = r_a[n]; }
+        break;
+    case 2:
+        vec3d(n) { c_ab.at(n) = r_a[n] + p_a[n]; }
+    case 3:
+        vec3d(n) { c_ab.at(n + 3) = r_b[n]; }
+        break;
+    case 4:
+        vec3d(n) { c_ab.at(n + 3) = r_b[n] + p_b[n]; }
+        break;
+    default:
+        throw std::out_of_range("Index to vector of distances between two rods");
+    }
+
+    if (rod::dbg_print)
+    {
+        std::cout << "rod-rod distance correction:" << std::endl;
+        printf("  |c_ab| : %.3e\n", distances[0]);
+        printf("  |d1| : %.3e\n", distances[1]);
+        printf("  |d2| : %.3e\n", distances[2]);
+        printf("  |d3| : %.3e\n", distances[3]);
+        printf("  |d4| : %.3e\n", distances[4]);
+        print_vector("  c_a (corrected)", c_ab.begin(), std::next(c_ab.begin(), 3) );
+        print_vector("  c_b (corrected)", std::next(c_ab.begin(), 3), c_ab.end() );
         std::cout << "\n";
     }
+
+    return c_ab;
 }
 
 /** Compute one of the two points, c_a and c_b, that form the interaction vector
@@ -183,8 +180,7 @@ on the element p_a. Element radii are not considered at this stage.
 To account for the infinite line assumption, a correction is applied.
 */
 void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3],
-                                    float r_b[3], OUT float c_a[3],
-                                    float c_b[3])
+    float r_b[3], float c_a[3], float c_b[3])
 {
     float l_a[3] = {0.0, 0.0, 0.0}; // l_a = p_a / |p_a|
     float l_b[3] = {0.0, 0.0, 0.0};
@@ -244,8 +240,12 @@ void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3],
         std::cout << "\n";
     }
 
-    // Apply corrections to c_a and/or c_b if appropriate
-    rod_distance_correction(c_a, c_b, r_a, r_b, p_a, p_b, c_a, c_b);
+    // Apply corrections
+    // ! - please sort this out with proper return values
+    std::vector<float> c_ab{c_a[0], c_a[1], c_a[2], c_b[0], c_b[1], c_b[2]};
+    c_ab = rod_distance_correction(c_ab, r_a, r_b, p_a, p_b);
+    vec3d(n) { c_a[n] = c_ab.at(n); }
+    vec3d(n) { c_b[n] = c_ab.at(n + 3); }
 }
 
 /*

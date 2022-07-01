@@ -31,6 +31,7 @@
 #define ROD_INTERACTIONS
 
 #include "rod_math_v9.h"
+#include <unordered_map>
 
 namespace rod
 {
@@ -55,24 +56,29 @@ struct InteractionData
         float rad_b,
         float c_a[3],
         float c_b[3]);
+
 };
 
-void rod_distance_correction(
-    float c_a[3],
-    float c_b[3],
+std::vector<float> snap_to_nodes(
+    std::vector<float> c_ab,
     float r_a[3],
     float r_b[3],
     float p_a[3],
-    float p_b[3],
-    OUT float c_a_out[3],
-    float c_b_out[3]);
+    float p_b[3]);
+
+std::vector<float> rod_distance_correction(
+    std::vector<float> c_ab,
+    float r_a[3],
+    float r_b[3],
+    float p_a[3],
+    float p_b[3]);
 
 void get_shortest_distance_to_rod(
     float p_a[3],
     float p_b[3],
     float r_a[3],
     float r_b[3],
-    OUT float c_a[3],
+    float c_a[3],
     float c_b[3]);
 
 void set_element_neighbours(
