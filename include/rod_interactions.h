@@ -31,7 +31,6 @@
 #define ROD_INTERACTIONS
 
 #include "rod_math_v9.h"
-#include <unordered_map>
 
 namespace rod
 {
@@ -66,14 +65,14 @@ std::vector<float> snap_to_nodes(
     float p_a[3],
     float p_b[3]);
 
-std::vector<float> rod_distance_correction(
+std::vector<float> compare_node_distances(
     std::vector<float> c_ab,
     float r_a[3],
     float r_b[3],
     float p_a[3],
     float p_b[3]);
 
-void get_shortest_distance_to_rod(
+void element_minimum_displacement(
     float p_a[3],
     float p_b[3],
     float r_a[3],

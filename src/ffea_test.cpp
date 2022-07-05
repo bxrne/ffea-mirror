@@ -1455,8 +1455,7 @@ int ffea_test::point_lies_within_rod_element()
     for (int i = 0; i < 6; i++)
     {
         vec3d(n) { c_init[n] = r1[n] + p[n] * t[i]; }
-        // rod::get_shortest_distance_to_rod(c_init, p, r1, c_out);  // test
-        // rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b)
+        // rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b)
         switch (i)
         {
         case 0:
@@ -1565,7 +1564,7 @@ int ffea_test::line_connecting_rod_elements()
         vec3d(n) { c_b_answer[n] = 0.0; }
 
         // Function to test
-        rod::get_shortest_distance_to_rod(p_a, p_b[i], r_a1, r_b1[i], c_a, c_b);
+        rod::element_minimum_displacement(p_a, p_b[i], r_a1, r_b1[i], c_a, c_b);
 
         switch (i)
         {
@@ -1822,7 +1821,7 @@ int ffea_test::steric_energy_two_rod_elements()
 
     for (int step_no = 0; step_no < num_steps; step_no++)
     {
-        rod::get_shortest_distance_to_rod(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
+        rod::element_minimum_displacement(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
 
         std::array<float, 6> distance = {0};
         distance[0] = rod::perturbed_intersection_distance(0,  delta, c_a, c_b, 2*radius);

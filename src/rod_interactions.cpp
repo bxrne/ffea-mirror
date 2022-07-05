@@ -51,7 +51,9 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
 /**
  * @brief If either interaction point, c_a or c_b, lies outside the finite
  * length of its respective rod element, replace its value with the nearest
- * node.
+ * node. This is necessary for certain situations, e.g. nearly-parallel rods.
+ *
+ * @return: 6-element std::vector<float> containing c_a and c_b.
  */
 std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
     float r_b[3], float p_a[3], float p_b[3])
@@ -74,6 +76,10 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
     {
         vec3d(n) { c_ab.at(n) = r_a[n] + p_a[n]; }
     }
+    else
+    {
+        throw std::runtime_error("Snap to nodes dot product on rod A");
+    }
 
     if (dot_b <= 0)
     {
@@ -82,6 +88,10 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
     else if (dot_a >= rod::absolute(p_b) * rod::absolute(p_b))
     {
         vec3d(n) { c_ab.at(n + 3) = r_b[n] + p_b[n]; }
+    }
+    else
+    {
+        throw std::runtime_error("Snap to nodes dot product on rod B");
     }
 
     if (rod::dbg_print)
@@ -95,26 +105,18 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
 }
 
 
-/** @brief 1) Check that the points of the rod interaction vector, c_a and c_b,
- * lie within their respective rod elements. Certain situations (e.g.
- * almost-parallel rods) will mean this correction can be poor (e.g. c being
- * corrected to completely the wrong end of the rod), so a secondary correction
- * is required.
+/** @brief Compare the centreline displacement, c_ab, to distances from both rod
+ * nodes to the interaction point, c_a or c_b, on the opposing element. Find
+ * the smallest distance from these. If c_ab is not the smallest then adjust
+ * c_a or c_b.
  *
- * 2) Compare the centreline displacement, c_ab, to distances measured from nodes
- * to c_a and c_b: d1 = c_b - r_a d2 = c_b - r_a2 d3 = c_a - r_b d4 = c_a - r_b2
- * Find the smallest vector from these and c_ab, and assign that to be the new
- * interaction vector.
- *
- * @return: 6-element std::vector containing c_a and c_b
+ * @return: 6-element std::vector<float> containing c_a and c_b.
 */
-std::vector<float> rod_distance_correction(std::vector<float> c_ab, float r_a[3],
+std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
     float r_b[3], float p_a[3], float p_b[3])
 {
     float displacements[5][3] = {0};
     std::vector<float> distances(5, 0);
-
-    c_ab = snap_to_nodes(c_ab, r_a, r_b, p_a, p_b);
 
     // compare c_ab to displacements from both rod nodes to the interaction
     // point on the opposing rod
@@ -133,7 +135,6 @@ std::vector<float> rod_distance_correction(std::vector<float> c_ab, float r_a[3]
     auto iter = std::min_element(distances.begin(), distances.end());
     int index_min = std::distance(distances.begin(), iter);
 
-    // adjust c_ab if it is not the smallest displacement
     switch (index_min)
     {
     case 0:
@@ -155,7 +156,7 @@ std::vector<float> rod_distance_correction(std::vector<float> c_ab, float r_a[3]
 
     if (rod::dbg_print)
     {
-        std::cout << "rod-rod distance correction:" << std::endl;
+        std::cout << "node to interaction point distance comparison:" << std::endl;
         printf("  |c_ab| : %.3e\n", distances[0]);
         printf("  |d1| : %.3e\n", distances[1]);
         printf("  |d2| : %.3e\n", distances[2]);
@@ -169,61 +170,62 @@ std::vector<float> rod_distance_correction(std::vector<float> c_ab, float r_a[3]
     return c_ab;
 }
 
-/** Compute one of the two points, c_a and c_b, that form the interaction vector
-joining two rod elements together, where c_a sits
-on the element p_a. Element radii are not considered at this stage.
 
-\f| \boldsymbol{c}_a = \boldsymbol{r}_a + \frac{(\boldsymbol{r}_b -
-\boldsymbol{r}_a)\cdot\boldsymbol{n}_b^p}{\boldsymbol{l}_a\cdot\boldsymbol{n}_b^p}
-\ \boldsymbol{l}_a \f|
-
-To account for the infinite line assumption, a correction is applied.
+/** @brief Compute the two points, c_a and c_b, that form the centreline
+ * displacement (interaction vector) joining two rod elements together, where
+ * c_a sits on the element p_a.
+ *
+ * The displacement for oblique rod elements is calculated using an infinite
+ * line assumption, so a correction is applied to account for the finite length
+ * of elements.
 */
-void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3],
+void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     float r_b[3], float c_a[3], float c_b[3])
 {
-    float l_a[3] = {0.0, 0.0, 0.0}; // l_a = p_a / |p_a|
-    float l_b[3] = {0.0, 0.0, 0.0};
-    float check[3] = {0, 0, 0};
-    float l_a_cross_l_b[3] = {0.0, 0.0, 0.0};
-    float n_a[3] = {0.0, 0.0, 0.0};
-    float n_b[3] = {0.0, 0.0, 0.0};
-    float r_ab[3] = {0.0, 0.0, 0.0};
-    float r_ba[3] = {0.0, 0.0, 0.0};
+    float l_a[3] = {0}; // l_a = p_a / |p_a|
+    float l_b[3] = {0};
+    float diff[3] = {0};
+    float l_a_cross_l_b[3] = {0};
+    float n_a[3] = {0};
+    float n_b[3] = {0};
+    float r_ab[3] = {0};
+    float r_ba[3] = {0};
 
     normalize(p_a, l_a);
     normalize(p_b, l_b);
+    vec3d(n) { diff[n] = l_a[n] - l_b[n]; }
 
-    vec3d(n) { check[n] = l_a[n] - l_b[n]; }
-    if (rod::absolute(check) < 1e-7)
+    // oblique / perpendicular elements
+    if (rod::absolute(diff) > 1e-7)
     {
-        print_array("l_a", l_a, 3);
-        print_array("l_b", l_b, 3);
-        throw std::runtime_error(
-            "Parallel rods detected; distance function will return nan.");
+        cross_product(l_a, l_b, l_a_cross_l_b);
+        cross_product(l_a, l_a_cross_l_b, n_a);
+        cross_product(l_b, l_a_cross_l_b, n_b);
+
+        vec3d(n) { r_ab[n] = r_b[n] - r_a[n]; }
+        vec3d(n) { r_ba[n] = -r_ab[n]; }
+
+        vec3d(n)
+        {
+            c_a[n] = r_a[n] +
+                dot_product_3x1(r_ab, n_b) / dot_product_3x1(l_a, n_b) * l_a[n];
+        }
+        vec3d(n)
+        {
+            c_b[n] = r_b[n] +
+                dot_product_3x1(r_ba, n_a) / dot_product_3x1(l_b, n_a) * l_b[n];
+        }
     }
-
-    cross_product(l_a, l_b, l_a_cross_l_b);
-    cross_product(l_a, l_a_cross_l_b, n_a);
-    cross_product(l_b, l_a_cross_l_b, n_b);
-
-    vec3d(n) { r_ab[n] = r_b[n] - r_a[n]; }
-    vec3d(n) { r_ba[n] = r_a[n] - r_b[n]; }
-
-    vec3d(n)
+    // parallel elements
+    else
     {
-        c_a[n] = r_a[n] +
-                    dot_product_3x1(r_ab, n_b) / dot_product_3x1(l_a, n_b) * l_a[n];
-    }
-    vec3d(n)
-    {
-        c_b[n] = r_b[n] +
-                    dot_product_3x1(r_ba, n_a) / dot_product_3x1(l_b, n_a) * l_b[n];
+        vec3d(n) { c_a[n] = r_a[n] + 0.5 * p_a[n]; }
+        vec3d(n) { c_b[n] = r_b[n] + 0.5 * p_b[n]; }
     }
 
     if (rod::dbg_print)
     {
-        std::cout << "shortest rod-rod distance" << std::endl;
+        std::cout << "minimum distance between rod elements:" << std::endl;
         print_array("  p_a", p_a, 3);
         print_array("  p_b", p_b, 3);
         print_array("  l_a", l_a, 3);
@@ -240,10 +242,11 @@ void get_shortest_distance_to_rod(float p_a[3], float p_b[3], float r_a[3],
         std::cout << "\n";
     }
 
-    // Apply corrections
+    // Apply corrections to infinite line assumption
     // ! - please sort this out with proper return values
     std::vector<float> c_ab{c_a[0], c_a[1], c_a[2], c_b[0], c_b[1], c_b[2]};
-    c_ab = rod_distance_correction(c_ab, r_a, r_b, p_a, p_b);
+    c_ab = snap_to_nodes(c_ab, r_a, r_b, p_a, p_b);
+    c_ab = compare_node_distances(c_ab, r_a, r_b, p_a, p_b);
     vec3d(n) { c_a[n] = c_ab.at(n); }
     vec3d(n) { c_b[n] = c_ab.at(n + 3); }
 }
@@ -254,25 +257,19 @@ distance between them and comparing to the sum of their radii. If this
 passes, the interaction information is added to both elements' neighbour
 lists.
 */
-void set_element_neighbours(int rod_id_a, int rod_id_b,
-                            int elem_id_a, int elem_id_b,
-                            float p_a[3], float p_b[3],
-                            float r_a[3], float r_b[3],
-                            float radius_a, float radius_b,
-                            std::vector<InteractionData> &neighbours_a,
-                            std::vector<InteractionData> &neighbours_b)
+void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
+    int elem_id_b, float p_a[3], float p_b[3], float r_a[3], float r_b[3],
+    float radius_a, float radius_b, std::vector<InteractionData> &neighbours_a,
+    std::vector<InteractionData> &neighbours_b)
 {
-
     float c_a[3] = {0};
     float c_b[3] = {0};
     float c_ab[3] = {0};
 
     if (rod::dbg_print)
-    {
         std::cout << "Element neighbour assignment:\n";
-    }
 
-    rod::get_shortest_distance_to_rod(p_a, p_b, r_a, r_b, c_a, c_b);
+    rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
     vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
 
     if (rod::dbg_print)
@@ -316,7 +313,6 @@ void set_element_neighbours(int rod_id_a, int rod_id_b,
             c_a);
         neighbours_b.push_back(stericDataB);
     }
-
 }
 
 float steric_energy_linear(float force_scaling_factor, float intersect_distance)
@@ -364,7 +360,7 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     energy[5] = steric_energy_linear(force_strength, distance[5]);
 
     // ! gradient implicitly negative due to use of intersection distance, rather
-    // than centreline distance? See notes 30/6/22.
+    // than centreline distance. See notes 30/6/22.
     force[0] = (energy[0] - energy[1]) / delta;
     force[1] = (energy[2] - energy[3]) / delta;
     force[2] = (energy[4] - energy[5]) / delta;
