@@ -1883,6 +1883,7 @@ int ffea_test::steric_energy_two_rod_elements()
 
 /**
  * @brief Pass if a simulation of two colliding rods does not crash.
+ * ! - Compeltely redundant; can check for crash in Python. Please remove.
  */
 int ffea_test::rod_collision_no_crash()
 {

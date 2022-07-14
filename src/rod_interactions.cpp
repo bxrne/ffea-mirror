@@ -76,10 +76,6 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
     {
         vec3d(n) { c_ab.at(n) = r_a[n] + p_a[n]; }
     }
-    else
-    {
-        throw std::runtime_error("Snap to nodes dot product on rod A");
-    }
 
     if (dot_b <= 0)
     {
@@ -88,10 +84,6 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
     else if (dot_a >= rod::absolute(p_b) * rod::absolute(p_b))
     {
         vec3d(n) { c_ab.at(n + 3) = r_b[n] + p_b[n]; }
-    }
-    else
-    {
-        throw std::runtime_error("Snap to nodes dot product on rod B");
     }
 
     if (rod::dbg_print)

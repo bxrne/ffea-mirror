@@ -21,9 +21,13 @@
 #  the research papers on the package.
 #
 
+set (COLLISION_SYM_DIR          stericCollision_initForceCentralSymmetric)
+set (COLLISION_SYM_CTEST        int_rod_${COLLISION_SYM_DIR})
+set (COLLISION_SYM_DIR_PATH     "${PROJECT_BINARY_DIR}/tests/rods/integration/${COLLISION_SYM_DIR}/")
 
-add_subdirectory(symmetry)
-add_subdirectory(equipartition)
-add_subdirectory(connection)
-add_subdirectory(stericCollision_pushApart)
-add_subdirectory(stericCollision_initForceCentralSymmetric)
+file (COPY run_test.py                          DESTINATION ${COLLISION_SYM_DIR_PATH})
+file (COPY create_straight_rod.py               DESTINATION ${COLLISION_SYM_DIR_PATH})
+file (COPY z-axis.rod                           DESTINATION ${COLLISION_SYM_DIR_PATH})
+file (COPY collision_twoRods_singleFrame.ffea   DESTINATION ${COLLISION_SYM_DIR_PATH})
+
+add_test(NAME ${COLLISION_SYM_CTEST} COMMAND ${PYTHON_EXECUTABLE} run_test.py)
