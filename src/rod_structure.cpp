@@ -404,15 +404,6 @@ namespace rod
         {
             do_steric();
         }
-        else
-        {
-            for (int node_no = 0; node_no < this->get_num_nodes(); node_no++)
-            {
-                this->steric_force[node_no] = 0;
-                this->steric_force[(node_no * 3) + 1] = 0;
-                this->steric_force[(node_no * 3) + 2] = 0;
-            }
-        }
 
         //This loop is for the dynamics
         for (int node_no = 0; node_no < end_node; node_no++)
@@ -490,9 +481,9 @@ namespace rod
             float z_steric = 0;
             if (this->calc_steric_rod)
             {
-                x_steric = steric_force[node_no * 3];
-                y_steric = steric_force[(node_no * 3) + 1];
-                z_steric = steric_force[(node_no * 3) + 2];
+                x_steric = this->steric_force[node_no * 3];
+                y_steric = this->steric_force[(node_no * 3) + 1];
+                z_steric = this->steric_force[(node_no * 3) + 2];
             }
 
             // Get delta r and delta twist
@@ -1283,13 +1274,14 @@ namespace rod
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
 
+        int num_nbrs = this->get_num_steric_neighbours(elem_id);
+
         if (rod::dbg_print)
         {
-            if (this->get_num_steric_neighbours(elem_id) > 0)
+            if (num_nbrs > 0)
             {
                 std::cout << "summing force on element " << elem_id << " from "
-                    << this->get_num_steric_neighbours(elem_id)
-                    << " neighbours:\n";
+                    << num_nbrs << " neighbours:\n";
             }
             else
             {
@@ -1297,9 +1289,18 @@ namespace rod
             }
         }
 
-        for (int nbr_id; nbr_id < this->get_num_steric_neighbours(elem_id); nbr_id++)
+        for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
         {
             rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id);
+
+            // sanity check
+            if (stericInt.elements_intersect() == false)
+            {
+                std::cout << "Rod " << stericInt.rod_id_self << ", elem " << stericInt.elem_id_self << "\n"
+                    << "Rod " << stericInt.rod_id_nbr  << ", elem " << stericInt.elem_id_nbr  << "\n";
+                throw std::runtime_error("Elements do not intersect, but a steric "
+                    "force calculation was attempted.");
+            }
 
             element_force = element_steric_force(
                 this->perturbation_amount,
@@ -1354,15 +1355,22 @@ namespace rod
         if(rod::dbg_print)
             std::cout << "calculating steric interactions on rod " << this->rod_no << ":\n";
 
-        for (int node_no; node_no < this->get_num_nodes() - 1; node_no++)
+        // reset force from last timestep
+        for (int i; i<this->length; i++)
+            this->steric_force[i] = 0;
+
+        // loop over elements
+        for (int i; i < this->get_num_nodes() - 1; i++)
         {
-            node_force = steric_force_sum_neighbours(node_no);
-            this->steric_force[node_no * 3] += node_force[0];
-            this->steric_force[(node_no * 3) + 1] += node_force[1];
-            this->steric_force[(node_no * 3) + 2] += node_force[2];
-            this->steric_force[(node_no * 3) + 3] += node_force[3];
-            this->steric_force[(node_no * 3) + 4] += node_force[4];
-            this->steric_force[(node_no * 3) + 5] += node_force[5];
+            node_force = steric_force_sum_neighbours(i);
+            // start node
+            this->steric_force[i * 3] += node_force[0];
+            this->steric_force[(i * 3) + 1] += node_force[1];
+            this->steric_force[(i * 3) + 2] += node_force[2];
+            // end node
+            this->steric_force[(i * 3) + 3] += node_force[3];
+            this->steric_force[(i * 3) + 4] += node_force[4];
+            this->steric_force[(i * 3) + 5] += node_force[5];
         }
 
         if (rod::dbg_print)

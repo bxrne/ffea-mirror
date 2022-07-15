@@ -40,13 +40,33 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
 {
     rod_id_self = rod_id_a;
     rod_id_nbr = rod_id_b;
-    element_id_self = elem_id_a;
-    element_id_nbr = elem_id_b;
+    elem_id_self = elem_id_a;
+    elem_id_nbr = elem_id_b;
     radius_self = radius_a;
     radius_nbr = radius_b;
     vec3d(n){contact_self[n] = c_a[n];}
     vec3d(n){contact_nbr[n] = c_b[n];}
 };
+
+bool InteractionData::elements_intersect()
+{
+    float c_ab[3] = {
+        this->contact_nbr[0] - this->contact_self[0],
+        this->contact_nbr[1] - this->contact_self[1],
+        this->contact_nbr[2] - this->contact_self[2]
+    };
+
+    if (rod::dbg_print)
+    {
+        std::cout << "|c_ab|" << rod::absolute(c_ab) << "\n";
+        std::cout << "radius sum" << this->radius_self + this->radius_nbr << "\n";
+    }
+
+    if (rod::absolute(c_ab) < this->radius_self + this->radius_nbr)
+        return true;
+    else
+        return false;
+}
 
 /**
  * @brief If either interaction point, c_a or c_b, lies outside the finite

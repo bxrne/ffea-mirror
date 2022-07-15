@@ -39,8 +39,8 @@ struct InteractionData
 {
     int rod_id_self;
     int rod_id_nbr;
-    int element_id_self;
-    int element_id_nbr;
+    int elem_id_self;
+    int elem_id_nbr;
     float radius_self;
     float radius_nbr;
     float contact_self[3];
@@ -55,6 +55,8 @@ struct InteractionData
         float rad_b,
         float c_a[3],
         float c_b[3]);
+
+    bool elements_intersect();
 
 };
 

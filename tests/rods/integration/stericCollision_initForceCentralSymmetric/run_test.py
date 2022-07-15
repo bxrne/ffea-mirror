@@ -28,13 +28,12 @@ def main():
     subprocess.call(["ffea", ffea_script_name + ".ffea"])
 
     # load both rod trajectories
-    print("Analysing output of FFEA simulation")
+    print("Analysing output of FFEA simulation" + str("\n"))
     rod1 = FFEA_rod.FFEA_rod(filename="outputs/1.rodtraj")
     rod2 = FFEA_rod.FFEA_rod(filename="outputs/2.rodtraj")
 
     force_dim = 2.4364705882352941e-11
-    print("Dividing by FFEA force unit: " + str(force_dim))
-    print("")
+    print("Dividing by FFEA force unit: " + str(force_dim) + str("\n"))
 
     force1 = rod1.steric_force[1, :, :] / force_dim
     force2 = rod2.steric_force[1, :, :] / force_dim
@@ -45,7 +44,8 @@ def main():
     force_22 = force2[2, :]
     force_23 = force2[3, :]
 
-    # check intra-element forces are equal (force is applied halfway along element)
+    # force occurs halfway along element
+    print("# === INTRA-ELEMENT FORCES EQUAL? === #")
     if np.linalg.norm(force_12 - force_13) < 1e-6:
         print("Rod 1, nodes 2 and 3: force magnitudes are equal")
         intra_element = True
@@ -56,6 +56,7 @@ def main():
     print("node 2: ", force_12)
     print("node 3: ", force_13)
     print("delta: ", np.linalg.norm(force_12 - force_13))
+    print("")
 
     if np.linalg.norm(force_22 - force_23) < 1e-6:
         print("Rod 2, nodes 2 and 3: force magnitudes are equal")
@@ -69,7 +70,7 @@ def main():
     print("delta: ", np.linalg.norm(force_22 - force_23))
     print("")
 
-    # check inter-element forces are symmetric
+    print("# === INTER-ELEMENT FORCES SYMMETRIC? === #")
     # force_12 + force_13 = -(force_22 + force_23)
     if np.linalg.norm(force_12 + force_13 + force_22 + force_23) < 1e-6:
         print("Inter-element forces are symmetric")
@@ -85,33 +86,34 @@ def main():
     print("delta: ", np.linalg.norm(force_12 + force_13 + force_22 + force_23))
     print("")
 
-    # check force only occurs on central elements
+    print("# === FORCE ONLY ON CENTRAL ELEMENTS? === #")
     force1_outer = np.delete(force1, [6, 7, 8, 9, 10, 11])
     force2_outer = np.delete(force2, [6, 7, 8, 9, 10, 11])
     if np.any(force1_outer != 0):
         print("Rod 1, steric force is on NON-central elements (FAIL)")
-        print("offending nodes: ", np.where(force1_outer!=0)[0]//3)
+        print("offending nodes: ", list(np.where(force1_outer != 0)[0] // 3))
         central_element = False
     else:
         print("Rod 1, steric force is on central element only")
         central_element = True
 
-    print('Rod 1 forces: ')
+    print("Rod 1 forces:")
     print(force1)
+    print("")
 
     if np.any(force2_outer != 0):
         print("Rod 2, steric force is on NON-central elements (FAIL)")
-        print("offending nodes: ", np.where(force2_outer!=0)[0]//3)
+        print("offending nodes: ", list(np.where(force2_outer != 0)[0] // 3))
         central_element = False
     else:
         print("Rod 2, steric force is on central element only")
         central_element = True
 
-    print('Rod 2 forces:')
+    print("Rod 2 forces:")
     print(force2)
     print("")
 
-    # TODO: check forces match BoE calculation
+    # print("# === FORCES MATCH EXPECTED RESULT? === #")
     match_boe = False
 
     if intra_element and inter_element and central_element and match_boe:
