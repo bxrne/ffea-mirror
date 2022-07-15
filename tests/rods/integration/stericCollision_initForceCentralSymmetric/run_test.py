@@ -32,35 +32,42 @@ def main():
     rod1 = FFEA_rod.FFEA_rod(filename="outputs/1.rodtraj")
     rod2 = FFEA_rod.FFEA_rod(filename="outputs/2.rodtraj")
 
-    force1 = rod1.steric_force[1, :]
-    force2 = rod2.steric_force[1, :]
+    force_dim = 2.4364705882352941e-11
+    print("Dividing by FFEA force unit: " + str(force_dim))
+    print("")
 
-    # force on central (3rd) element
-    force_12 = force1[6:9]
-    force_13 = force1[9:12]
-    force_22 = force2[6:9]
-    force_23 = force2[9:12]
+    force1 = rod1.steric_force[1, :, :] / force_dim
+    force2 = rod2.steric_force[1, :, :] / force_dim
+
+    # force on nodes of central element
+    force_12 = force1[2, :]
+    force_13 = force1[3, :]
+    force_22 = force2[2, :]
+    force_23 = force2[3, :]
 
     # check intra-element forces are equal (force is applied halfway along element)
     if np.linalg.norm(force_12 - force_13) < 1e-6:
         print("Rod 1, nodes 2 and 3: force magnitudes are equal")
         intra_element = True
     else:
-        print("FAIL: Rod 1, nodes 2 and 3: force magnitudes are NOT equal")
-        print("node 2: ", force_12)
-        print("node 3: ", force_13)
-        print("delta: ", np.linalg.norm(force_12 - force_13))
+        print("Rod 1, nodes 2 and 3: force magnitudes are NOT equal (FAIL)")
         intra_element = False
+
+    print("node 2: ", force_12)
+    print("node 3: ", force_13)
+    print("delta: ", np.linalg.norm(force_12 - force_13))
 
     if np.linalg.norm(force_22 - force_23) < 1e-6:
         print("Rod 2, nodes 2 and 3: force magnitudes are equal")
         intra_element = True
     else:
-        print("FAIL: Rod 2, nodes 2 and 3: force magnitudes are NOT equal")
-        print("node 2: ", force_22)
-        print("node 3: ", force_23)
-        print("error: ", np.linalg.norm(force_22 - force_23))
+        print("Rod 2, nodes 2 and 3: force magnitudes are NOT equal (FAIL)")
         intra_element = False
+
+    print("node 2: ", force_22)
+    print("node 3: ", force_23)
+    print("delta: ", np.linalg.norm(force_22 - force_23))
+    print("")
 
     # check inter-element forces are symmetric
     # force_12 + force_13 = -(force_22 + force_23)
@@ -68,34 +75,41 @@ def main():
         print("Inter-element forces are symmetric")
         inter_element = True
     else:
-        print("FAIL: Inter-element forces are NOT symmetrice")
-        print("rod 1, node 2: ", force_12)
-        print("rod 1, node 3: ", force_13)
-        print("rod 2, node 2: ", force_22)
-        print("rod 2, node 3: ", force_23)
-        print("delta: ", np.linalg.norm(force_12 + force_13 + force_22 + force_23))
+        print("Inter-element forces are NOT symmetric (FAIL)")
         inter_element = False
+
+    print("rod 1, node 2: ", force_12)
+    print("rod 1, node 3: ", force_13)
+    print("rod 2, node 2: ", force_22)
+    print("rod 2, node 3: ", force_23)
+    print("delta: ", np.linalg.norm(force_12 + force_13 + force_22 + force_23))
+    print("")
 
     # check force only occurs on central elements
     force1_outer = np.delete(force1, [6, 7, 8, 9, 10, 11])
     force2_outer = np.delete(force2, [6, 7, 8, 9, 10, 11])
     if np.any(force1_outer != 0):
-        print("FAIL: Forces applied to non-central nodes (rod 1)")
-        print("non-central, non-zero forces: ", force1_outer[force1_outer!=0])
-        print("on nodes: ", list(np.where(force1_outer!=0)[0]))
+        print("Rod 1, steric force is on NON-central elements (FAIL)")
+        print("offending nodes: ", np.where(force1_outer!=0)[0]//3)
         central_element = False
     else:
-        print("Only central nodes have steric force (rod 1)")
+        print("Rod 1, steric force is on central element only")
         central_element = True
 
+    print('Rod 1 forces: ')
+    print(force1)
+
     if np.any(force2_outer != 0):
-        print("FAIL: Forces applied to non-central nodes (rod 2)")
-        print("non-central, non-zero forces: ", force2_outer[force2_outer!=0])
-        print("on nodes: ", list(np.where(force2_outer!=0)[0]))
+        print("Rod 2, steric force is on NON-central elements (FAIL)")
+        print("offending nodes: ", np.where(force2_outer!=0)[0]//3)
         central_element = False
     else:
-        print("Only central nodes have steric force (rod 2)")
+        print("Rod 2, steric force is on central element only")
         central_element = True
+
+    print('Rod 2 forces:')
+    print(force2)
+    print("")
 
     # TODO: check forces match BoE calculation
     match_boe = False
