@@ -274,55 +274,69 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     float radius_a, float radius_b, std::vector<InteractionData> &neighbours_a,
     std::vector<InteractionData> &neighbours_b)
 {
+    float mp_a[3] = {0};
+    float mp_b[3] = {0};
+    float mp_ab[3] = {0};
     float c_a[3] = {0};
     float c_b[3] = {0};
     float c_ab[3] = {0};
 
-    if (rod::dbg_print)
-        std::cout << "Element neighbour assignment:\n";
+    rod::get_element_midpoint(p_a, r_a, mp_a);
+    rod::get_element_midpoint(p_b, r_b, mp_b);
+    vec3d(n){mp_ab[n] = mp_b[n] - mp_a[n];}
 
-    rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
-    vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
-
-    if (rod::dbg_print)
+    if(rod::dbg_print)
     {
-        std::cout << "  |c_ab|: "
-                    << rod::absolute(c_ab) * mesoDimensions::length * 1e9 << " nm"
-                    << std::endl;
-        std::cout << "  radius sum: "
-                    << (radius_a + radius_b) * mesoDimensions::length * 1e9 << " nm"
-                    << std::endl;
+        std::cout << "cull distant elements:\n";
+        std::printf("  |midpoint ab| : %.3e", rod::absolute(mp_ab));
+        std::printf("    = %.2f|p_a|", rod::absolute(mp_ab) / rod::absolute(p_a));
+        std::printf("    = %.2f|p_b|", rod::absolute(mp_ab) / rod::absolute(p_b));
     }
 
-    if (rod::absolute(c_ab) < (radius_a + radius_b))
+    if (rod::absolute(mp_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)))
     {
+
+        rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
+        vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
+
         if (rod::dbg_print)
         {
-            std::cout << "  neighbour of " << rod_id_a << "|" << elem_id_a
-            << ": " << rod_id_b << "|" << elem_id_b << "\n\n";
+            std::cout << "rod-rod distance:\n";
+            printf("  |c_ab| : %.3e", rod::absolute(c_ab));
+            printf("  radius sum : %.3e", radius_a + radius_b);
         }
 
-        InteractionData stericDataA(
-            rod_id_a,
-            rod_id_b,
-            elem_id_a,
-            elem_id_b,
-            radius_a,
-            radius_b,
-            c_a,
-            c_b);
-        neighbours_a.push_back(stericDataA);
+        if (rod::absolute(c_ab) < (radius_a + radius_b))
+        {
+            if (rod::dbg_print)
+            {
+                std::cout << "  neighbour pair: " << rod_id_a << "|" << elem_id_a
+                << " and " << rod_id_b << "|" << elem_id_b << "\n\n";
+                std::cout << "  generating interaction structs";
+            }
 
-        InteractionData stericDataB(
-            rod_id_b,
-            rod_id_a,
-            elem_id_b,
-            elem_id_a,
-            radius_b,
-            radius_a,
-            c_b,
-            c_a);
-        neighbours_b.push_back(stericDataB);
+            InteractionData stericDataA(
+                rod_id_a,
+                rod_id_b,
+                elem_id_a,
+                elem_id_b,
+                radius_a,
+                radius_b,
+                c_a,
+                c_b);
+            neighbours_a.push_back(stericDataA);
+
+            InteractionData stericDataB(
+                rod_id_b,
+                rod_id_a,
+                elem_id_b,
+                elem_id_a,
+                radius_b,
+                radius_a,
+                c_b,
+                c_a);
+            neighbours_b.push_back(stericDataB);
+        }
     }
 }
 

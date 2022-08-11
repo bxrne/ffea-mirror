@@ -668,26 +668,14 @@ float safe_cos(float in){
 */
     float get_stretch_energy(float k, float p_i[3], float p_i_equil[3])
     {
-        if (rod::dbg_print)
-        {
-            std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1] << ", " << p_i_equil[2] << "}, ";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << "p_i = {" << p_i[0] << ", " << p_i[1] << ", " << p_i[2] << "}, ";
-        }
         float diff = absolute(p_i) - absolute(p_i_equil);
-        if (rod::dbg_print)
-        {
-            std::cout << "k = " << k << ", ";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << "diff = " << diff << ", ";
-        }
         float stretch_energy = (diff * diff * 0.5 * k) / absolute(p_i_equil);
         if (rod::dbg_print)
         {
+            std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1] << ", " << p_i_equil[2] << "}\n";
+            std::cout << "p_i = {" << p_i[0] << ", " << p_i[1] << ", " << p_i[2] << "}\n";
+            std::cout << "diff = " << diff << "\n";
+            std::cout << "k = " << k << "\n";
             std::cout << "stretch energy: " << stretch_energy << "\n";
         }
         not_simulation_destroying(stretch_energy, "get_stretch_energy is simulation destroying.");
@@ -719,7 +707,7 @@ float safe_cos(float in){
 
         if (rod::dbg_print)
         {
-            std::cout << "\n\ntwist energy being calculated.\n\n";
+            std::cout << "\nComputing twist energy:\n";
         }
 
         float l_i = get_l_i(p_im1_equil, p_i_equil);
@@ -751,7 +739,7 @@ float safe_cos(float in){
 
         if (rod::dbg_print)
         {
-            std::cout << "parallel transport at equil is occuring.\n";
+            std::cout << "parallel transport at equil:\n";
             // print_array("m_im1_equil_norm", m_im1_equil_norm, 3);
             // print_array("m_equil_prime", m_equil_prime, 3);
             // print_array("p_im1_equil_norm", p_im1_equil_norm, 3);
@@ -782,7 +770,7 @@ float safe_cos(float in){
             // std::cout << " m_equil_prime: [" << m_equil_prime[0] << ", " << m_equil_prime[1] << ", " << m_equil_prime[2] << "\n";
             // std::cout << " delta_theta: " << delta_theta << "\n";
             // std::cout << " delta_theta_equil: " << delta_theta_equil << "\n";
-            std::cout << " twist_energy: " << twist_energy << "\n";
+            std::cout << "  twist_energy: " << twist_energy << "\n";
         }
 
         //float delta_theta = safe_cos( m_prime[x]*m_i_norm[x] + m_prime[y]*m_i_norm[y] + m_prime[z]*m_i_norm[z] );
@@ -790,11 +778,6 @@ float safe_cos(float in){
         //float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
         //float twist_energy = (beta/l_i)*pow((delta_theta - delta_theta_equil), 2);
         not_simulation_destroying(twist_energy, "get_twist_energy is simulation destroying.");
-
-        if (rod::dbg_print)
-        {
-            std::cout << "\n\ntwist has been calculated.\n\n";
-        }
 
         return twist_energy;
     }

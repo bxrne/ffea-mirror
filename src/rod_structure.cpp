@@ -245,9 +245,8 @@ namespace rod
             // We move the node backwards and forwards in each degree of freedom, so we end up calling get_perturbation_energy eight whole times
             // Fill the temporary variable with energies ( we basically pass the entire state of the rod to get_perturbation_energy)
             if (rod::dbg_print)
-            {
-                std::cout << "getting perturbation energy 1...\n";
-            } //temp
+                std::cout << "CALCULATING INTERNAL PERTURBATION ENERGIES\n";
+
             get_perturbation_energy(
                 perturbation_amount * 0.5, //half one way, half the other
                 x,                         // dimension (x, y, z are array indices, defined to be 1, 2, 3 at the top of this file, twist is = 4)
@@ -267,10 +266,6 @@ namespace rod
             internal_perturbed_x_energy_positive[(node_no * 3) + 1] = energies[bend_index];
             internal_perturbed_x_energy_positive[(node_no * 3) + 2] = energies[twist_index];
 
-            if (rod::dbg_print)
-            {
-                std::cout << "getting perturbation energy 2...\n";
-            }                        //temp
             get_perturbation_energy( //from rod_math
                 perturbation_amount * 0.5,
                 y, // dimension
@@ -403,6 +398,9 @@ namespace rod
         // steric interactions loop
         if (this->calc_steric_rod == 1)
         {
+            if(rod::dbg_print)
+                std::cout << "CALCULATING ROD-ROD STERIC INTERACTIONS\n";
+
             do_steric();
         }
 
