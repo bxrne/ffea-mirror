@@ -707,7 +707,8 @@ namespace rod
         this->perturbation_amount = 0.001 * pow(10, -9) / mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
         this->calc_noise = 1;
         this->calc_steric_rod = 0;
-        this->steric_force_factor = (5 * mesoDimensions::Energy / 1e-9) / mesoDimensions::force;  // maximum at ~ 20 pN (Biotin/streptavidin ~ 160 pN)
+        // TODO: scale this with timestep (currently selected for 1e-13)
+        this->steric_force_factor = 20;  // maximum at ~ 486 pN (Biotin/streptavidin unfolding ~ 160 pN) [Force units]
 
         return *this;
     }

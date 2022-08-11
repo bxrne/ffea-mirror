@@ -51,6 +51,8 @@ def plot_displacement(rod1, rod2):
     disp1 = rod1.current_r - rod1.current_r[0]
     disp2 = rod2.current_r - rod2.current_r[0]
 
+    radius1 = rod1.material_params[0][0][2]
+
     print("Plotting displacement...")
     for frame in range(rod1.num_frames):
         for node in range(rod1.num_elements):
@@ -58,6 +60,10 @@ def plot_displacement(rod1, rod2):
             displacement_rod2 = np.linalg.norm(disp2[frame, node])
             plt.plot(frame, displacement_rod1*1e9, marker='o', color='red', ms=0.8)
             plt.plot(frame, displacement_rod2*1e9, marker='o', color='blue', ms=0.8)
+
+        plt.plot(frame, 0.5*radius1, marker='o', color='black', ms=0.5)
+
+    plt.title("rod1: red | rod2: blue | half-radius: black")
 
     plt.xlabel("Step")
     plt.ylabel("Distance of node from initial position (nm)")

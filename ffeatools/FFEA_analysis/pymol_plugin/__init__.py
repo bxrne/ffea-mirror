@@ -1219,8 +1219,9 @@ class FFEA_viewer_control_window:
                 rx = rod.current_r[i][j][0]
                 ry = rod.current_r[i][j][1]
                 rz = rod.current_r[i][j][2]
-                steric_radius = rod.material_params[i][j][2] / 1.7e-10  # element radius in FFEA units
-                display_radius = 1.02 * steric_radius  # multiply by PyMOL display scaling factor (found by trial and error!)
+                steric_radius = rod.material_params[i][j][2] / 1.7e-10  # element radius in m
+                # display_radius = 1.02 * steric_radius  # multiply by PyMOL display scaling factor (found by trial and error!)
+                display_radius = 1.8 * steric_radius  # ok, try this one (found using steric interaction forces)
 
                 # drawing on elements
                 if j < len(rod.current_r[i]) - 1:

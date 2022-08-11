@@ -306,7 +306,7 @@ class FFEA_rod:
                     row += 1
                     line = rod_file.readline()
                     self.num_neighbours[frame_no] = np.fromstring(
-                        line, sep=",").reshape(self.num_neighbours[frame_no].shape)
+                        line, sep=",", dtype=int)
                     frame_no += 1
                 except ValueError as e:
                     raise ValueError(str(e) + "\nError loading frame " +
