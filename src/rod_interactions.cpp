@@ -58,8 +58,8 @@ bool InteractionData::elements_intersect()
 
     if (rod::dbg_print)
     {
-        std::cout << "|c_ab|" << rod::absolute(c_ab) << "\n";
-        std::cout << "radius sum" << this->radius_self + this->radius_nbr << "\n";
+        std::cout << "|c_ab|: " << rod::absolute(c_ab) << "\n";
+        std::cout << "radius sum: " << this->radius_self + this->radius_nbr << "\n";
     }
 
     if (rod::absolute(c_ab) < this->radius_self + this->radius_nbr)
@@ -298,9 +298,8 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     {
         if (rod::dbg_print)
         {
-            std::cout << "  neighbours: rod " << rod_id_a << " elem "
-                << elem_id_a << ", rod " << rod_id_b << " elem " << elem_id_b
-                << "\n\n";
+            std::cout << "  neighbour of " << rod_id_a << "|" << elem_id_a
+            << ": " << rod_id_b << "|" << elem_id_b << "\n\n";
         }
 
         InteractionData stericDataA(

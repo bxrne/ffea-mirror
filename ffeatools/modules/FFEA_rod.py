@@ -151,6 +151,8 @@ class FFEA_rod:
             self.B_matrix = np.zeros([self.num_frames, self.num_elements, 4])
             self.steric_force = np.zeros(
                 [self.num_frames, self.num_elements, 3])
+            self.num_neighbours = np.zeros(
+                [self.num_frames, self.num_elements])
 
         return
 
@@ -228,6 +230,7 @@ class FFEA_rod:
             [self.num_frames, self.num_elements, self.get_num_dimensions(14)])
         self.steric_force = np.empty(
             [self.num_frames, self.num_elements, self.get_num_dimensions(15)])
+        self.num_neighbours = np.empty([self.num_frames, self.num_elements])
 
         # look, this is not pretty but it is really fast
         # Hard-coded some shapes at the end because I wasn't following the previous convention
@@ -300,6 +303,10 @@ class FFEA_rod:
                     line = rod_file.readline()
                     self.steric_force[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.steric_force[frame_no].shape)
+                    row += 1
+                    line = rod_file.readline()
+                    self.num_neighbours[frame_no] = np.fromstring(
+                        line, sep=",").reshape(self.num_neighbours[frame_no].shape)
                     frame_no += 1
                 except ValueError as e:
                     raise ValueError(str(e) + "\nError loading frame " +
@@ -338,6 +345,7 @@ class FFEA_rod:
         rod_file.write("row13,material_params\n")
         rod_file.write("row14,B_matrix\n")
         rod_file.write("row15,steric_force\n")
+        rod_file.write("row16,num_neighbours\n")
 
         # Connections (note: this is temporary, it might end up in the .ffea file)
         rod_file.write("CONNECTIONS,ROD,0\n")
@@ -387,6 +395,7 @@ class FFEA_rod:
             write_array(self.material_params[frame].flatten(), rod_file)
             write_array(self.B_matrix[frame].flatten(), rod_file)
             write_array(self.steric_force[frame].flatten(), rod_file)
+            write_array(self.num_neighbours[frame].flatten(), rod_file)
 
         rod_file.close()
 
@@ -1463,6 +1472,7 @@ class anal_rod:
         self.rod.material_params = self.rod.material_params[::interval]
         self.rod.B_matrix = self.rod.B_matrix[::interval]
         self.rod.steric_force = self.rod.steric_force[::interval]
+        self.rod.num_neighbours = self.rod.num_neighbours[::interval]
         self.rod.num_frames = len(self.rod.current_r)
 
         try:

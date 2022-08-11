@@ -101,10 +101,28 @@ namespace rod
         return true;
     }
 
-    /**
- Print the contents of an array to the stdout.
-*/
+    // Print the contents of an array to the stdout.
     void print_array(std::string array_name, float array[], int length)
+    {
+        if (rod::dbg_print)
+        {
+            std::cout << array_name << " : [";
+            for (int i = 0; i < length; i++)
+            {
+                if (i != length - 1)
+                {
+                    std::cout << array[i] << ", ";
+                }
+                else
+                {
+                    std::cout << array[i];
+                }
+            }
+            std::cout << "]\n";
+        }
+    }
+
+    void print_array(std::string array_name, int array[], int length)
     {
         if (rod::dbg_print)
         {
@@ -189,6 +207,25 @@ namespace rod
             else
             {
                 std::fprintf(file_ptr, "%e", array_ptr[i] * unit_scale_factor);
+            }
+        }
+        if (new_line == true)
+        {
+            std::fprintf(file_ptr, "\n");
+        }
+    }
+
+    void write_array(FILE *file_ptr, int *array_ptr, int array_len, bool new_line)
+    {
+        for (int i = 0; i < array_len; i++)
+        {
+            if (i < array_len - 1)
+            {
+                std::fprintf(file_ptr, "%i,", array_ptr[i]);
+            }
+            else
+            {
+                std::fprintf(file_ptr, "%i", array_ptr[i]);
             }
         }
         if (new_line == true)
@@ -715,11 +752,11 @@ float safe_cos(float in){
         if (rod::dbg_print)
         {
             std::cout << "parallel transport at equil is occuring.\n";
+            // print_array("m_im1_equil_norm", m_im1_equil_norm, 3);
+            // print_array("m_equil_prime", m_equil_prime, 3);
+            // print_array("p_im1_equil_norm", p_im1_equil_norm, 3);
+            // print_array("p_i_equil_norm", p_i_equil_norm, 3);
         }
-        print_array("m_im1_equil_norm", m_im1_equil_norm, 3);
-        print_array("m_equil_prime", m_equil_prime, 3);
-        print_array("p_im1_equil_norm", p_im1_equil_norm, 3);
-        print_array("p_i_equil_norm", p_i_equil_norm, 3);
 
         precise_normalize(m_prime, m_prime);
         precise_normalize(m_equil_prime, m_equil_prime);
@@ -733,58 +770,18 @@ float safe_cos(float in){
 
         if (rod::dbg_print)
         {
-            std::cout << " m_i_norm: [" << m_i_norm[0] << ", " << m_i_norm[1] << ", " << m_i_norm[2] << "\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << " m_im1_norm: [" << m_im1_norm[0] << ", " << m_im1_norm[1] << ", " << m_im1_norm[2] << "\n";
-        }
-
-        if (rod::dbg_print)
-        {
-            std::cout << " m_i_equil: [" << m_i_equil_norm[0] << ", " << m_i_equil_norm[1] << ", " << m_i_equil_norm[2] << "\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << " m_im1_equil: [" << m_im1_equil_norm[0] << ", " << m_im1_equil_norm[1] << ", " << m_im1_equil_norm[2] << "\n";
-        }
-
-        if (rod::dbg_print)
-        {
-            std::cout << "p_i_norm: [" << p_i_norm[0] << ", " << p_i_norm[1] << ", " << p_i_norm[2] << "]\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << "p_im1_norm: [" << p_im1_norm[0] << ", " << p_im1_norm[1] << ", " << p_im1_norm[2] << "]\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << "p_i_equil_norm: [" << p_i_equil_norm[0] << ", " << p_i_equil_norm[1] << ", " << p_i_equil_norm[2] << "]\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << "p_im1_equil_norm: [" << p_im1_equil_norm[0] << ", " << p_im1_equil_norm[1] << ", " << p_im1_equil_norm[2] << "]\n";
-        }
-
-        if (rod::dbg_print)
-        {
-            std::cout << " m_prime: [" << m_prime[0] << ", " << m_prime[1] << ", " << m_prime[2] << "\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << " m_equil_prime: [" << m_equil_prime[0] << ", " << m_equil_prime[1] << ", " << m_equil_prime[2] << "\n";
-        }
-
-        if (rod::dbg_print)
-        {
-            std::cout << " delta_theta: " << delta_theta << "\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << " delta_theta_equil: " << delta_theta_equil << "\n";
-        }
-        if (rod::dbg_print)
-        {
+            // std::cout << " m_i_norm: [" << m_i_norm[0] << ", " << m_i_norm[1] << ", " << m_i_norm[2] << "\n";
+            // std::cout << " m_im1_norm: [" << m_im1_norm[0] << ", " << m_im1_norm[1] << ", " << m_im1_norm[2] << "\n";
+            // std::cout << " m_i_equil: [" << m_i_equil_norm[0] << ", " << m_i_equil_norm[1] << ", " << m_i_equil_norm[2] << "\n";
+            // std::cout << " m_im1_equil: [" << m_im1_equil_norm[0] << ", " << m_im1_equil_norm[1] << ", " << m_im1_equil_norm[2] << "\n";
+            // std::cout << "p_i_norm: [" << p_i_norm[0] << ", " << p_i_norm[1] << ", " << p_i_norm[2] << "]\n";
+            // std::cout << "p_im1_norm: [" << p_im1_norm[0] << ", " << p_im1_norm[1] << ", " << p_im1_norm[2] << "]\n";
+            // std::cout << "p_i_equil_norm: [" << p_i_equil_norm[0] << ", " << p_i_equil_norm[1] << ", " << p_i_equil_norm[2] << "]\n";
+            // std::cout << "p_im1_equil_norm: [" << p_im1_equil_norm[0] << ", " << p_im1_equil_norm[1] << ", " << p_im1_equil_norm[2] << "]\n";
+            // std::cout << " m_prime: [" << m_prime[0] << ", " << m_prime[1] << ", " << m_prime[2] << "\n";
+            // std::cout << " m_equil_prime: [" << m_equil_prime[0] << ", " << m_equil_prime[1] << ", " << m_equil_prime[2] << "\n";
+            // std::cout << " delta_theta: " << delta_theta << "\n";
+            // std::cout << " delta_theta_equil: " << delta_theta_equil << "\n";
             std::cout << " twist_energy: " << twist_energy << "\n";
         }
 
@@ -843,10 +840,10 @@ float safe_cos(float in){
         delta_omega[1] = omega_i_im1[1] - omega_i_im1_equil[1];
         float result = delta_omega[0] * (delta_omega[0] * B_equil[0] + delta_omega[1] * B_equil[2]) + delta_omega[1] * (delta_omega[0] * B_equil[1] + delta_omega[1] * B_equil[3]);
         not_simulation_destroying(result, "get_bend_energy is simulation destroying.");
-        print_array("    B_equil", B_equil, 4);
-        print_array("    delta_omega", delta_omega, 2);
         if (rod::dbg_print)
         {
+            print_array("    B_equil", B_equil, 4);
+            print_array("    delta_omega", delta_omega, 2);
             std::cout << "    result:" << result << "\n";
         }
         return result;
@@ -1064,20 +1061,23 @@ float safe_cos(float in){
         float n_mutual[3];
         float n_mutual_equil[3];
 
-        //print_array("B", B_i_equil, 4);
-        print_array("    m_im1", m_im1, 3);
-        print_array("    m_i", m_i, 3);
-        print_array("    m_im1_transported", m_im1_transported, 3);
-        print_array("    m_i_transported", m_i_transported, 3);
-        print_array("    m_mutual", m_mutual, 3);
-        print_array("    l_mutual", mutual_l, 3);
+        if (rod::dbg_print)
+        {
+            // print_array("B", B_i_equil, 4);
+            // print_array("    m_im1", m_im1, 3);
+            // print_array("    m_i", m_i, 3);
+            // print_array("    m_im1_transported", m_im1_transported, 3);
+            // print_array("    m_i_transported", m_i_transported, 3);
+            // print_array("    m_mutual", m_mutual, 3);
+            // print_array("    l_mutual", mutual_l, 3);
 
-        print_array("    p_im1", p_im1, 3);
-        print_array("    p_i", p_i, 3);
-        print_array("    p_im1_equil", p_im1_equil, 3);
-        print_array("    p_i_equil", p_i_equil, 3);
-        print_array("    mutual_l", mutual_l, 3);
-        print_array("    equil_mutual_l", equil_mutual_l, 3);
+            // print_array("    p_im1", p_im1, 3);
+            // print_array("    p_i", p_i, 3);
+            // print_array("    p_im1_equil", p_im1_equil, 3);
+            // print_array("    p_i_equil", p_i_equil, 3);
+            // print_array("    mutual_l", mutual_l, 3);
+            // print_array("    equil_mutual_l", equil_mutual_l, 3);
+        }
 
         cross_product(mutual_l, m_mutual, n_mutual);
         cross_product(equil_mutual_l, m_mutual_equil, n_mutual_equil);
@@ -1569,10 +1569,6 @@ float safe_cos(float in){
         float stretch_energy = 0;
         float twist_energy = 0;
 
-        // ! hack to get rid of ridiculous amount of stdout
-        bool dbg_old = dbg_print;
-        dbg_print = false;
-
         if (start_cutoff == 0 and end_cutoff == 0)
         {
             bend_energy += get_bend_energy_mutual_parallel_transport(p[im2], p[im1], p_equil[im2], p_equil[im1], n[im2], m[im2], n_equil[im2], m_equil[im2], n[im1], m[im1], n_equil[im1], m_equil[im1], B_equil[im1], B_equil[im2]);
@@ -1618,8 +1614,6 @@ float safe_cos(float in){
         {
             throw std::invalid_argument("Length of the rod must be larger than 3");
         }
-
-        dbg_print = dbg_old;
 
         energies[0] = bend_energy;
         energies[1] = stretch_energy;

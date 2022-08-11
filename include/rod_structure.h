@@ -88,13 +88,14 @@ namespace rod
         float *B_matrix;                         /** Contents of the bending modulus matrix for each node, as a 1-d array. Given as [a_1_1, a_1_2, a_2,1, a_2_2, a_1_1...]. **/
         float *steric_perturbed_energy_positive; // Length 2L array: energies from steric interactions at the start (0) and end (1) nodes of each rod element, i. Given as [xi0 yi0 zi0, xi1 yi1 zi1, ...]
         float *steric_perturbed_energy_negative;
-        float *steric_force; // Length L array: steric repulsive force interpolated onto nodes from elements [x, y, z, ...]
+        float *steric_force;                     // Length L array: steric repulsive force interpolated onto nodes from elements [x, y, z, ...]
 
-        float *applied_forces;           /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
-        bool *pinned_nodes;              /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
-        bool interface_at_start = false; /** if this is true, the positioning of the start node is being handled by a rod-blob interface, so its energies will be ignored. **/
-        bool interface_at_end = false;   /** if this is true, the positioning of the end node is being handled by a rod-blob interface, so its energies will be ignored. **/
-        bool restarting = false;         /** If this is true, the rod will skip writing a frame of the trajectory (this is normally done so that the trajectory starts with correct box positioning) **/
+        int *num_neighbours; // Length L/3 array. Keeps track of how many neighbours each rod element has.
+        float *applied_forces;              /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
+        bool *pinned_nodes;                 /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
+        bool interface_at_start = false;    /** if this is true, the positioning of the start node is being handled by a rod-blob interface, so its energies will be ignored. **/
+        bool interface_at_end = false;      /** if this is true, the positioning of the end node is being handled by a rod-blob interface, so its energies will be ignored. **/
+        bool restarting = false;            /** If this is true, the rod will skip writing a frame of the trajectory (this is normally done so that the trajectory starts with correct box positioning) **/
 
         std::vector<std::vector<InteractionData>> steric_neighbours; /** Steric interaction neighbour list **/
 

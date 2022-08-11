@@ -1626,15 +1626,12 @@ int ffea_test::line_connecting_rod_elements()
             pass_count++;
         }
 
-        if (rod::dbg_print == true)
-        {
-            rod::print_array("c_a computed", c_a, 3);
-            rod::print_array("c_a expected", c_a_answer, 3);
-            std::cout << "|delta_a| = " << rod::absolute(delta_a) << std::endl;
-            rod::print_array("c_b computed", c_b, 3);
-            rod::print_array("c_b expected", c_b_answer, 3);
-            std::cout << "|delta_b| = " << rod::absolute(delta_b) << std::endl;
-        }
+        rod::print_array("c_a computed", c_a, 3);
+        rod::print_array("c_a expected", c_a_answer, 3);
+        std::cout << "|delta_a| = " << rod::absolute(delta_a) << std::endl;
+        rod::print_array("c_b computed", c_b, 3);
+        rod::print_array("c_b expected", c_b_answer, 3);
+        std::cout << "|delta_b| = " << rod::absolute(delta_b) << std::endl;
 
         std::cout << "CASES PASSED: " << pass_count << "/" << num_tests << "\n"
                   << std::endl;
@@ -1888,7 +1885,6 @@ int ffea_test::steric_energy_two_rod_elements()
 int ffea_test::rod_collision_no_crash()
 {
 
-    rod::dbg_print = false;  // ! temporary
     World *world;
     world = new World();
     if (world->init("collision_two_rods.ffea", 0, 0, 2) == FFEA_ERROR)

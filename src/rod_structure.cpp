@@ -93,6 +93,7 @@ namespace rod
                                            material_params(new float[length]),
                                            B_matrix(new float[length + (length / 3)]),
                                            steric_force(new float[length]),
+                                           num_neighbours(new int[length/3]),
                                            applied_forces(new float[length + (length / 3)]),
                                            pinned_nodes(new bool[length / 3]){};
 
@@ -685,6 +686,7 @@ namespace rod
         material_params = static_cast<float *>(malloc(sizeof(float) * length));
         B_matrix = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         steric_force = static_cast<float *>(malloc(sizeof(float) * length));
+        num_neighbours = static_cast<int *>(malloc(sizeof(int) * (length/3)));
         applied_forces = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length / 3));
         steric_neighbours = std::vector<std::vector<InteractionData>>((length / 3) - 1);
@@ -791,7 +793,9 @@ namespace rod
                 assert(
                     (unsigned)length == line_vec_float.size() ||
                     (unsigned)length + (length / 3) == line_vec_float.size() ||
-                    (unsigned)2 * length == line_vec_float.size()); //it's definitely fine to cast length
+                    (unsigned)2 * length == line_vec_float.size() || //it's definitely fine to cast length
+                    (unsigned)length/3 == line_vec_float.size()
+                    );
 
                 /** Set our rod data arrays to the raw .data() from the vector. */
                 if (n == line_of_last_frame + 1)
@@ -869,6 +873,11 @@ namespace rod
                     for (int i = 0; i < length; i++)
                         steric_force[i] = line_vec_float.data()[i];
                 }
+                if (n == line_of_last_frame + 16)
+                {
+                    for (int i = 0; i < length/3; i++)
+                        num_neighbours[i] = line_vec_float.data()[i];
+                }
             }
             n++;
         }
@@ -901,6 +910,7 @@ namespace rod
         write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
         write_array(file_ptr, B_matrix, length + (length / 3), bending_response_factor, true);
         write_array(file_ptr, steric_force, length, mesoDimensions::force, true);
+        write_array(file_ptr, num_neighbours, length/3, true);
         fflush(file_ptr);
         return *this;
     }
@@ -1275,18 +1285,22 @@ namespace rod
         float diff[3] = { 0 };
 
         int num_nbrs = this->get_num_steric_neighbours(elem_id);
+        this->num_neighbours[elem_id] = num_nbrs;
 
         if (rod::dbg_print)
         {
-            if (num_nbrs > 0)
+            std::cout << "Elem " << this->rod_no << "|" << elem_id << " has "
+                << num_nbrs << " neighbours";
+            for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
             {
-                std::cout << "summing force on element " << elem_id << " from "
-                    << num_nbrs << " neighbours:\n";
+                if (nbr_id == 0)
+                    std::cout << ": ";
+                std::cout << get_interaction_data(elem_id, nbr_id).rod_id_nbr
+                    << "|" << get_interaction_data(elem_id, nbr_id).elem_id_nbr;
+                if (nbr_id < num_nbrs - 1)
+                    std::cout << ", ";
             }
-            else
-            {
-                std::cout << "element " << elem_id << " has no neighbours:\n";
-            }
+            std::cout << "\n";
         }
 
         for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
@@ -1331,11 +1345,9 @@ namespace rod
 
         if (rod::dbg_print)
         {
-            print_vector(
-                "  force sum start node",
+            print_vector("  force sum start node",
                 std::vector<float>(node_force_sum.begin(), std::next(node_force_sum.begin(), 3)));
-            print_vector(
-                "  force sum end node",
+            print_vector("  force sum end node",
                 std::vector<float>(std::next(node_force_sum.begin(), 3), node_force_sum.end()));
             std::cout << "\n";
         }
@@ -1352,16 +1364,16 @@ namespace rod
     {
         std::vector<float> node_force(6, 0);  // x0, y0, z0, x1, y1, z1
 
-        if(rod::dbg_print)
-            std::cout << "calculating steric interactions on rod " << this->rod_no << ":\n";
-
         // reset force from last timestep
-        for (int i; i<this->length; i++)
+        for (int i = 0; i < this->length; i++)
             this->steric_force[i] = 0;
 
         // loop over elements
-        for (int i; i < this->get_num_nodes() - 1; i++)
+        for (int i = 0; i < this->get_num_nodes() - 1; i++)
         {
+            if(rod::dbg_print)
+                std::cout << "ROD STERIC CALC " << this->rod_no << "|" << i << "\n";
+
             node_force = steric_force_sum_neighbours(i);
             // start node
             this->steric_force[i * 3] += node_force[0];

@@ -72,15 +72,17 @@ namespace rod
 
 #define vec3d(x) for (int x = 0; x < 3; ++x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
 
-    static const float rod_software_version = 1.1;
+    static const float rod_software_version = 1.2;
 
     void rod_abort(std::string message);
 
     // These are just generic vector functions that will be replaced by mat_vec_fns at some point
     void print_array(std::string array_name, float array[], int length);
+    void print_array(std::string array_name, int array[], int length);
     void print_array(std::string array_name, float array[], int start, int end);
     void print_array(std::string array_name, double array[], int length);
     void write_array(FILE *file_ptr, float *array_ptr, int array_len, float unit_scale_factor, bool new_line);
+    void write_array(FILE *file_ptr, int *array_ptr, int array_len, bool new_line);
     void print_vector(std::string vector_name, const std::vector<float> &vec);
     void print_vector(std::string vector_name, std::vector<float>::iterator start, std::vector<float>::iterator end);
     std::vector<float> slice_vector(std::vector<float> vec, int start_index, int end_index);
