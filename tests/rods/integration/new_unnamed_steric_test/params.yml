@@ -3,3 +3,4 @@ radius: 2.5e-9
 length: 5.0e-8
 in_dir: "input"
 out_dir: "output"
+ffea_length: 1.7e-10

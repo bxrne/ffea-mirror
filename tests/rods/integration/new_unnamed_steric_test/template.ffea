@@ -34,8 +34,8 @@
     <rod>
             <input = z-axis.rod>
             <output = ../output/1.rodtraj>
-            <centroid_pos = (0.0,0.0,0.0)>
-            <rotation = (0.00, 0.00, 0,00)>
+            <centroid_pos = (0.0, 0.0, 0.0)>
+            <rotation = (0.0, 0.0, 0.0)>
             <scale = 1>
     </rod>
     <rod>
