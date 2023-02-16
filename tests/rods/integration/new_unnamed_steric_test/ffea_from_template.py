@@ -17,7 +17,7 @@ def copy_template(filename: str):
 
 
 def write_test_config_yaml(r: str, l: str, config_filename: str):
-    """Write translations and rotations of a rod to a .yml file."""
+    """Write translations and rotations of a rod to a .yml file and return as a dict."""
 
     config = {
         "parallel": {
