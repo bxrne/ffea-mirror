@@ -3,6 +3,7 @@
 from pathlib import Path
 import shutil
 from omegaconf import OmegaConf
+import sys
 
 
 def copy_template(filename: str):
@@ -93,6 +94,13 @@ def edit_ffea_file(
 
 def main():
 
+    if not Path("input").exists():
+        raise FileNotFoundError("'input' directory not found.")
+    if not Path("params.yml").exists():
+        raise FileNotFoundError("'params.yml' not found.")
+    if not Path("template.ffea").exists():
+        raise FileNotFoundError("'template.ffea' not found.")
+
     # Define rod configurations
     params = OmegaConf.load("params.yml")
     radius = params["radius"]
@@ -102,6 +110,9 @@ def main():
         length / params["ffea_length"],
         "test_config.yml",
     )
+
+    if not Path("test_config.yml").exists():
+        raise FileNotFoundError("'test_config.yml' not found.")
 
     # Generate .ffea files for colliding rod pairs
     for key1, val1 in test_config.items():
@@ -114,7 +125,7 @@ def main():
                 trans_old="(0.0, 0.0, 0.0)",
                 trans_new=val2[:3],
                 rot_old="(0.0, 0.0, 0.0)",
-                rot=val2[3:],
+                rot_new=val2[3:],
             )
 
 
