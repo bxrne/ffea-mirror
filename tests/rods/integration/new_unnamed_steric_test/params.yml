@@ -1,0 +1,5 @@
+num_nodes: 6
+radius: 2.5e-9
+length: 5.0e-8
+in_dir: "input"
+out_dir: "output"
