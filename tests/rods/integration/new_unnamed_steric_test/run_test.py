@@ -16,6 +16,9 @@ def main():
     ffea_files = sorted(glob.glob(f"{params['in_dir']:s}/*.ffea"))
     count = 0
 
+    # run create_straight_rod.py, unless there's a ModuleNotFoundError, in which
+    # case just use the file provided
+
     for i, path in enumerate(ffea_files, 1):
 
         name = path.split("/")[-1].split(".")[0]
