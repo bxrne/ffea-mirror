@@ -6,6 +6,11 @@ from omegaconf import OmegaConf
 import sys
 
 
+def not_found(file_path: str):
+    if not Path(file_path).exists():
+        raise FileNotFoundError(f"'{file_path:s}' not found.")
+
+
 def copy_template(filename: str):
     template = Path("template.ffea")
     if not template.exists():
@@ -54,9 +59,9 @@ def edit_ffea_field(file_line: str, val_old: str, val_new: str) -> str:
 def edit_ffea_file(
     ffea_file_path: str,
     trans_old: str,
-    trans_new: tuple[float],
+    trans_new: "tuple[float]",
     rot_old: str,
-    rot_new: tuple[float],
+    rot_new: "tuple[float]",
 ):
     """Edits in-place the rod traj, centroid, and rotation fields of a .ffea file."""
 
@@ -94,12 +99,8 @@ def edit_ffea_file(
 
 def main():
 
-    if not Path("input").exists():
-        raise FileNotFoundError("'input' directory not found.")
-    if not Path("params.yml").exists():
-        raise FileNotFoundError("'params.yml' not found.")
-    if not Path("template.ffea").exists():
-        raise FileNotFoundError("'template.ffea' not found.")
+    not_found("params.yml")
+    not_found("template.ffea")
 
     # Define rod configurations
     params = OmegaConf.load("params.yml")
@@ -111,8 +112,8 @@ def main():
         "test_config.yml",
     )
 
-    if not Path("test_config.yml").exists():
-        raise FileNotFoundError("'test_config.yml' not found.")
+    not_found(params["in_dir"])
+    not_found("test_config.yml")
 
     # Generate .ffea files for colliding rod pairs
     for key1, val1 in test_config.items():
@@ -131,3 +132,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    sys.exit()
