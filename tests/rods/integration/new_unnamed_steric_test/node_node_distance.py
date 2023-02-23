@@ -36,7 +36,7 @@ def main():
     a = rod.FFEA_rod(filename=args.rod_a_traj)
     b = rod.FFEA_rod(filename=args.rod_b_traj)
 
-    norm = distance(a.current_r, b.current_r)
+    norm = distance(a.current_r[-1], b.current_r[-1])
 
 
 if __name__ == "__main__":
