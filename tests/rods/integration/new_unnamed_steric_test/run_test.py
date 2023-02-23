@@ -48,9 +48,9 @@ def main():
             [
                 "python2",
                 "node_node_distance.py",
-                "-a",
+                "--rod_1_traj",
                 f"{params['out_dir']:s}/{name:s}_1.rodtraj",
-                "-b",
+                "--rod_2_traj",
                 f"{params['out_dir']:s}/{name:s}_2.rodtraj",
             ]
         )
