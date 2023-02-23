@@ -1,3 +1,4 @@
+# Create a FFEA / KOBRA rod that is straight in the z-axis.
 import sys
 
 try:

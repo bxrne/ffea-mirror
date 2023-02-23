@@ -1,5 +1,4 @@
 # Generate rod configurations and create FFEA input files from them
-# Ryan Cocking 2023
 from pathlib import Path
 import shutil
 from omegaconf import OmegaConf
