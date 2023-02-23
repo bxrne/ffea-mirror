@@ -1336,7 +1336,7 @@ namespace rod
             vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
             if (rod::absolute(diff) > 1e-6)
             {
-                std::cout << "  |diff| : " << diff << "\n";
+                rod::print_array("  diff", diff, 3);
                 throw std::runtime_error("Sum of node forces not equal to element force.");
             }
 
