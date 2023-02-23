@@ -18,11 +18,13 @@ def main():
     Path(params["out_dir"]).mkdir()
     Path(f"{params['out_dir']:s}/delete").mkdir()
 
+    # NOTE: THE 'python2' EXEC IS A HACK THAT RUNS ON MY HOME PC.
+    # Set up simulations
+    subprocess.run(["python2", "create_straight_rod.py"])
+    subprocess.run(["python", "ffea_from_template.py"])
+
     ffea_files = sorted(glob.glob(f"{params['in_dir']:s}/*.ffea"))
     count = 0
-
-    # run create_straight_rod.py, unless there's a ModuleNotFoundError, in which
-    # case just use the file provided
 
     for i, path in enumerate(ffea_files, 1):
 
@@ -42,6 +44,16 @@ def main():
             f.write(result.stderr)
 
         # analyse results and determine if configuration has passed here
+        subprocess.run(
+            [
+                "python2",
+                "node_node_distance.py",
+                "-a",
+                f"{params['out_dir']:s}/{name:s}_1.rodtraj",
+                "-b",
+                f"{params['out_dir']:s}/{name:s}_2.rodtraj",
+            ]
+        )
         passed = False
 
         if passed:
