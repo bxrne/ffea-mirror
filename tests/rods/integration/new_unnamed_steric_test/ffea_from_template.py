@@ -75,7 +75,9 @@ def edit_ffea_file(
 
     for i, line in enumerate(lines):
         if "output" and "rodtraj" in line:
-            lines[i] = edit_ffea_field(line, f"{count:d}.rodtraj", f"{name:s}.rodtraj")
+            lines[i] = edit_ffea_field(
+                line, f"{count:d}.rodtraj", f"{name:s}_{count:d}.rodtraj"
+            )
             count += 1
 
         if "centroid_pos" in line:
@@ -108,11 +110,11 @@ def main():
     test_config = write_test_config_yaml(
         radius / params["ffea_length"],
         length / params["ffea_length"],
-        "test_config.yml",
+        f"{params['in_dir']:s}/test_config.yml",
     )
 
     not_found(params["in_dir"])
-    not_found("test_config.yml")
+    not_found(f"{params['in_dir']:s}/test_config.yml")
 
     # Generate .ffea files for colliding rod pairs
     for key1, val1 in test_config.items():
