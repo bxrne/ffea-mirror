@@ -6,9 +6,9 @@
     <check = 100>
     <num_steps = 10000>
     <rng_seed = time>
-    <trajectory_out_fname = ../output/del.ftj>
-    <measurement_out_fname = ../output/del.fm>
-    <checkpoint_out = ../output/del.fcp>
+    <trajectory_out_fname = ../output/delete/del.ftj>
+    <measurement_out_fname = ../output/delete/del.fm>
+    <checkpoint_out = ../output/delete/del.fcp>
     <epsilon = 0.01>
     <max_iterations_cg = 1000>
     <kappa = 2e9>
