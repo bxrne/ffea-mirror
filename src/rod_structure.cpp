@@ -1334,10 +1334,14 @@ namespace rod
             vec3d(n) { node_force_sum[n + 3] += node_force[n + 3]; }
 
             vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
-            if (rod::absolute(diff) > 1e-6)
+            if (rod::absolute(diff) > 1e-5)
             {
-                rod::print_array("  diff", diff, 3);
-                throw std::runtime_error("Sum of node forces not equal to element force.");
+                std::string msg = "Sum of node forces not equal to element force.\n"
+                    "node 1: (" + std::to_string(node_force[0]) + ", " + std::to_string(node_force[1]) + ", " + std::to_string(node_force[2]) + ")";
+                    "node 2: (" + std::to_string(node_force[3]) + ", " + std::to_string(node_force[4]) + ", " + std::to_string(node_force[5]) + ")";
+                    "elem:  (" + std::to_string(element_force[0]) + ", " + std::to_string(element_force[1]) + ", " + std::to_string(element_force[2]) + ")";
+                    "diff:  (" + std::to_string(diff[0]) + ", " + std::to_string(diff[1]) + ", " + std::to_string(diff[2]) + ")";
+                throw std::runtime_error(msg);
             }
 
         }

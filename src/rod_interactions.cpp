@@ -208,7 +208,7 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     vec3d(n) { diff[n] = l_a[n] - l_b[n]; }
 
     // oblique / perpendicular elements
-    if (rod::absolute(diff) > 1e-7)
+    if (rod::absolute(diff) > 1e-5)
     {
         cross_product(l_a, l_b, l_a_cross_l_b);
         cross_product(l_a, l_a_cross_l_b, n_a);
