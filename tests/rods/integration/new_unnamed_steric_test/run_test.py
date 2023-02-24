@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 from omegaconf import OmegaConf
 from ffea_from_template import not_found
+import numpy as np
 
 
 def main():
@@ -52,12 +53,22 @@ def main():
                 f"{params['out_dir']:s}/{name:s}_1.rodtraj",
                 "--rod_2_traj",
                 f"{params['out_dir']:s}/{name:s}_2.rodtraj",
+                "--radius",
+                str(params["radius"]),
+                "--length",
+                str(params["length"]),
+                "--out_dir",
+                params["out_dir"],
             ]
         )
-        passed = False
 
-        if passed:
+        dist = np.loadtxt(f"{params['out_dir']:s}/{name:s}_distance.txt")
+
+        if dist[dist <= 2 * params["radius"]].size == 0:
             count += 1
+            print("Passed\n")
+        else:
+            print("Failed\n")
 
     print(f"Configurations passed: {count:d}")
 

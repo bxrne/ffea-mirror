@@ -3,6 +3,7 @@ import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 
 try:
     import ffeatools.modules.FFEA_rod as rod
@@ -27,28 +28,35 @@ def node_node_distance(node_pos_a, node_pos_b):
     return result
 
 
-def plot_heatmap(xydata):
-    pass
-
-
 def main():
 
     parser = argparse.ArgumentParser(description="Paths to two .rodtraj files.")
     parser.add_argument("-t1", "--rod_1_traj", type=str, required=True)
     parser.add_argument("-t2", "--rod_2_traj", type=str, required=True)
+    parser.add_argument("-r", "--radius", type=float, required=True)
+    parser.add_argument("-l", "--length", type=float, required=True)
+    parser.add_argument("-o", "--out_dir", type=str, required=True)
     args = parser.parse_args()
 
     rod1 = rod.FFEA_rod(filename=args.rod_1_traj)
     rod2 = rod.FFEA_rod(filename=args.rod_2_traj)
 
-    norm_nm = node_node_distance(rod1.current_r[-1], rod2.current_r[-1]) * 1e9
-    print(norm_nm)
-    plt.imshow(norm_nm, cmap="hot", interpolation="nearest")
+    dist = node_node_distance(rod1.current_r[-1], rod2.current_r[-1])
+
+    # Discrete colorbar
+    cmap = plt.cm.RdBu
+    bounds = np.array([0, args.radius * 1e9, args.radius * 2 * 1e9, dist.max() * 1e9])
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+
+    plt.imshow(dist * 1e9, cmap=cmap, norm=norm, interpolation="nearest")
     plt.xlabel("Node index (rod 1)")
-    plt.ylabel("Node index (rod 1)")
+    plt.ylabel("Node index (rod 2)")
     plt.title("Node-node distance (nm)")
     plt.colorbar()
-    plt.show()
+    name = args.rod_1_traj.split("/")[-1].split(".")[0][:-2]
+    plt.savefig(args.out_dir + "/" + name + "_heatmap_distance.png", dpi=300)
+
+    np.savetxt(args.out_dir + "/" + name + "_distance.txt", dist)
 
 
 if __name__ == "__main__":
