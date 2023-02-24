@@ -80,14 +80,15 @@ def edit_ffea_file(
             )
             count += 1
 
-        if "centroid_pos" in line:
+        # Only apply transformation to a single rod of the pair
+        if "centroid_pos" in line and count == 2:
             lines[i] = edit_ffea_field(
                 line,
                 trans_old,
                 f"({trans_new[0]:.2f}, {trans_new[1]:.2f}, {trans_new[2]:.2f})",
             )
 
-        if "rotation" in line:
+        if "rotation" in line and count == 2:
             lines[i] = edit_ffea_field(
                 line, rot_old, f"({rot_new[0]:.2f}, {rot_new[1]:.2f}, {rot_new[2]:.2f})"
             )
