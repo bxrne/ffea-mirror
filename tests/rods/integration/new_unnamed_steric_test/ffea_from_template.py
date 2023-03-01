@@ -3,6 +3,7 @@ from pathlib import Path
 import shutil
 from omegaconf import OmegaConf
 import sys
+import numpy as np
 
 
 def not_found(file_path: str):
@@ -24,10 +25,17 @@ def write_test_config_yaml(r: str, l: str, config_filename: str):
     """
     Write translations and rotations of a rod to a .yml file and return as a dict.
 
-    x: left/right (relative to rod axis)
+    x: left (-ve) / right (+ve)
     y: up/down (relative to rod axis)
     z: rod axis
+
+    rotation: anticlockwise (-ve) / clockwise (+ve) about an axis, with the origin
+    at the rod midpoint
     """
+
+    r90 = 0.5 * np.pi
+    half_l_r = 0.5 * (l + r)
+    half_l = 0.5 * l
 
     # avoid using underscores or periods here
     config = {
@@ -38,12 +46,36 @@ def write_test_config_yaml(r: str, l: str, config_filename: str):
             "-y": [0, -r, 0, 0, 0, 0],
             "+z": [0, 0, l + r, 0, 0, 0],
             "-z": [0, 0, -l - r, 0, 0, 0],
-            "+xzHalf": [r, 0, 0.5 * (l + r), 0, 0, 0],
-            "-xzHalf": [-r, 0, 0.5 * (-l - r), 0, 0, 0],
+            "+xzHalf": [r, 0, half_l_r, 0, 0, 0],
+            "-xzHalf": [-r, 0, -half_l_r, 0, 0, 0],
             "+xyz": [r, r, l + r, 0, 0, 0],
             "-xyz": [-r, -r, -l - r, 0, 0, 0],
         },
-        "perp": {},
+        "perp": {
+            # X-shape
+            "+x+Rx": [r, 0, 0, r90, 0, 0],
+            "+x-Rx": [r, 0, 0, -r90, 0, 0],
+            "-x+Rx": [-r, 0, 0, r90, 0, 0],
+            "-x-Rx": [-r, 0, 0, r90, 0, 0],
+            "+y+Ry": [0, r, 0, 0, r90, 0],
+            "+y-Ry": [0, r, 0, 0, -r90, 0],
+            "-y+Ry": [0, -r, 0, 0, r90, 0],
+            "-y-Ry": [0, -r, 0, 0, -r90, 0],
+            # T-shape
+            "+zHalf+Rx": [0, 0, half_l_r, r90, 0, 0],
+            "-zHalf+Rx": [0, 0, -half_l_r, r90, 0, 0],
+            "+zHalf+Ry": [0, 0, half_l_r, 0, r90, 0],
+            "-zHalf+Ry": [0, 0, -half_l_r, 0, r90, 0],
+            # L-shape
+            "+xHalf+zHalf+Ry": [half_l, 0, half_l_r, 0, r90, 0],
+            "-xHalf+zHalf+Ry": [-half_l, 0, half_l_r, 0, r90, 0],
+            "+xHalf-zHalf+Ry": [half_l, 0, -half_l_r, 0, r90, 0],
+            "-xHalf-zHalf+Ry": [-half_l, 0, -half_l_r, 0, r90, 0],
+            "+yHalf+zHalf+Rx": [0, half_l, half_l_r, r90, 0, 0],
+            "-yHalf+zHalf+Rx": [0, -half_l, half_l_r, r90, 0, 0],
+            "+yHalf-zHalf+Rx": [0, -half_l, half_l_r, r90, 0, 0],
+            "-yHalf-zHalf+Rx": [0, -half_l, half_l_r, r90, 0, 0],
+        },
         # "oblique":{
         # }
     }
@@ -72,7 +104,11 @@ def edit_ffea_file(
     rot_old: str,
     rot_new: "tuple[float]",
 ):
-    """Edits in-place the rod traj, centroid, and rotation fields of a .ffea file."""
+    """
+    Edits in-place the rod traj, centroid, and rotation fields of a .ffea file.
+
+    The first rod occurring in the file is transformed.
+    """
 
     if len(trans_new) and len(rot_new) != 3:
         raise Exception("Translation and rotation vectors must be length 3")
