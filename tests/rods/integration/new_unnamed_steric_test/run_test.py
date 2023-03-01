@@ -4,7 +4,6 @@ import glob
 import subprocess
 from pathlib import Path
 from omegaconf import OmegaConf
-from ffea_from_template import not_found
 import numpy as np
 
 
@@ -12,39 +11,46 @@ def main():
 
     params = OmegaConf.load("params.yml")
 
-    not_found(params["in_dir"])
-    # not_found(params["out_dir"])
+    if Path(params["in_dir"]).exists():
+        shutil.rmtree(params["in_dir"])
+    Path(params["in_dir"]).mkdir()
+
     if Path(params["out_dir"]).exists():
         shutil.rmtree(params["out_dir"])
     Path(params["out_dir"]).mkdir()
     Path(f"{params['out_dir']:s}/delete").mkdir()
 
     # NOTE: THE 'python2' EXEC IS A HACK THAT RUNS ON MY HOME PC.
+    # PLEASE UPDATE FFEATOOLS TO PYTHON 3 TO FIX THIS
     # Set up simulations
     subprocess.run(["python2", "create_straight_rod.py"])
     subprocess.run(["python", "ffea_from_template.py"])
 
     ffea_files = sorted(glob.glob(f"{params['in_dir']:s}/*.ffea"))
     count = 0
+    num_configs = len(ffea_files)
+    failed_configs = []
 
     for i, path in enumerate(ffea_files, 1):
 
         name = path.split("/")[-1].split(".")[0]
 
-        print(f"{path:s}\t({i:d}/{len(ffea_files):d})")
+        print(f"Configuration:\t{name:s}\t({i:d}/{num_configs:d})")
 
+        print("FFEA simulation...")
         result = subprocess.run(
             ["ffea", f"{name:s}.ffea"],
             capture_output=True,
             text=True,
             cwd=params["in_dir"],
         )
+
         with open(f"{params['out_dir']:s}/{name:s}.stdout", "w") as f:
             f.write(result.stdout)
         with open(f"{params['out_dir']:s}/{name:s}.stderr", "w") as f:
             f.write(result.stderr)
 
-        # analyse results and determine if configuration has passed here
+        print("ffeatools analysis...")
         subprocess.run(
             [
                 "python2",
@@ -62,17 +68,25 @@ def main():
             ]
         )
 
-        dist = np.loadtxt(f"{params['out_dir']:s}/{name:s}_distance.txt")
+        dist = np.loadtxt(f"{params['out_dir']:s}/{name:s}_distanceHeatmap.txt")
 
         if dist[dist <= 2 * params["radius"]].size == 0:
             count += 1
             print("Passed\n")
         else:
             print("Failed\n")
+            failed_configs.append(name)
 
-    print(f"Configurations passed: {count:d}")
+    print(f"Passed: {count:d}/{num_configs:d}")
 
-    if count == len(ffea_files):
+    with open(f"{params['out_dir']:s}/failed.txt", "w") as f:
+        for item in failed_configs:
+            f.write(f"{item:s}\n")
+
+    if Path("FFEA_meta.json").exists():
+        Path("FFEA_meta.json").unlink()
+
+    if count == num_configs:
         return 0
     else:
         return 1

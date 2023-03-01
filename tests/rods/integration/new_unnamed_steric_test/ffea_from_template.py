@@ -21,7 +21,13 @@ def copy_template(filename: str):
 
 
 def write_test_config_yaml(r: str, l: str, config_filename: str):
-    """Write translations and rotations of a rod to a .yml file and return as a dict."""
+    """
+    Write translations and rotations of a rod to a .yml file and return as a dict.
+
+    x: left/right (relative to rod axis)
+    y: up/down (relative to rod axis)
+    z: rod axis
+    """
 
     # avoid using underscores or periods here
     config = {
@@ -32,9 +38,12 @@ def write_test_config_yaml(r: str, l: str, config_filename: str):
             "-y": [0, -r, 0, 0, 0, 0],
             "+z": [0, 0, l + r, 0, 0, 0],
             "-z": [0, 0, -l - r, 0, 0, 0],
+            "+xzHalf": [r, 0, 0.5 * (l + r), 0, 0, 0],
+            "-xzHalf": [-r, 0, 0.5 * (-l - r), 0, 0, 0],
+            "+xyz": [r, r, l + r, 0, 0, 0],
+            "-xyz": [-r, -r, -l - r, 0, 0, 0],
         },
-        # "perp": {
-        # },
+        "perp": {},
         # "oblique":{
         # }
     }
