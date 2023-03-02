@@ -95,7 +95,6 @@ def write_test_config_yaml(R: str, L: str, config_filename: str):
             "Cross-y+RyBig": [0, -R, 0, 0, a_big, 0],
             "Cross+y-RyBig": [0, R, 0, 0, -a_big, 0],
             "Cross-y-RyBig": [0, -R, 0, 0, -a_big, 0],
-            #
             "T+z+RxSmall": [
                 0,
                 0,

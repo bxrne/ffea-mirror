@@ -50,6 +50,11 @@ def main():
         with open(f"{params['out_dir']:s}/{name:s}.stderr", "w") as f:
             f.write(result.stderr)
 
+        if "thruFail" in name and result.returncode != 0:
+            count += 1
+            print("Passed\n")
+            continue
+
         print("ffeatools analysis...")
         subprocess.run(
             [
@@ -69,7 +74,6 @@ def main():
         )
 
         dist = np.loadtxt(f"{params['out_dir']:s}/{name:s}_distanceHeatmap.txt")
-
         if dist[dist <= 2 * params["radius"]].size == 0:
             count += 1
             print("Passed\n")
