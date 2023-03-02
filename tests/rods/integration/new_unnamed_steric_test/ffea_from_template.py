@@ -3,7 +3,7 @@ from pathlib import Path
 import shutil
 from omegaconf import OmegaConf
 import sys
-import numpy as np
+import math
 
 
 def not_found(file_path: str):
@@ -21,7 +21,7 @@ def copy_template(filename: str):
     return Path(filename)
 
 
-def write_test_config_yaml(r: str, l: str, config_filename: str):
+def write_test_config_yaml(R: str, L: str, config_filename: str):
     """
     Write translations and rotations of a rod to a .yml file and return as a dict.
 
@@ -33,51 +33,112 @@ def write_test_config_yaml(r: str, l: str, config_filename: str):
     at the rod midpoint
     """
 
-    r90 = 0.5 * np.pi
-    half_l_r = 0.5 * (l + r)
-    half_l = 0.5 * l
+    a_small = math.pi * 1 / 36
+    a_big = math.pi * 1 / 3
+    a_90 = math.pi * 1 / 2
+    half_L_R = 0.5 * (L + R)
+    half_L = 0.5 * L
 
-    # avoid using underscores or periods here
+    # avoid using underscores or periods in dict keys
     config = {
         "parallel": {
-            "+x": [r, 0, 0, 0, 0, 0],
-            "-x": [-r, 0, 0, 0, 0, 0],
-            "+y": [0, r, 0, 0, 0, 0],
-            "-y": [0, -r, 0, 0, 0, 0],
-            "+z": [0, 0, l + r, 0, 0, 0],
-            "-z": [0, 0, -l - r, 0, 0, 0],
-            "+xzHalf": [r, 0, half_l_r, 0, 0, 0],
-            "-xzHalf": [-r, 0, -half_l_r, 0, 0, 0],
-            "+xyz": [r, r, l + r, 0, 0, 0],
-            "-xyz": [-r, -r, -l - r, 0, 0, 0],
+            "+x": [R, 0, 0, 0, 0, 0],
+            "-x": [-R, 0, 0, 0, 0, 0],
+            "+y": [0, R, 0, 0, 0, 0],
+            "-y": [0, -R, 0, 0, 0, 0],
+            "+z": [0, 0, L + R, 0, 0, 0],
+            "-z": [0, 0, -L - R, 0, 0, 0],
+            "+xzHalf": [R, 0, half_L_R, 0, 0, 0],
+            "-xzHalf": [-R, 0, -half_L_R, 0, 0, 0],
+            "+xyz": [R, R, L + R, 0, 0, 0],
+            "-xyz": [-R, -R, -L - R, 0, 0, 0],
         },
         "perp": {
-            # X-shape
-            "+x+Rx": [r, 0, 0, r90, 0, 0],
-            "+x-Rx": [r, 0, 0, -r90, 0, 0],
-            "-x+Rx": [-r, 0, 0, r90, 0, 0],
-            "-x-Rx": [-r, 0, 0, r90, 0, 0],
-            "+y+Ry": [0, r, 0, 0, r90, 0],
-            "+y-Ry": [0, r, 0, 0, -r90, 0],
-            "-y+Ry": [0, -r, 0, 0, r90, 0],
-            "-y-Ry": [0, -r, 0, 0, -r90, 0],
+            # crossed
+            "Cross+x+Rx": [R, 0, 0, a_90, 0, 0],
+            "Cross+x-Rx": [R, 0, 0, -a_90, 0, 0],
+            "Cross-x+Rx": [-R, 0, 0, a_90, 0, 0],
+            "Cross-x-Rx": [-R, 0, 0, a_90, 0, 0],
+            "Cross+y+Ry": [0, R, 0, 0, a_90, 0],
+            "Cross+y-Ry": [0, R, 0, 0, -a_90, 0],
+            "Cross-y+Ry": [0, -R, 0, 0, a_90, 0],
+            "Cross-y-Ry": [0, -R, 0, 0, -a_90, 0],
             # T-shape
-            "+zHalf+Rx": [0, 0, half_l_r, r90, 0, 0],
-            "-zHalf+Rx": [0, 0, -half_l_r, r90, 0, 0],
-            "+zHalf+Ry": [0, 0, half_l_r, 0, r90, 0],
-            "-zHalf+Ry": [0, 0, -half_l_r, 0, r90, 0],
+            "T+z+Rx": [0, 0, half_L_R, a_90, 0, 0],
+            "T-z+Rx": [0, 0, -half_L_R, a_90, 0, 0],
+            "T+z+Ry": [0, 0, half_L_R, 0, a_90, 0],
+            "T-z+Ry": [0, 0, -half_L_R, 0, a_90, 0],
             # L-shape
-            "+xHalf+zHalf+Ry": [half_l, 0, half_l_r, 0, r90, 0],
-            "-xHalf+zHalf+Ry": [-half_l, 0, half_l_r, 0, r90, 0],
-            "+xHalf-zHalf+Ry": [half_l, 0, -half_l_r, 0, r90, 0],
-            "-xHalf-zHalf+Ry": [-half_l, 0, -half_l_r, 0, r90, 0],
-            "+yHalf+zHalf+Rx": [0, half_l, half_l_r, r90, 0, 0],
-            "-yHalf+zHalf+Rx": [0, -half_l, half_l_r, r90, 0, 0],
-            "+yHalf-zHalf+Rx": [0, -half_l, half_l_r, r90, 0, 0],
-            "-yHalf-zHalf+Rx": [0, -half_l, half_l_r, r90, 0, 0],
+            "L+x+z+Ry": [half_L, 0, half_L_R, 0, a_90, 0],
+            "L-x+z+Ry": [-half_L, 0, half_L_R, 0, a_90, 0],
+            "L+x-z+Ry": [half_L, 0, -half_L_R, 0, a_90, 0],
+            "L-x-z+Ry": [-half_L, 0, -half_L_R, 0, a_90, 0],
+            "L+y+z+Rx": [0, half_L, half_L_R, a_90, 0, 0],
+            "L-y+z+Rx": [0, -half_L, half_L_R, a_90, 0, 0],
+            "L+y-z+Rx": [0, -half_L, half_L_R, a_90, 0, 0],
+            "L-y-z+Rx": [0, -half_L, half_L_R, a_90, 0, 0],
         },
-        # "oblique":{
-        # }
+        "oblique": {
+            "Cross+x+RxSmall": [R, 0, 0, a_small, 0, 0],
+            "Cross-x+RxSmall": [-R, 0, 0, a_small, 0, 0],
+            "Cross+x-RxSmall": [R, 0, 0, -a_small, 0, 0],
+            "Cross-x-RxSmall": [-R, 0, 0, -a_small, 0, 0],
+            "Cross+x+RxBig": [R, 0, 0, a_big, 0, 0],
+            "Cross-x+RxBig": [-R, 0, 0, a_big, 0, 0],
+            "Cross+x-RxBig": [R, 0, 0, -a_big, 0, 0],
+            "Cross-x-RxBig": [-R, 0, 0, -a_big, 0, 0],
+            "Cross+y+RySmall": [0, R, 0, 0, a_small, 0],
+            "Cross-y+RySmall": [0, -R, 0, 0, a_small, 0],
+            "Cross+y-RySmall": [0, R, 0, 0, -a_small, 0],
+            "Cross-y-RySmall": [0, -R, 0, 0, -a_small, 0],
+            "Cross+y+RyBig": [0, R, 0, 0, a_big, 0],
+            "Cross-y+RyBig": [0, -R, 0, 0, a_big, 0],
+            "Cross+y-RyBig": [0, R, 0, 0, -a_big, 0],
+            "Cross-y-RyBig": [0, -R, 0, 0, -a_big, 0],
+            #
+            "T+z+RxSmall": [
+                0,
+                0,
+                half_L_R,
+                a_90 - a_small,
+                0,
+                0,
+            ],
+            "T+z+RxBig": [
+                0,
+                0,
+                half_L_R,
+                a_90 - a_big,
+                0,
+                0,
+            ],
+            # within z-plane, intersect at +z end
+            "zPlane+y+RxSmall": [
+                0,
+                -half_L * math.sin(a_small) + R,
+                half_L * (1 - math.cos(a_small)),
+                a_small,
+                0,
+                0,
+            ],
+            "zPlane+y+RxBig": [
+                0,
+                -half_L * math.sin(a_big) + R,
+                half_L * (1 - math.cos(a_big)),
+                a_big,
+                0,
+                0,
+            ],
+        },
+        "thruFail": {
+            "parallel": [0, 0, 0, 0, 0, 0],
+            "parallelHalf": [0, 0, half_L, 0, 0, 0],
+            "perpC": [0, 0, 0, a_90, 0, 0],
+            "perpT": [0, 0, half_L, a_90, 0, 0],
+            "perpL": [half_L, 0, half_L, a_90, 0, 0],
+            "obliqueSmall": [0, 0, 0, a_small, 0, 0],
+            "obliqueBig": [0, 0, 0, a_big, 0, 0],
+        },
     }
 
     conf = OmegaConf.create(config)
