@@ -26,16 +26,26 @@ def main():
     subprocess.run(["python2", "create_straight_rod.py"])
     subprocess.run(["python", "ffea_from_template.py"])
 
-    ffea_files = sorted(glob.glob(f"{params['in_dir']:s}/*.ffea"))
+    if params["run_failed"]:
+        with open(params["fail_path"], "r") as f:
+            ffea_files = f.readlines()
+
+        for i, file in enumerate(ffea_files):
+            ffea_files[i] = f"{params['in_dir']:s}/{file[:-1]}.ffea"
+
+        print("Running failed configurations only\n")
+    else:
+        ffea_files = glob.glob(f"{params['in_dir']:s}/*.ffea")
+
     count = 0
     num_configs = len(ffea_files)
     failed_configs = []
 
-    for i, path in enumerate(ffea_files, 1):
+    for i, path in enumerate(sorted(ffea_files), 1):
 
         name = path.split("/")[-1].split(".")[0]
 
-        print(f"Configuration:\t{name:s}\t({i:d}/{num_configs:d})")
+        print(f"{name:s}\t({i:d}/{num_configs:d})")
 
         print("FFEA simulation...")
         result = subprocess.run(
