@@ -7,6 +7,25 @@ from omegaconf import OmegaConf
 import numpy as np
 
 
+def copy_failed(new_dir: str, failed_path: str, input_dir: str):
+
+    Path(new_dir).mkdir()
+
+    with open(failed_path, "r") as f:
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            lines[i] = line[:-1] + ".ffea"
+            shutil.copyfile(f"{input_dir:s}/{lines[i]:s}", f"{new_dir:s}/{lines[i]:s}")
+
+    check_copied = len(glob.glob(f"{new_dir:s}/*.ffea"))
+    check_failed = len(lines)
+
+    if check_copied != check_failed:
+        raise Exception(
+            f"Inconsistent copying of failed FFEA files: {check_failed:d} failed, {check_copied:d} copied to dir {new_dir:s}"
+        )
+
+
 def main():
 
     params = OmegaConf.load("params.yml")
@@ -99,6 +118,16 @@ def main():
 
     if Path("FFEA_meta.json").exists():
         Path("FFEA_meta.json").unlink()
+
+    if len(failed_configs) > 0:
+        fail_dir = f"{params['in_dir']:s}_failed"
+        if Path(fail_dir).exists():
+            shutil.rmtree(fail_dir)
+        copy_failed(
+            new_dir=fail_dir,
+            failed_path=params["fail_path"],
+            input_dir=params["in_dir"],
+        )
 
     if count == num_configs:
         return 0
