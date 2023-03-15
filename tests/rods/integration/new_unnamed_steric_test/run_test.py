@@ -67,7 +67,7 @@ def main():
         print(f"{name:s}\t({i:d}/{num_configs:d})")
 
         print("FFEA simulation...")
-        result = subprocess.run(
+        ffea_result = subprocess.run(
             ["ffea", f"{name:s}.ffea"],
             capture_output=True,
             text=True,
@@ -75,13 +75,17 @@ def main():
         )
 
         with open(f"{params['out_dir']:s}/{name:s}.stdout", "w") as f:
-            f.write(result.stdout)
+            f.write(ffea_result.stdout)
         with open(f"{params['out_dir']:s}/{name:s}.stderr", "w") as f:
-            f.write(result.stderr)
+            f.write(ffea_result.stderr)
 
-        if "thruFail" in name and result.returncode != 0:
+        if "thruFail" in name and ffea_result.returncode != 0:
             count += 1
             print("Passed\n")
+            continue
+        elif "thruFail" not in name and ffea_result.returncode != 0:
+            print("Failed\n")
+            failed_configs.append(name)
             continue
 
         print("ffeatools analysis...")
@@ -110,7 +114,7 @@ def main():
             print("Failed\n")
             failed_configs.append(name)
 
-    print(f"Passed: {count:d}/{num_configs:d}")
+    print(f"Total passed: {count:d}/{num_configs:d}")
 
     with open(f"{params['out_dir']:s}/failed.txt", "w") as f:
         for item in failed_configs:
