@@ -1,8 +1,9 @@
+py2_exe_path: "/home/bsrctb/software/miniconda3/envs/py2/bin/python2"
 num_nodes: 6
 radius: 2.5e-9
 length: 5.0e-8
 in_dir: "input"
 out_dir: "output"
 ffea_length: 1.7e-10
-run_failed: True
+run_failed_only: False
 fail_path: "failed.txt"

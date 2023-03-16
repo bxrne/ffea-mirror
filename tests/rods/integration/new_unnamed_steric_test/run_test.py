@@ -42,10 +42,10 @@ def main():
     # NOTE: THE 'python2' EXEC IS A HACK THAT RUNS ON MY HOME PC.
     # PLEASE UPDATE FFEATOOLS TO PYTHON 3 TO FIX THIS
     # Set up simulations
-    subprocess.run(["python2", "create_straight_rod.py"])
+    subprocess.run([f"{params['py2_exe_path']:s}", "create_straight_rod.py"])
     subprocess.run(["python", "ffea_from_template.py"])
 
-    if params["run_failed"]:
+    if params["run_failed_only"]:
         with open(params["fail_path"], "r") as f:
             ffea_files = f.readlines()
 
@@ -91,7 +91,7 @@ def main():
         print("ffeatools analysis...")
         subprocess.run(
             [
-                "python2",
+                f"{params['py2_exe_path']:s}",
                 "node_node_distance.py",
                 "--rod_1_traj",
                 f"{params['out_dir']:s}/{name:s}_1.rodtraj",
