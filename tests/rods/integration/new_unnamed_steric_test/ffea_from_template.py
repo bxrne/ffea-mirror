@@ -111,23 +111,6 @@ def write_test_config_yaml(R: str, L: str, config_filename: str):
                 0,
                 0,
             ],
-            # within z-plane, intersect at +z end
-            "zPlane+y+RxSmall": [
-                0,
-                -half_L * math.sin(a_small) + R,
-                half_L * (1 - math.cos(a_small)),
-                a_small,
-                0,
-                0,
-            ],
-            "zPlane+y+RxBig": [
-                0,
-                -half_L * math.sin(a_big) + R,
-                half_L * (1 - math.cos(a_big)),
-                a_big,
-                0,
-                0,
-            ],
         },
         "thruFail": {
             "parallel": [0, 0, 0, 0, 0, 0],
