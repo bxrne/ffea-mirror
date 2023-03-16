@@ -7,14 +7,34 @@ from omegaconf import OmegaConf
 import numpy as np
 
 
-def copy_failed(new_dir: str, failed_path: str, input_dir: str):
+def final_frame_index(rodtraj_path: str):
+    """Note that rod trajectories, as of 16/03/23, seem to have two extra frames
+    compared to 'Nframes / check' computed from the .ffea file."""
+    n = -1
+    with open(rodtraj_path, "w") as f:
+        lines = f.readlines()
+        for line in lines:
+            if "FRAME" in line:
+                n = int(line.split(" ")[1])
+    return n
+
+
+def write_failed_info(fail_info_path: str, config_names, return_codes):
+    with open(f"{fail_info_path:s}", "w") as f:
+        f.write("config,last_frame,return_code")
+        for name, code in zip(config_names, return_codes):
+            frame = final_frame_index(f"{name:s}_1.rodtraj")
+            f.write(f"{name:s},{frame:d},{code:d}\n")
+
+
+def copy_failed(new_dir: str, fail_info_path: str, input_dir: str):
 
     Path(new_dir).mkdir()
 
-    with open(failed_path, "r") as f:
-        lines = f.readlines()
+    with open(fail_info_path, "r") as f:
+        lines = f.readlines()[1:]
         for i, line in enumerate(lines):
-            lines[i] = line[:-1] + ".ffea"
+            lines[i] = line.split(",")[0] + ".ffea"
             shutil.copyfile(f"{input_dir:s}/{lines[i]:s}", f"{new_dir:s}/{lines[i]:s}")
 
     check_copied = len(glob.glob(f"{new_dir:s}/*.ffea"))
@@ -39,18 +59,17 @@ def main():
     Path(params["out_dir"]).mkdir()
     Path(f"{params['out_dir']:s}/delete").mkdir()
 
-    # NOTE: THE 'python2' EXEC IS A HACK THAT RUNS ON MY HOME PC.
-    # PLEASE UPDATE FFEATOOLS TO PYTHON 3 TO FIX THIS
     # Set up simulations
     subprocess.run([f"{params['py2_exe_path']:s}", "create_straight_rod.py"])
     subprocess.run(["python", "ffea_from_template.py"])
 
     if params["run_failed_only"]:
-        with open(params["fail_path"], "r") as f:
-            ffea_files = f.readlines()
-
-        for i, file in enumerate(ffea_files):
-            ffea_files[i] = f"{params['in_dir']:s}/{file[:-1]}.ffea"
+        ffea_files = []
+        with open(params["fail_info_path"], "r") as f:
+            lines = f.readlines()[1:]
+            for line in lines:
+                name = line.split(",")[0]
+                ffea_files.append(f"{params['in_dir']:s}/{name:s}.ffea")
 
         print("Running failed configurations only\n")
     else:
@@ -59,13 +78,13 @@ def main():
     count = 0
     num_configs = len(ffea_files)
     failed_configs = []
+    failed_return_codes = []
 
     for i, path in enumerate(sorted(ffea_files), 1):
 
         name = path.split("/")[-1].split(".")[0]
 
         print(f"{name:s}\t({i:d}/{num_configs:d})")
-
         print("FFEA simulation...")
         ffea_result = subprocess.run(
             ["ffea", f"{name:s}.ffea"],
@@ -86,6 +105,7 @@ def main():
         elif "thruFail" not in name and ffea_result.returncode != 0:
             print("Failed\n")
             failed_configs.append(name)
+            failed_return_codes.append(ffea_result.returncode)
             continue
 
         print("ffeatools analysis...")
@@ -113,12 +133,11 @@ def main():
         else:
             print("Failed\n")
             failed_configs.append(name)
+            failed_return_codes.append(ffea_result.returncode)
 
     print(f"Total passed: {count:d}/{num_configs:d}")
 
-    with open(f"{params['out_dir']:s}/failed.txt", "w") as f:
-        for item in failed_configs:
-            f.write(f"{item:s}\n")
+    write_failed_info(params["fail_info_path"], failed_configs)
 
     if Path("FFEA_meta.json").exists():
         Path("FFEA_meta.json").unlink()
@@ -129,7 +148,7 @@ def main():
             shutil.rmtree(fail_dir)
         copy_failed(
             new_dir=fail_dir,
-            failed_path=params["fail_path"],
+            fail_info_path=params["fail_info_path"],
             input_dir=params["in_dir"],
         )
 
