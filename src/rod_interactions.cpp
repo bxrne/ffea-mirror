@@ -25,9 +25,6 @@
  *      rod_interactions.h
  *	Author: Ryan Cocking, University of Leeds
  *	Email: bsrctb@leeds.ac.uk
-
- *	Author: Ryan Cocking, University of Leeds
- *	Email: bsrctb@leeds.ac.uk
  */
 
 #include "rod_interactions.h"
@@ -202,6 +199,7 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     float n_b[3] = {0};
     float r_ab[3] = {0};
     float r_ba[3] = {0};
+    bool is_parallel;
 
     normalize(p_a, l_a);
     normalize(p_b, l_b);
@@ -210,6 +208,7 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     // oblique / perpendicular elements
     if (rod::absolute(diff) > 1e-5)
     {
+        is_parallel = false;
         cross_product(l_a, l_b, l_a_cross_l_b);
         cross_product(l_a, l_a_cross_l_b, n_a);
         cross_product(l_b, l_a_cross_l_b, n_b);
@@ -231,13 +230,15 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     // parallel elements
     else
     {
+        is_parallel = true;
         vec3d(n) { c_a[n] = r_a[n] + 0.5 * p_a[n]; }
         vec3d(n) { c_b[n] = r_b[n] + 0.5 * p_b[n]; }
     }
 
     if (rod::dbg_print)
     {
-        std::cout << "minimum distance between rod elements:" << std::endl;
+        std::cout << "minimum distance between rod elements:\n";
+        std::cout << "rods parallel: " << is_parallel << "\n";
         print_array("  p_a", p_a, 3);
         print_array("  p_b", p_b, 3);
         print_array("  l_a", l_a, 3);
