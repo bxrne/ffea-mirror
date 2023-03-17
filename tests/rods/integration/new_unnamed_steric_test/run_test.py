@@ -137,7 +137,7 @@ def main():
 
     print(f"Total passed: {count:d}/{num_configs:d}")
 
-    write_failed_info(params["fail_info_path"], failed_configs)
+    write_failed_info(params["fail_info_path"], failed_configs, failed_return_codes)
 
     if Path("FFEA_meta.json").exists():
         Path("FFEA_meta.json").unlink()
