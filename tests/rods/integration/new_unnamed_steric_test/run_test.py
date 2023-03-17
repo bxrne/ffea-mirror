@@ -21,7 +21,7 @@ def final_frame_index(rodtraj_path: str):
 
 def write_failed_info(fail_info_path: str, config_names, return_codes, output_dir):
     with open(f"{fail_info_path:s}", "w") as f:
-        f.write("config,last_frame,return_code")
+        f.write("config,last_frame,return_code\n")
         for name, code in zip(config_names, return_codes):
             frame = final_frame_index(f"{output_dir:s}/{name:s}_1.rodtraj")
             f.write(f"{name:s},{frame:d},{code:d}\n")
