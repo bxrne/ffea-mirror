@@ -193,7 +193,6 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
 {
     float l_a[3] = {0}; // l_a = p_a / |p_a|
     float l_b[3] = {0};
-    float diff[3] = {0};
     float l_a_cross_l_b[3] = {0};
     float n_a[3] = {0};
     float n_b[3] = {0};
@@ -203,13 +202,12 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
 
     normalize(p_a, l_a);
     normalize(p_b, l_b);
-    vec3d(n) { diff[n] = l_a[n] - l_b[n]; }
+    cross_product(l_a, l_b, l_a_cross_l_b);
 
     // oblique / perpendicular elements
-    if (rod::absolute(diff) > 1e-5)
+    if (rod::absolute(l_a_cross_l_b) > 1e-5)
     {
         is_parallel = false;
-        cross_product(l_a, l_b, l_a_cross_l_b);
         cross_product(l_a, l_a_cross_l_b, n_a);
         cross_product(l_b, l_a_cross_l_b, n_b);
 
@@ -238,12 +236,13 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     if (rod::dbg_print)
     {
         std::cout << "minimum distance between rod elements:\n";
-        std::cout << "rods parallel: " << is_parallel << "\n";
+        std::cout << "  rods parallel: " << is_parallel << "\n";
         print_array("  p_a", p_a, 3);
         print_array("  p_b", p_b, 3);
         print_array("  l_a", l_a, 3);
         print_array("  l_b", l_b, 3);
         print_array("  l_a x l_b", l_a_cross_l_b, 3);
+        std::cout << "  |l_a x l_b|: " << rod::absolute(l_a_cross_l_b) << "\n";
         print_array("  n_b", n_a, 3);
         print_array("  n_b", n_b, 3);
         print_array("  r_a", r_a, 3);
