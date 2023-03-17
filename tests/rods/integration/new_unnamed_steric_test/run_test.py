@@ -11,7 +11,7 @@ def final_frame_index(rodtraj_path: str):
     """Note that rod trajectories, as of 16/03/23, seem to have two extra frames
     compared to 'Nframes / check' computed from the .ffea file."""
     n = -1
-    with open(rodtraj_path, "w") as f:
+    with open(rodtraj_path, "r") as f:
         lines = f.readlines()
         for line in lines:
             if "FRAME" in line:
