@@ -19,11 +19,11 @@ def final_frame_index(rodtraj_path: str):
     return n
 
 
-def write_failed_info(fail_info_path: str, config_names, return_codes):
+def write_failed_info(fail_info_path: str, config_names, return_codes, output_dir):
     with open(f"{fail_info_path:s}", "w") as f:
         f.write("config,last_frame,return_code")
         for name, code in zip(config_names, return_codes):
-            frame = final_frame_index(f"{name:s}_1.rodtraj")
+            frame = final_frame_index(f"{output_dir:s}/{name:s}_1.rodtraj")
             f.write(f"{name:s},{frame:d},{code:d}\n")
 
 
@@ -80,7 +80,7 @@ def main():
     failed_configs = []
     failed_return_codes = []
 
-    for i, path in enumerate(sorted(ffea_files), 1):
+    for i, path in enumerate(sorted(ffea_files)[0:3], 1):
 
         name = path.split("/")[-1].split(".")[0]
 
@@ -137,7 +137,9 @@ def main():
 
     print(f"Total passed: {count:d}/{num_configs:d}")
 
-    write_failed_info(params["fail_info_path"], failed_configs, failed_return_codes)
+    write_failed_info(
+        params["fail_info_path"], failed_configs, failed_return_codes, params["out_dir"]
+    )
 
     if Path("FFEA_meta.json").exists():
         Path("FFEA_meta.json").unlink()
