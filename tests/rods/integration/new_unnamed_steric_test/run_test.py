@@ -80,7 +80,7 @@ def main():
     failed_configs = []
     failed_return_codes = []
 
-    for i, path in enumerate(sorted(ffea_files)[0:3], 1):
+    for i, path in enumerate(sorted(ffea_files), 1):
 
         name = path.split("/")[-1].split(".")[0]
 
