@@ -93,6 +93,7 @@ def main():
             cwd=params["in_dir"],
         )
 
+        print("Writing stdout and stderr...")
         with open(f"{params['out_dir']:s}/{name:s}.stdout", "w") as f:
             f.write(ffea_result.stdout)
         with open(f"{params['out_dir']:s}/{name:s}.stderr", "w") as f:
@@ -108,7 +109,7 @@ def main():
             failed_return_codes.append(ffea_result.returncode)
             continue
 
-        print("ffeatools analysis...")
+        print("Results analysis...")
         subprocess.run(
             [
                 f"{params['py2_exe_path']:s}",
