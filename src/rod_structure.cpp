@@ -1268,13 +1268,13 @@ namespace rod
     }
 
     /**
-     * @brief Return the sum of the steric interaction forces on the nodes of a
+     * @brief Return the sum of the steric interaction forces on both nodes of a
      * given element due to neighbouring elements.
      *
      * @param elem_id
      * @return std::vector<float, 6> - force on nodes [x0, y0, z0, x1, y1, z1]
      */
-    std::vector<float> Rod::steric_force_sum_neighbours(int elem_id)
+    std::vector<float> Rod::net_steric_force_nbrs(int elem_id)
     {
         std::vector<float> element_force(3, 0);
         std::vector<float> node_force(6, 0);
@@ -1377,7 +1377,7 @@ namespace rod
             if(rod::dbg_print)
                 std::cout << "ROD STERIC CALC " << this->rod_no << "|" << i << "\n";
 
-            node_force = steric_force_sum_neighbours(i);
+            node_force = net_steric_force_nbrs(i);
             // start node
             this->steric_force[i * 3] += node_force[0];
             this->steric_force[(i * 3) + 1] += node_force[1];
