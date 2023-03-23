@@ -98,7 +98,7 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
     {
         vec3d(n) { c_ab.at(n + 3) = r_b[n]; }
     }
-    else if (dot_a >= rod::absolute(p_b) * rod::absolute(p_b))
+    else if (dot_b >= rod::absolute(p_b) * rod::absolute(p_b))
     {
         vec3d(n) { c_ab.at(n + 3) = r_b[n] + p_b[n]; }
     }
