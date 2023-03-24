@@ -285,15 +285,16 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     rod::get_element_midpoint(p_b, r_b, mp_b);
     vec3d(n){mp_ab[n] = mp_b[n] - mp_a[n];}
 
-    if(rod::dbg_print)
+    if (rod::dbg_print)
     {
         std::cout << "cull distant elements:\n";
-        std::printf("  |midpoint ab| : %.3e\n", rod::absolute(mp_ab));
-        std::printf("    = %.2f|p_a|\n", rod::absolute(mp_ab) / rod::absolute(p_a));
-        std::printf("    = %.2f|p_b|\n", rod::absolute(mp_ab) / rod::absolute(p_b));
+        std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mp_ab));
+        std::printf("    = %.3f|p_a|\n", rod::absolute(mp_ab) / rod::absolute(p_a));
+        std::printf("    = %.3f|p_b|\n", rod::absolute(mp_ab) / rod::absolute(p_b));
+        printf("  radius sum : %.3f\n", radius_a + radius_b);
     }
 
-    if (rod::absolute(mp_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)))
+    if (rod::absolute(mp_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
     {
 
         rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
@@ -303,7 +304,6 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
         {
             std::cout << "rod-rod distance:\n";
             printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
-            printf("  radius sum : %.3e\n", radius_a + radius_b);
         }
 
         if (rod::absolute(c_ab) < (radius_a + radius_b))
