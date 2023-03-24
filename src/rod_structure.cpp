@@ -1290,6 +1290,7 @@ namespace rod
         {
             std::cout << "Elem " << this->rod_no << "|" << elem_id << " has "
                 << num_nbrs << " neighbours";
+
             for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
             {
                 if (nbr_id == 0)
@@ -1300,6 +1301,9 @@ namespace rod
                     std::cout << ", ";
             }
             std::cout << "\n";
+
+            if (num_nbrs == 0)
+                std::cout << "No steric interactions to calculate\n";
         }
 
         for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
