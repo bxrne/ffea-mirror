@@ -288,9 +288,9 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     if(rod::dbg_print)
     {
         std::cout << "cull distant elements:\n";
-        std::printf("  |midpoint ab| : %.3e", rod::absolute(mp_ab));
-        std::printf("    = %.2f|p_a|", rod::absolute(mp_ab) / rod::absolute(p_a));
-        std::printf("    = %.2f|p_b|", rod::absolute(mp_ab) / rod::absolute(p_b));
+        std::printf("  |midpoint ab| : %.3e\n", rod::absolute(mp_ab));
+        std::printf("    = %.2f|p_a|\n", rod::absolute(mp_ab) / rod::absolute(p_a));
+        std::printf("    = %.2f|p_b|\n", rod::absolute(mp_ab) / rod::absolute(p_b));
     }
 
     if (rod::absolute(mp_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)))
@@ -302,8 +302,8 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
         if (rod::dbg_print)
         {
             std::cout << "rod-rod distance:\n";
-            printf("  |c_ab| : %.3e", rod::absolute(c_ab));
-            printf("  radius sum : %.3e", radius_a + radius_b);
+            printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
+            printf("  radius sum : %.3e\n", radius_a + radius_b);
         }
 
         if (rod::absolute(c_ab) < (radius_a + radius_b))
