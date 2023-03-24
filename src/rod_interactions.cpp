@@ -288,7 +288,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     if (rod::dbg_print)
     {
         std::cout << "cull distant elements:\n";
-        std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mp_ab));
+        std::printf("  |midpoint ab| : %.3e\n", rod::absolute(mp_ab));
         std::printf("    = %.3f|p_a|\n", rod::absolute(mp_ab) / rod::absolute(p_a));
         std::printf("    = %.3f|p_b|\n", rod::absolute(mp_ab) / rod::absolute(p_b));
         printf("  radius sum : %.3f\n", radius_a + radius_b);
