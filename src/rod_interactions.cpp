@@ -338,6 +338,8 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
             neighbours_b.push_back(stericDataB);
         }
     }
+    else if (rod::dbg_print)
+        std::cout << "  culled\n";
 }
 
 float steric_energy_linear(float force_scaling_factor, float intersect_distance)
