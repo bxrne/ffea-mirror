@@ -306,7 +306,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
             printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
         }
 
-        if (rod::absolute(c_ab) < (radius_a + radius_b))
+        if (rod::absolute(c_ab) > 0 and rod::absolute(c_ab) < (radius_a + radius_b))
         {
             if (rod::dbg_print)
             {
@@ -337,9 +337,15 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
                 c_a);
             neighbours_b.push_back(stericDataB);
         }
+        else if (rod::absolute(c_ab) <= 0)
+        {
+            throw std::runtime_error("rod elements have fully overlapped");
+        }
     }
     else if (rod::dbg_print)
+    {
         std::cout << "  culled\n";
+    }
 }
 
 float steric_energy_linear(float force_scaling_factor, float intersect_distance)
