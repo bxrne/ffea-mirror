@@ -406,18 +406,18 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     force[1] = (energy[2] - energy[3]) / delta;
     force[2] = (energy[4] - energy[5]) / delta;
 
+    float c_ab[3] = {0};
+    vec3d(n) { c_ab[n] = contact_neighb[n] - contact_self[n]; }
+
     if (rod::dbg_print)
     {
-        float centreline_displacement[3] = {0};
-        vec3d(n) { centreline_displacement[n] = contact_neighb[n] - contact_self[n]; }
-
         std::cout << "element steric force:\n";
         std::cout << "  delta : " << delta << "\n";
         std::cout << "  force_strength : " << force_strength << "\n";
         std::cout << "  radius_sum : " << radius_sum << "\n";
         print_array("  contact_self", contact_self, 3);
         print_array("  contact_neighb", contact_neighb, 3);
-        std::cout << "  centreline distance : " << rod::absolute(centreline_displacement) << "\n";
+        std::cout << "  centreline distance : " << rod::absolute(c_ab) << "\n";
         print_array("  perturbed distance x", distance, 0, 1);
         print_array("  perturbed distance y", distance, 2, 3);
         print_array("  perturbed distance z", distance, 4, 5);
@@ -426,11 +426,10 @@ std::vector<float> element_steric_force(float delta, float force_strength,
         print_array("  element energy z", energy, 4, 5);
         print_array("  element force", force, 3);
         std::cout << "\n";
-
     }
 
     // sanity check #1
-    if (rod::absolute(centreline_displacement) > radius_sum)
+    if (rod::absolute(c_ab) > radius_sum)
     {
         throw std::runtime_error("Unperturbed centreline distance cannot be "
             "greater than radius sum when calculating steric energy.");
@@ -438,10 +437,8 @@ std::vector<float> element_steric_force(float delta, float force_strength,
 
     // sanity check #2
     float force_norm[3] = {0};
-    float c_ab[3] = {0};
-    float c_ab_norm = {0};
+    float c_ab_norm[3] = {0};
 
-    vec3d(n){c_ab[n] = contact_neighb[n] - contact_self[n];}
     normalize(force, force_norm);
     normalize(c_ab, c_ab_norm);
     float dot = rod::dot_product_3x1(force_norm, c_ab_norm);
@@ -449,10 +446,10 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     if (dot >= 0)
     {
         std::string msg = "Force on rod element A (self) should point away from rod element B (neighbour):\n"
-            "force :      (" + to_string(force[0]) + ", " + to_string(force[1]) + ", " + to - string(force[2]) + ")\n";
-            "c_ab :       (" + to_string(c_ab[0]) + ", " + to_string(c_ab[1]) + ", " + to - string(c_ab[2]) + ")\n";
-            "force_norm : (" + to_string(force_norm[0]) + ", " + to_string(force_norm[1]) + ", " + to - string(force_norm[2]) + ")\n";
-            "c_ab :       (" + to_string(c_ab_norm[0]) + ", " + to_string(c_ab_norm[1]) + ", " + to - string(c_ab_norm[2]) + ")\n";
+            "force :      (" + to_string(force[0]) + ", " + to_string(force[1]) + ", " + to_string(force[2]) + ")\n";
+            "c_ab :       (" + to_string(c_ab[0]) + ", " + to_string(c_ab[1]) + ", " + to_string(c_ab[2]) + ")\n";
+            "force_norm : (" + to_string(force_norm[0]) + ", " + to_string(force_norm[1]) + ", " + to_string(force_norm[2]) + ")\n";
+            "c_ab :       (" + to_string(c_ab_norm[0]) + ", " + to_string(c_ab_norm[1]) + ", " + to_string(c_ab_norm[2]) + ")\n";
             "dot :         " + to_string(dot) + "\n";
         throw std::runtime_error(msg);
     }
