@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <boost/math/special_functions/fpclassify.hpp>
 #include <vector>
+#include <string>
 //#include <fenv.h>
 
 namespace rod
