@@ -107,7 +107,6 @@ def main():
             print("Failed\n")
             failed_configs.append(name)
             failed_return_codes.append(ffea_result.returncode)
-            continue
 
         print("Results analysis...")
         subprocess.run(
@@ -128,8 +127,8 @@ def main():
         )
 
         dist = np.loadtxt(f"{params['out_dir']:s}/{name:s}_distanceHeatmap.txt")
-        print("Node-node distances:")
-        print(dist)
+        print("Node-node distances (nm):")
+        print(dist * 1e9)
         if dist[dist <= 2 * params["radius"]].size == 0:
             count += 1
             print("Passed\n")
