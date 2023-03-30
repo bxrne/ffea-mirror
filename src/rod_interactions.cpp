@@ -446,11 +446,11 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     if (dot >= 0)
     {
         std::string msg = "Force on rod element A (self) should point away from rod element B (neighbour):\n"
-            "force :      (" + std::to_string(force[0]) + ", " + std::to_string(force[1]) + ", " + std::to_string(force[2]) + ")\n";
-            "c_ab :       (" + std::to_string(c_ab[0]) + ", " + std::to_string(c_ab[1]) + ", " + std::to_string(c_ab[2]) + ")\n";
-            "force_norm : (" + std::to_string(force_norm[0]) + ", " + std::to_string(force_norm[1]) + ", " + std::to_string(force_norm[2]) + ")\n";
-            "c_ab :       (" + std::to_string(c_ab_norm[0]) + ", " + std::to_string(c_ab_norm[1]) + ", " + std::to_string(c_ab_norm[2]) + ")\n";
-            "dot :         " + std::to_string(dot) + "\n";
+            "  force :      (" + std::to_string(force[0]) + ", " + std::to_string(force[1]) + ", " + std::to_string(force[2]) + ")\n"
+            "  c_ab :       (" + std::to_string(c_ab[0]) + ", " + std::to_string(c_ab[1]) + ", " + std::to_string(c_ab[2]) + ")\n"
+            "  force_norm : (" + std::to_string(force_norm[0]) + ", " + std::to_string(force_norm[1]) + ", " + std::to_string(force_norm[2]) + ")\n"
+            "  c_ab :       (" + std::to_string(c_ab_norm[0]) + ", " + std::to_string(c_ab_norm[1]) + ", " + std::to_string(c_ab_norm[2]) + ")\n"
+            "  dot :         " + std::to_string(dot) + "\n";
         throw std::runtime_error(msg);
     }
     return std::vector<float> {force[0], force[1], force[2]};
