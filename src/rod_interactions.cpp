@@ -114,10 +114,16 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
 }
 
 
-/** @brief Compare the centreline displacement, c_ab, to distances from both rod
- * nodes to the interaction point, c_a or c_b, on the opposing element. Find
- * the smallest distance from these. If c_ab is not the smallest then adjust
- * c_a or c_b.
+/** @brief Compare the centreline displacement, c_ab, to the following
+ * rod-rod displacements:
+ *
+ * d1 = c_b - r_a1
+ * d2 = c_b - r_a2
+ * d3 = c_a - r_b1
+ * d4 = c_a - r_b2
+ *
+ * Find the smallest displacement and, if needed, adjust c_ab such that it is
+ * the smallest displacement.
  *
  * @return: 6-element std::vector<float> containing c_a and c_b.
 */
@@ -125,16 +131,18 @@ std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
     float r_b[3], float p_a[3], float p_b[3])
 {
     float displacements[5][3] = {0};
+    float r_a2[3] = {0};
+    float r_b2[3] = {0};
     std::vector<float> distances(5, 0);
 
-    // compare c_ab to displacements from both rod nodes to the interaction
-    // point on the opposing rod
-    // ! put the stuff below in a function
-    vec3d(n) { displacements[0][n] = c_ab.at(n + 3) - c_ab.at(n); }       // c_ab
-    vec3d(n) { displacements[1][n] = c_ab.at(n + 3) - r_a[n]; }           // r_a1 to c_b
-    vec3d(n) { displacements[2][n] = c_ab.at(n + 3) - r_a[n] + p_a[n]; }  // r_a2 to c_b
-    vec3d(n) { displacements[3][n] = c_ab.at(n) - r_b[n]; }               // r_b1 to c_a
-    vec3d(n) { displacements[4][n] = c_ab.at(n) - r_b[n] + p_b[n]; }      // r_b2 to c_a
+    vec3d(n) { r_a2[n] = r_a[n] + p_a[n]; }
+    vec3d(n) { r_b2[n] = r_b[n] + p_b[n]; }
+
+    vec3d(n) { displacements[0][n] = c_ab.at(n + 3) - c_ab.at(n); }
+    vec3d(n) { displacements[1][n] = c_ab.at(n + 3) - r_a[n]; }
+    vec3d(n) { displacements[2][n] = c_ab.at(n + 3) - r_a2[n]; }
+    vec3d(n) { displacements[3][n] = c_ab.at(n) - r_b[n]; }
+    vec3d(n) { displacements[4][n] = c_ab.at(n) - r_b2[n]; }
 
     int i = 0;
     for (auto &d : distances)
@@ -152,27 +160,27 @@ std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
         vec3d(n) { c_ab.at(n) = r_a[n]; }
         break;
     case 2:
-        vec3d(n) { c_ab.at(n) = r_a[n] + p_a[n]; }
+        vec3d(n) { c_ab.at(n) = r_a2[n]; }
     case 3:
         vec3d(n) { c_ab.at(n + 3) = r_b[n]; }
         break;
     case 4:
-        vec3d(n) { c_ab.at(n + 3) = r_b[n] + p_b[n]; }
+        vec3d(n) { c_ab.at(n + 3) = r_b2[n]; }
         break;
     default:
-        throw std::out_of_range("Index to vector of distances between two rods");
+        throw std::out_of_range("Index to vector of displacements in rod::compare_node_distances()");
     }
 
     if (rod::dbg_print)
     {
-        std::cout << "node to interaction point distance comparison:" << std::endl;
-        printf("  |c_ab| : %.3e\n", distances[0]);
-        printf("  |d1| : %.3e\n", distances[1]);
-        printf("  |d2| : %.3e\n", distances[2]);
-        printf("  |d3| : %.3e\n", distances[3]);
-        printf("  |d4| : %.3e\n", distances[4]);
-        print_vector("  c_a (corrected)", c_ab.begin(), std::next(c_ab.begin(), 3) );
-        print_vector("  c_b (corrected)", std::next(c_ab.begin(), 3), c_ab.end() );
+        std::cout << "node to interaction point distance comparison:\n";
+        printf("  |c_ab| :       %.3f\n", distances[0]);
+        printf("  |c_b - r_a1| : %.3f\n", distances[1]);
+        printf("  |c_b - r_a2| : %.3f\n", distances[2]);
+        printf("  |c_a - r_b1| : %.3f\n", distances[3]);
+        printf("  |c_a - r_b2| : %.3f\n", distances[4]);
+        print_vector("  c_a (corrected)", c_ab.begin(), std::next(c_ab.begin(), 3));
+        print_vector("  c_b (corrected)", std::next(c_ab.begin(), 3), c_ab.end());
         std::cout << "\n";
     }
 
@@ -255,7 +263,6 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     }
 
     // Apply corrections to infinite line assumption
-    // ! - please sort this out with proper return values
     std::vector<float> c_ab{c_a[0], c_a[1], c_a[2], c_b[0], c_b[1], c_b[2]};
     c_ab = snap_to_nodes(c_ab, r_a, r_b, p_a, p_b);
     c_ab = compare_node_distances(c_ab, r_a, r_b, p_a, p_b);
@@ -288,7 +295,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     if (rod::dbg_print)
     {
         std::cout << "cull distant elements:\n";
-        std::printf("  |midpoint ab| : %.3e\n", rod::absolute(mp_ab));
+        std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mp_ab));
         std::printf("    = %.3f|p_a|\n", rod::absolute(mp_ab) / rod::absolute(p_a));
         std::printf("    = %.3f|p_b|\n", rod::absolute(mp_ab) / rod::absolute(p_b));
         printf("  radius sum : %.3f\n", radius_a + radius_b);
@@ -312,7 +319,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
             {
                 std::cout << "  neighbour pair: " << rod_id_a << "|" << elem_id_a
                 << " and " << rod_id_b << "|" << elem_id_b << "\n\n";
-                std::cout << "  generating interaction structs";
+                std::cout << "  generating interaction structs\n";
             }
 
             InteractionData stericDataA(
