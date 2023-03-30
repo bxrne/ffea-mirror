@@ -87,6 +87,7 @@ namespace rod
     void print_vector(std::string vector_name, std::vector<float>::iterator start, std::vector<float>::iterator end);
     std::vector<float> slice_vector(std::vector<float> vec, int start_index, int end_index);
     void normalize(float in[3], OUT float out[3]);
+    void normalize(std::vector<float> in, OUT std::vector<float> out);
     void normalize_unsafe(float in[3], OUT float out[3]);
     float absolute(float in[3]);
     void cross_product(float a[3], float b[3], float out[3]);

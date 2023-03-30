@@ -300,7 +300,26 @@ namespace rod
             out[1] = 0;
             out[2] = 0;
         }
-        not_simulation_destroying(out, "Noramlisation is simulation destroying.");
+        not_simulation_destroying(out, "Normalisation is simulation destroying.");
+    }
+
+    void normalize(std::vector<float> in, OUT std::vector<float> out)
+    {
+        float sqsum = 0;
+        for (float x : in)
+            sqsum += x * x;
+        float absolute = sqrt(sqsum);
+
+        for (int i = 0; i < in.size(); i++)
+            out.at(i) = in.at(i) / absolute;
+
+        if (boost::math::isnan(out[0]))
+        {
+            out[0] = 0;
+            out[1] = 0;
+            out[2] = 0;
+        }
+        not_simulation_destroying(out[0], "Normalisation is simulation destroying.");
     }
 
     /**
