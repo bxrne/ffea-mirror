@@ -128,6 +128,8 @@ def main():
         )
 
         dist = np.loadtxt(f"{params['out_dir']:s}/{name:s}_distanceHeatmap.txt")
+        print("Node-node distances:")
+        print(dist)
         if dist[dist <= 2 * params["radius"]].size == 0:
             count += 1
             print("Passed\n")

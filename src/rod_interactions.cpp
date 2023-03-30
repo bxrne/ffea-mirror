@@ -295,10 +295,11 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     if (rod::dbg_print)
     {
         std::cout << "cull distant elements:\n";
+        std::printf("  |p_a| :         %.3f\n", rod::absolute(p_a));
+        std::printf("  |p_b| :         %.3f\n", rod::absolute(p_b));
+        std::printf("  radius sum :    %.3f\n", radius_a + radius_b);
         std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mp_ab));
-        std::printf("    = %.3f|p_a|\n", rod::absolute(mp_ab) / rod::absolute(p_a));
-        std::printf("    = %.3f|p_b|\n", rod::absolute(mp_ab) / rod::absolute(p_b));
-        printf("  radius sum : %.3f\n", radius_a + radius_b);
+        std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b);
     }
 
     if (rod::absolute(mp_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
@@ -383,7 +384,7 @@ std::vector<float> element_steric_force(float delta, float force_strength,
 {
     float distance[6] = { 0 };      // +x, -x, +y, -y, +z, -z
     float energy[6] = { 0 };        // +x, -x, +y, -y, +z, -z
-    std::vector<float> force(3, 0); // x, y, z
+    float force[3] = {0}; // x, y, z
 
     distance[0] = perturbed_intersection_distance(0,  0.5 * delta, contact_self, contact_neighb, radius_sum);
     distance[1] = perturbed_intersection_distance(0, -0.5 * delta, contact_self, contact_neighb, radius_sum);
@@ -423,18 +424,39 @@ std::vector<float> element_steric_force(float delta, float force_strength,
         print_array("  element energy x", energy, 0, 1);
         print_array("  element energy y", energy, 2, 3);
         print_array("  element energy z", energy, 4, 5);
-        print_vector("  element force", force);
+        print_array("  element force", force, 3);
         std::cout << "\n";
 
-        // ! sanity check
-        if (rod::absolute(centreline_displacement) > radius_sum)
-        {
-            throw std::runtime_error("Unperturbed centreline distance cannot be "
-                "greater than radius sum when calculating steric energy.");
-        }
     }
 
-    return force;
+    // sanity check #1
+    if (rod::absolute(centreline_displacement) > radius_sum)
+    {
+        throw std::runtime_error("Unperturbed centreline distance cannot be "
+            "greater than radius sum when calculating steric energy.");
+    }
+
+    // sanity check #2
+    float force_norm[3] = {0};
+    float c_ab[3] = {0};
+    float c_ab_norm = {0};
+
+    vec3d(n){c_ab[n] = contact_neighb[n] - contact_self[n];}
+    normalize(force, force_norm);
+    normalize(c_ab, c_ab_norm);
+    float dot = rod::dot_product_3x1(force_norm, c_ab_norm);
+
+    if (dot >= 0)
+    {
+        std::string msg = "Force on rod element A (self) should point away from rod element B (neighbour):\n"
+            "force :      (" + to_string(force[0]) + ", " + to_string(force[1]) + ", " + to - string(force[2]) + ")\n";
+            "c_ab :       (" + to_string(c_ab[0]) + ", " + to_string(c_ab[1]) + ", " + to - string(c_ab[2]) + ")\n";
+            "force_norm : (" + to_string(force_norm[0]) + ", " + to_string(force_norm[1]) + ", " + to - string(force_norm[2]) + ")\n";
+            "c_ab :       (" + to_string(c_ab_norm[0]) + ", " + to_string(c_ab_norm[1]) + ", " + to - string(c_ab_norm[2]) + ")\n";
+            "dot :         " + to_string(dot) + "\n";
+        throw std::runtime_error(msg);
+    }
+    return std::vector<float> {force[0], force[1], force[2]};
 }
 
 /**
