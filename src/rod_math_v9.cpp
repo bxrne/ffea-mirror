@@ -1363,12 +1363,6 @@ float safe_cos(float in){
         OUT float energies[3])
     {
 
-        if (rod::dbg_print)
-        {
-            std::cout << "getting energy for node " << p_i_node_no << " in dimension " << perturbation_dimension << "\n";
-        } //temp
-
-        //feenableexcept( FE_INVALID | FE_OVERFLOW );
 
         // Put a 5-node segment onto the stack.
         // We need to make a copy of it, because we'l be modifying it for our
