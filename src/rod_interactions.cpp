@@ -168,6 +168,7 @@ std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
         vec3d(n) { c_ab.at(n + 3) = r_b2[n]; }
         break;
     default:
+        std::cout << "ERROR!\n";
         throw std::out_of_range("Index to vector of displacements in rod::compare_node_distances()");
     }
 
@@ -347,6 +348,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
         }
         else if (rod::absolute(c_ab) <= 1e-5)
         {
+            std::cout << "ERROR!\n";
             throw std::runtime_error("rod elements have fully overlapped");
         }
     }
@@ -431,6 +433,7 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     // sanity check #1
     if (rod::absolute(c_ab) > radius_sum)
     {
+        std::cout << "ERROR!\n";
         throw std::runtime_error("Unperturbed centreline distance cannot be "
             "greater than radius sum when calculating steric energy.");
     }
@@ -445,6 +448,7 @@ std::vector<float> element_steric_force(float delta, float force_strength,
 
     if (dot >= 0)
     {
+        std::cout << "ERROR!\n";
         std::string msg = "Force on rod element A (self) should point away from rod element B (neighbour):\n"
             "  force :      (" + std::to_string(force[0]) + ", " + std::to_string(force[1]) + ", " + std::to_string(force[2]) + ")\n"
             "  c_ab :       (" + std::to_string(c_ab[0]) + ", " + std::to_string(c_ab[1]) + ", " + std::to_string(c_ab[2]) + ")\n"

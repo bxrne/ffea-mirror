@@ -1292,6 +1292,7 @@ namespace rod
             // sanity check
             if (stericInt.elements_intersect() == false)
             {
+                std::cout << "ERROR!\n";
                 std::cout << "Rod " << stericInt.rod_id_self << ", elem " << stericInt.elem_id_self << "\n"
                     << "Rod " << stericInt.rod_id_nbr  << ", elem " << stericInt.elem_id_nbr  << "\n";
                 throw std::runtime_error("Elements do not intersect, but a steric "
@@ -1319,6 +1320,7 @@ namespace rod
             vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
             if (rod::absolute(diff) > 1e-5)
             {
+                std::cout << "ERROR!\n";
                 std::string msg = "Sum of node forces not equal to element force.\n"
                     "  start node: (" + std::to_string(node_force[0]) + ", " + std::to_string(node_force[1]) + ", " + std::to_string(node_force[2]) + ")"
                     "  end node:   (" + std::to_string(node_force[3]) + ", " + std::to_string(node_force[4]) + ", " + std::to_string(node_force[5]) + ")"
