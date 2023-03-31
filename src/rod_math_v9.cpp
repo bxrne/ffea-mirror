@@ -689,14 +689,6 @@ float safe_cos(float in){
     {
         float diff = absolute(p_i) - absolute(p_i_equil);
         float stretch_energy = (diff * diff * 0.5 * k) / absolute(p_i_equil);
-        if (rod::dbg_print)
-        {
-            std::cout << "p_i_equil = {" << p_i_equil[0] << ", " << p_i_equil[1] << ", " << p_i_equil[2] << "}\n";
-            std::cout << "p_i = {" << p_i[0] << ", " << p_i[1] << ", " << p_i[2] << "}\n";
-            std::cout << "diff = " << diff << "\n";
-            std::cout << "k = " << k << "\n";
-            std::cout << "stretch energy: " << stretch_energy << "\n";
-        }
         not_simulation_destroying(stretch_energy, "get_stretch_energy is simulation destroying.");
 
         return stretch_energy;
@@ -723,11 +715,6 @@ float safe_cos(float in){
 */
     float get_twist_energy(float beta, float m_i[3], float m_im1[3], float m_i_equil[3], float m_im1_equil[3], float p_im1[3], float p_i[3], float p_im1_equil[3], float p_i_equil[3])
     {
-
-        if (rod::dbg_print)
-        {
-            std::cout << "\nComputing twist energy:\n";
-        }
 
         float l_i = get_l_i(p_im1_equil, p_i_equil);
 
@@ -756,46 +743,14 @@ float safe_cos(float in){
         float m_equil_prime[3];
         parallel_transport(m_im1_equil_norm, m_equil_prime, p_im1_equil_norm, p_i_equil_norm);
 
-        if (rod::dbg_print)
-        {
-            std::cout << "parallel transport at equil:\n";
-            // print_array("m_im1_equil_norm", m_im1_equil_norm, 3);
-            // print_array("m_equil_prime", m_equil_prime, 3);
-            // print_array("p_im1_equil_norm", p_im1_equil_norm, 3);
-            // print_array("p_i_equil_norm", p_i_equil_norm, 3);
-        }
-
         precise_normalize(m_prime, m_prime);
         precise_normalize(m_equil_prime, m_equil_prime);
 
         float delta_theta = get_signed_angle(m_prime, m_i_norm, p_i_norm);
         float delta_theta_equil = get_signed_angle(m_equil_prime, m_i_equil_norm, p_i_equil_norm);
 
-        //std::cout << "delta_theta = " << delta_theta << " - " << delta_theta_equil << " = " << delta_theta-delta_theta_equil << "\n";
-
         float twist_energy = beta / (l_i * 2) * pow(fmod(delta_theta - delta_theta_equil + M_PI, 2 * M_PI) - M_PI, 2);
 
-        if (rod::dbg_print)
-        {
-            // std::cout << " m_i_norm: [" << m_i_norm[0] << ", " << m_i_norm[1] << ", " << m_i_norm[2] << "\n";
-            // std::cout << " m_im1_norm: [" << m_im1_norm[0] << ", " << m_im1_norm[1] << ", " << m_im1_norm[2] << "\n";
-            // std::cout << " m_i_equil: [" << m_i_equil_norm[0] << ", " << m_i_equil_norm[1] << ", " << m_i_equil_norm[2] << "\n";
-            // std::cout << " m_im1_equil: [" << m_im1_equil_norm[0] << ", " << m_im1_equil_norm[1] << ", " << m_im1_equil_norm[2] << "\n";
-            // std::cout << "p_i_norm: [" << p_i_norm[0] << ", " << p_i_norm[1] << ", " << p_i_norm[2] << "]\n";
-            // std::cout << "p_im1_norm: [" << p_im1_norm[0] << ", " << p_im1_norm[1] << ", " << p_im1_norm[2] << "]\n";
-            // std::cout << "p_i_equil_norm: [" << p_i_equil_norm[0] << ", " << p_i_equil_norm[1] << ", " << p_i_equil_norm[2] << "]\n";
-            // std::cout << "p_im1_equil_norm: [" << p_im1_equil_norm[0] << ", " << p_im1_equil_norm[1] << ", " << p_im1_equil_norm[2] << "]\n";
-            // std::cout << " m_prime: [" << m_prime[0] << ", " << m_prime[1] << ", " << m_prime[2] << "\n";
-            // std::cout << " m_equil_prime: [" << m_equil_prime[0] << ", " << m_equil_prime[1] << ", " << m_equil_prime[2] << "\n";
-            // std::cout << " delta_theta: " << delta_theta << "\n";
-            // std::cout << " delta_theta_equil: " << delta_theta_equil << "\n";
-            std::cout << "  twist_energy: " << twist_energy << "\n";
-        }
-
-        //float delta_theta = safe_cos( m_prime[x]*m_i_norm[x] + m_prime[y]*m_i_norm[y] + m_prime[z]*m_i_norm[z] );
-        //float delta_theta_equil = safe_cos( m_equil_prime[x]*m_i_equil_norm[x] + m_equil_prime[y]*m_i_equil_norm[y] + m_equil_prime[z]*m_i_equil_norm[z] );
-        //float twist_energy = (beta/l_i)*((delta_theta - delta_theta_equil)*(delta_theta - delta_theta_equil));
-        //float twist_energy = (beta/l_i)*pow((delta_theta - delta_theta_equil), 2);
         not_simulation_destroying(twist_energy, "get_twist_energy is simulation destroying.");
 
         return twist_energy;
@@ -842,12 +797,6 @@ float safe_cos(float in){
         delta_omega[1] = omega_i_im1[1] - omega_i_im1_equil[1];
         float result = delta_omega[0] * (delta_omega[0] * B_equil[0] + delta_omega[1] * B_equil[2]) + delta_omega[1] * (delta_omega[0] * B_equil[1] + delta_omega[1] * B_equil[3]);
         not_simulation_destroying(result, "get_bend_energy is simulation destroying.");
-        if (rod::dbg_print)
-        {
-            print_array("    B_equil", B_equil, 4);
-            print_array("    delta_omega", delta_omega, 2);
-            std::cout << "    result:" << result << "\n";
-        }
         return result;
     }
 
@@ -1035,51 +984,17 @@ float safe_cos(float in){
         parallel_transport(m_i, m_i_transported, p_i_norm, mutual_l);
         parallel_transport(m_i_equil, m_i_equil_transported, p_i_equil_norm, equil_mutual_l);
 
-        // get the angle between the two sets of material axes
-        //float angle_between_axes = safe_cos((m_i_transported[0] * m_im1_transported[0])+(m_i_transported[1] * m_im1_transported[1])+(m_i_transported[2] * m_im1_transported[2]));
-        //float angle_between_axes_equil = safe_cos((m_i_equil_transported[0] * m_im1_equil_transported[0])+(m_i_equil_transported[1] * m_im1_equil_transported[1])+(m_i_equil_transported[2] * m_im1_equil_transported[2]));
-
-        //float angle_to_rotate = get_mutual_angle_inverse(p_i, p_im1, angle_between_axes);
-        //float angle_to_rotate_equil = get_mutual_angle_inverse(p_i_equil, p_im1_equil, angle_between_axes_equil);
-
-        //float m_im1_rotated[3];
-        //float m_im1_rotated_equil[3];
-
-        // rotate by the angle in question
-        //rodrigues_rotation(m_im1_transported, mutual_l, angle_to_rotate, m_im1_rotated);
-        //rodrigues_rotation(m_im1_equil_transported, equil_mutual_l, angle_to_rotate_equil, m_im1_rotated_equil);
-
         float m_mutual[3];
         get_mutual_axes_inverse(m_im1_transported, m_i_transported, weight, m_mutual);
-        //vec3d(n){m_mutual[n] = (m_i_transported[n]*(1.0/weight_i) + m_im1_transported[n]*(1.0/weight_im1))/(absolute(m_i_transported)+absolute(m_im1_transported)) ;}
 
         float m_mutual_equil[3];
         get_mutual_axes_inverse(m_im1_equil_transported, m_i_equil_transported, equil_weight, m_mutual_equil);
-        //vec3d(n){m_mutual_equil[n] = (m_i_equil_transported[n]*(1.0/weight_i_equil) + m_im1_equil_transported[n]*(1.0/weight_im1_equil))/(absolute(m_i_equil_transported)+absolute(m_im1_equil_transported)) ;}
 
         normalize(m_mutual_equil, m_mutual_equil);
         normalize(m_mutual, m_mutual);
 
         float n_mutual[3];
         float n_mutual_equil[3];
-
-        if (rod::dbg_print)
-        {
-            // print_array("B", B_i_equil, 4);
-            // print_array("    m_im1", m_im1, 3);
-            // print_array("    m_i", m_i, 3);
-            // print_array("    m_im1_transported", m_im1_transported, 3);
-            // print_array("    m_i_transported", m_i_transported, 3);
-            // print_array("    m_mutual", m_mutual, 3);
-            // print_array("    l_mutual", mutual_l, 3);
-
-            // print_array("    p_im1", p_im1, 3);
-            // print_array("    p_i", p_i, 3);
-            // print_array("    p_im1_equil", p_im1_equil, 3);
-            // print_array("    p_i_equil", p_i_equil, 3);
-            // print_array("    mutual_l", mutual_l, 3);
-            // print_array("    equil_mutual_l", equil_mutual_l, 3);
-        }
 
         cross_product(mutual_l, m_mutual, n_mutual);
         cross_product(equil_mutual_l, m_mutual_equil, n_mutual_equil);
@@ -1099,21 +1014,6 @@ float safe_cos(float in){
         if (bend_energy >= 1900000850)
         {
             std::cout << "bend energy is very large. Please fire this up in gdb!\n";
-        }
-
-        if (rod::dbg_print)
-        {
-            std::cout << "    benergy delta_omega : [" << omega_j_im1[0] - omega_j_im1_equil[0] << ", " << omega_j_im1[1] - omega_j_im1_equil[1] << "]\n";
-        }
-
-        //std::cout << "delta_omega = [" << omega_j_im1[0] << ", " << omega_j_im1[1] << "]\n";
-        //std::cout << "delta_omega_equil = [" << omega_j_im1_equil[0] << ", " << omega_j_im1_equil[1] << "]\n";
-        print_array("    kb_i", kb_i, 3);
-        print_array("    kb_i_equil", kb_i_equil, 3);
-
-        if (rod::dbg_print)
-        {
-            std::cout << "    benergy is " << bend_energy << "\n";
         }
 
         return bend_energy;
@@ -1485,11 +1385,6 @@ float safe_cos(float in){
         // We need to make a copy of it, because we'l be modifying it for our
         // Numerical differentiation later on.
 
-        if (rod::dbg_print)
-        {
-            std::cout << "Setting up...\n";
-        }
-
         float B_equil[4][4];
         load_B_all(B_equil, B_matrix, p_i_node_no);
 
@@ -1510,11 +1405,6 @@ float safe_cos(float in){
         load_m(m_equil, m_all_equil, p_i_node_no);
         load_m(material, material_params, p_i_node_no);
 
-        if (rod::dbg_print)
-        {
-            std::cout << "Applying perturbation...\n";
-        }
-
         // Apply our perturbation in x, y or z (for numerical differentiation)
         if (perturbation_dimension < 4 and perturbation_amount != 0)
         { //e.g. if we're perturbing x, y, or z
@@ -1528,41 +1418,21 @@ float safe_cos(float in){
             rodrigues_rotation(m[i], p[i], perturbation_amount, m[i]);
         }
 
-        if (rod::dbg_print)
-        {
-            std::cout << "Update m1...\n";
-        }
-
         // If we've perturbed it in x, y, or z, we need to update m, and then adjust it to make sure it's perpendicular
         if (perturbation_dimension < 4 and perturbation_amount != 0)
         {
             update_m1_matrix_all(m, original_p, p, m, start_cutoff, end_cutoff);
         }
 
-        if (rod::dbg_print)
-        {
-            std::cout << "Normalize...\n";
-        }
-
         // Normalize m1, just to be sure (the maths doesn't work if it's not normalized)
         normalize_all(m);
         normalize_all(m_equil);
-
-        if (rod::dbg_print)
-        {
-            std::cout << "Compute m_i_2...\n";
-        }
 
         // Compute m_i_2 (we know it's perpendicular to e_i and m_i_1, so this shouldn't be too hard)
         float n[4][3];
         float n_equil[4][3];
         cross_all(p, m, n);
         cross_all(p_equil, m_equil, n_equil);
-
-        if (rod::dbg_print)
-        {
-            std::cout << "Computing energies...\n";
-        }
 
         // Compute unperturbed energy.
         // I could make this less verbose, but the explicit lookup table is a bit clearer about what's going on.

@@ -211,7 +211,7 @@ namespace rod
 
             if (rod::dbg_print)
             {
-                std::cout << "IT BREAKS DURING NODE " << node_no << " ENERGY\n";
+                std::cout << "Node index : " << node_no << "\n";
             }
 
             // if the node is pinned, we go to the next iteration of the loop (e.g. the next node)
@@ -486,9 +486,6 @@ namespace rod
             }
 
             // Get delta r and delta twist
-            // float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force + x_steric, x_noise, applied_force_x); //from rod_math
-            // float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force + y_steric, y_noise, applied_force_y);
-            // float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force + z_steric, z_noise, applied_force_z);
             std::vector<float> x_force_vector{x_force, x_noise, applied_force_x, x_steric};
             std::vector<float> y_force_vector{y_force, y_noise, applied_force_y, y_steric};
             std::vector<float> z_force_vector{z_force, z_noise, applied_force_z, z_steric};
