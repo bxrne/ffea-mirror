@@ -498,10 +498,6 @@ namespace rod
             current_r[node_no * 3] += delta_r_x;
             current_r[(node_no * 3) + 1] += delta_r_y;
             current_r[(node_no * 3) + 2] += delta_r_z;
-            if (rod::dbg_print)
-            {
-                std::cout << "delta_r: [" << delta_r_x << ", " << delta_r_y << ", " << delta_r_z << "]" << std::endl;
-            }
 
             // A wee sanity check to stop your simulations from exploding horribly
             for (int i = 0; i < length; i++)
@@ -610,7 +606,7 @@ namespace rod
         std::ifstream infile(filename);
         if (!infile)
         {
-            std::cout << "Walrus IO error. Does input file exist?" << std::endl;
+            std::cout << "IO error. Does input file exist?" << std::endl;
         }
 
         /** Iterate through file up to rod connections marker. */
@@ -1152,23 +1148,9 @@ namespace rod
         }
         else
         {
-            if (rod::dbg_print)
-            {
-                std::cout << "rod " << this->rod_no << ", index = " << index << "\n";
-                float r_i[3] = {0, 0, 0};
-                float r_ip1[3] = {0, 0, 0};
-                vec3d(n) { r_i[n] = current_r[(index * 3) + n]; }
-                vec3d(n) { r_ip1[n] = current_r[(index * 3) + 3 + n]; }
-                rod::print_array("  r_i", r_i, 3);
-                rod::print_array("  r_ip1", r_ip1, 3);
-            }
             // current_r is 1D, so coordinates for rod nodes that are adjacent in space
             // are separated in the array by 3 items (x, y, and z)
             vec3d(n) { p[n] = current_r[(index * 3) + 3 + n] - current_r[(index * 3) + n]; }
-        }
-        if (rod::dbg_print)
-        {
-            print_array("  p", p, 3);
         }
         assert(std::abs(rod::absolute(p)) > 1e-7 && "Length of rod element is zero");
         return *this;

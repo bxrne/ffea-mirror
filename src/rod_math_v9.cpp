@@ -630,15 +630,6 @@ float safe_cos(float in){
     {
         float m2_cross_m1[3];
         cross_product(m2, m1, m2_cross_m1);
-        print_array("cross", m2_cross_m1, 3);
-        if (rod::dbg_print)
-        {
-            std::cout << "top: " << (m2_cross_m1[0] * l[0] + m2_cross_m1[1] * l[1] + m2_cross_m1[2] * l[2]) << "\n";
-        }
-        if (rod::dbg_print)
-        {
-            std::cout << "bottom: " << (m1[0] * m2[0] + m1[1] * m2[1] + m1[2] * m2[2]) << "\n";
-        }
         return atan2((m2_cross_m1[0] * l[0] + m2_cross_m1[1] * l[1] + m2_cross_m1[2] * l[2]), (m1[0] * m2[0] + m1[1] * m2[1] + m1[2] * m2[2]));
     }
 
@@ -762,8 +753,6 @@ float safe_cos(float in){
 */
     void get_kb_i(float p_im1[3], float p_i[3], OUT float kb_i[3])
     {
-        //    print_array("p_im1", p_im1, 3);
-        //    print_array("p_i", p_i, 3);
         float two_p_im1[3];
         vec3d(n) { two_p_im1[n] = p_im1[n] + p_im1[n]; }
         float top[3];
@@ -887,7 +876,7 @@ float safe_cos(float in){
             }
             if (rod::dbg_print)
             {
-                std::cout << "Energon Crystals = " << bend_energy << "\n";
+                std::cout << "bend_energy = " << bend_energy << "\n";
             }
             //        assert(false);
         }
