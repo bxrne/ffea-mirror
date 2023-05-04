@@ -104,16 +104,25 @@ float steric_energy_squared(
     float force_scaling_factor,
     float intersect_distance);
 
+// Perturbation in +x/-x/+y/-y/+z/-z
 float intersection_distance(
-    int perturb_dim,
-    float perturb_delta,
-    float contact_a[3],
-    float contact_b[3],
+    int dim,
+    float delta,
+    float c_a[3],
+    float c_b[3],
     float radius_sum);
 
+// Perturbation in +c_ab/-c_ab
 float intersection_distance(
-    float contact_a[3],
-    float contact_b[3],
+    float delta,
+    float c_a[3],
+    float c_b[3],
+    float radius_sum);
+
+// No perturbation
+float intersection_distance(
+    float c_a[3],
+    float c_b[3],
     float radius_sum);
 
 std::vector<float> element_steric_force(
@@ -122,6 +131,13 @@ std::vector<float> element_steric_force(
     float radius_sum,
     float contact_self[3],
     float contact_neighb[3]);
+
+std::vector<float> element_steric_energy(
+    float delta,
+    float force_strength,
+    float radius_sum,
+    float c_a[3],
+    float c_b[3]);
 
 std::vector<float> node_force_interpolation(
     float contact[3],

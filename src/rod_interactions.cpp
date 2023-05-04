@@ -368,28 +368,39 @@ float steric_energy_squared(float force_scaling_factor, float intersect_distance
     return force_scaling_factor * intersect_distance * intersect_distance;
 }
 
-// Distance between two rod elements, with a spatial perturbation applied to
-// the centreline displacement
-float intersection_distance(int perturb_dim, float perturb_delta,
-    float contact_self[3], float contact_neighb[3], float radius_sum)
+// Perturbation in +x/-x/+y/-y/+z/-z
+float intersection_distance(int dim, float delta, float c_a[3], float c_b[3],
+    float radius_sum)
 {
-    float centreline_displacement[3] = { 0 };
-    contact_neighb[perturb_dim] += perturb_delta;
-    vec3d(n) { centreline_displacement[n] = contact_neighb[n] - contact_self[n]; }
+    float c_ab[3] = { 0 };
+    c_b[dim] += delta;
+    vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
 
-    return rod::absolute(centreline_displacement) - radius_sum;
+    return rod::absolute(c_ab) - radius_sum;
+}
+
+// Perturbation in +c_ab/-c_ab
+float intersection_distance(float delta, float c_a[3], float c_b[3], float radius_sum)
+{
+    float c_ab[3] = { 0 };
+    float c_ab_norm[3] = { 0 };
+    float c_ab_ptb[3] = { 0 };
+
+    vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
+    rod::normalize(c_ab, c_ab_norm);
+    vec3d(n) { c_ab_ptb[n] = c_ab[n] + delta * c_ab_norm[n]; }
+
+    return rod::absolute(c_ab_ptb) - radius_sum;
 }
 
 // No perturbation
-float intersection_distance(float contact_self[3], float contact_neighb[3],
-    float radius_sum)
+float intersection_distance(float c_a[3], float c_b[3], float radius_sum)
 {
-    float centreline_displacement[3] = { 0 };
-    vec3d(n) { centreline_displacement[n] = contact_neighb[n] - contact_self[n]; }
+    float c_ab[3] = { 0 };
+    vec3d(n) { c_ab[n] = c_a[n] - c_b[n]; }
 
-    return rod::absolute(centreline_displacement) - radius_sum;
+    return rod::absolute(c_ab) - radius_sum;
 }
-
 
 /**
  * @brief Steric repulsive force on a rod element due to its collision
@@ -474,9 +485,27 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     return std::vector<float> {force[0], force[1], force[2]};
 }
 
-/**
- * @brief Interpolate the force applied to an element onto both nodes.
- */
+// Return the steric collision energy of a rod element as a vector with the
+// format [r+dr, r, r-dr]. Perturbation occurs along the intersection vector
+// pointing away from the current element.
+std::vector<float> element_steric_energy(float delta, float force_strength,
+    float radius_sum, float c_a[3], float c_b[3])
+{
+    float dist[3] = {0};
+    float energy[3] = {0};
+
+    dist[0] = intersection_distance(0.5 * delta, c_a, c_b, radius_sum);
+    dist[1] = intersection_distance(c_a, c_b, radius_sum);
+    dist[2] = intersection_distance(-0.5 * delta, c_a, c_b, radius_sum);
+
+    energy[0] = steric_energy_squared(force_strength, dist[0]);
+    energy[1] = steric_energy_squared(force_strength, dist[1]);
+    energy[2] = steric_energy_squared(force_strength, dist[2]);
+
+    return std::vector<float> {energy[0], energy[1], energy[2]};
+}
+
+// Interpolate the force applied to an element onto both nodes
 std::vector<float> node_force_interpolation(float contact[3], float node_start[3],
     float element_length, const std::vector<float> &element_force)
 {
