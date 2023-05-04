@@ -100,9 +100,18 @@ float steric_energy_linear(
     float force_scaling_factor,
     float intersect_distance);
 
-float perturbed_intersection_distance(
+float steric_energy_squared(
+    float force_scaling_factor,
+    float intersect_distance);
+
+float intersection_distance(
     int perturb_dim,
     float perturb_delta,
+    float contact_a[3],
+    float contact_b[3],
+    float radius_sum);
+
+float intersection_distance(
     float contact_a[3],
     float contact_b[3],
     float radius_sum);

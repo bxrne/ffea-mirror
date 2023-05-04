@@ -1821,12 +1821,12 @@ int ffea_test::steric_energy_two_rod_elements()
         rod::element_minimum_displacement(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
 
         std::array<float, 6> distance = {0};
-        distance[0] = rod::perturbed_intersection_distance(0,  delta, c_a, c_b, 2*radius);
-        distance[1] = rod::perturbed_intersection_distance(0, -delta, c_a, c_b, 2*radius);
-        distance[2] = rod::perturbed_intersection_distance(1,  delta, c_a, c_b, 2*radius);
-        distance[3] = rod::perturbed_intersection_distance(1, -delta, c_a, c_b, 2*radius);
-        distance[4] = rod::perturbed_intersection_distance(2,  delta, c_a, c_b, 2*radius);
-        distance[5] = rod::perturbed_intersection_distance(2, -delta, c_a, c_b, 2*radius);
+        distance[0] = rod::intersection_distance(0,  delta, c_a, c_b, 2*radius);
+        distance[1] = rod::intersection_distance(0, -delta, c_a, c_b, 2*radius);
+        distance[2] = rod::intersection_distance(1,  delta, c_a, c_b, 2*radius);
+        distance[3] = rod::intersection_distance(1, -delta, c_a, c_b, 2*radius);
+        distance[4] = rod::intersection_distance(2,  delta, c_a, c_b, 2*radius);
+        distance[5] = rod::intersection_distance(2, -delta, c_a, c_b, 2*radius);
 
         std::array<float, 6> energy = {0};
         energy[0] = rod::steric_energy_linear(strength, distance[0]);
