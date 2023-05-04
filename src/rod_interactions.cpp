@@ -169,7 +169,7 @@ std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
         break;
     default:
         std::cout << "ERROR!\n";
-        throw std::out_of_range("Index to vector of displacements in rod::compare_node_distances()");
+        throw std::out_of_range("Invalid index to vector of displacements in rod::compare_node_distances()");
     }
 
     if (rod::dbg_print)
@@ -349,7 +349,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
         else if (rod::absolute(c_ab) <= 1e-5)
         {
             std::cout << "ERROR!\n";
-            throw std::runtime_error("rod elements have fully overlapped");
+            throw std::runtime_error("Rod elements have fully overlapped.");
         }
     }
     else if (rod::dbg_print)
@@ -377,7 +377,7 @@ float intersection_distance(int perturb_dim, float perturb_delta,
     contact_neighb[perturb_dim] += perturb_delta;
     vec3d(n) { centreline_displacement[n] = contact_neighb[n] - contact_self[n]; }
 
-    return std::abs(rod::absolute(centreline_displacement) - radius_sum);
+    return rod::absolute(centreline_displacement) - radius_sum;
 }
 
 // No perturbation
@@ -387,7 +387,7 @@ float intersection_distance(float contact_self[3], float contact_neighb[3],
     float centreline_displacement[3] = { 0 };
     vec3d(n) { centreline_displacement[n] = contact_neighb[n] - contact_self[n]; }
 
-    return std::abs(rod::absolute(centreline_displacement) - radius_sum);
+    return rod::absolute(centreline_displacement) - radius_sum;
 }
 
 
@@ -448,7 +448,7 @@ std::vector<float> element_steric_force(float delta, float force_strength,
     if (rod::absolute(c_ab) > radius_sum)
     {
         std::cout << "ERROR!\n";
-        throw std::runtime_error("Unperturbed centreline distance cannot be "
+        throw std::runtime_error("Centreline distance cannot be "
             "greater than radius sum when calculating steric energy.");
     }
 
