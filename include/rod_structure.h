@@ -88,6 +88,7 @@ namespace rod
         float *B_matrix;                         /** Contents of the bending modulus matrix for each node, as a 1-d array. Given as [a_1_1, a_1_2, a_2,1, a_2_2, a_1_1...]. **/
         float *steric_perturbed_energy_positive; // Length 2L array: energies from steric interactions at the start (0) and end (1) nodes of each rod element, i. Given as [xi0 yi0 zi0, xi1 yi1 zi1, ...]
         float *steric_perturbed_energy_negative;
+        float *steric_energy;                    // Length L array : steric repulsion energy of elements (should be L/3 array, but previous decisions make it easier this way; xi=yi=zi, and so on)
         float *steric_force;                     // Length L array: steric repulsive force interpolated onto nodes from elements [x, y, z, ...]
 
         int *num_neighbours; // Length L/3 array. Keeps track of how many neighbours each rod element has.

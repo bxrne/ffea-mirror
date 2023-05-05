@@ -149,6 +149,8 @@ class FFEA_rod:
             self.material_params = np.zeros(
                 [self.num_frames, self.num_elements, 3])
             self.B_matrix = np.zeros([self.num_frames, self.num_elements, 4])
+            self.steric_energy = np.zeros(
+                [self.num_frames, self.num_elements, 3])
             self.steric_force = np.zeros(
                 [self.num_frames, self.num_elements, 3])
             self.num_neighbours = np.zeros(
@@ -228,8 +230,10 @@ class FFEA_rod:
             [self.num_frames, self.num_elements, self.get_num_dimensions(13)])
         self.B_matrix = np.empty(
             [self.num_frames, self.num_elements, self.get_num_dimensions(14)])
-        self.steric_force = np.empty(
+        self.steric_energy = np.empty(
             [self.num_frames, self.num_elements, self.get_num_dimensions(15)])
+        self.steric_force = np.empty(
+            [self.num_frames, self.num_elements, self.get_num_dimensions(16)])
         self.num_neighbours = np.empty([self.num_frames, self.num_elements])
 
         # look, this is not pretty but it is really fast
@@ -301,6 +305,10 @@ class FFEA_rod:
                         line, sep=",").reshape(self.B_matrix[frame_no].shape)
                     row += 1
                     line = rod_file.readline()
+                    self.steric_energy[frame_no] = np.fromstring(
+                        line, sep=",").reshape(self.steric_energy[frame_no].shape)
+                    row += 1
+                    line = rod_file.readline()
                     self.steric_force[frame_no] = np.fromstring(
                         line, sep=",").reshape(self.steric_force[frame_no].shape)
                     row += 1
@@ -344,8 +352,9 @@ class FFEA_rod:
         rod_file.write("row12,twisted_energy_negative\n")
         rod_file.write("row13,material_params\n")
         rod_file.write("row14,B_matrix\n")
-        rod_file.write("row15,steric_force\n")
-        rod_file.write("row16,num_neighbours\n")
+        rod_file.write("row15,steric_energy\n")
+        rod_file.write("row16,steric_force\n")
+        rod_file.write("row17,num_neighbours\n")
 
         # Connections (note: this is temporary, it might end up in the .ffea file)
         rod_file.write("CONNECTIONS,ROD,0\n")
@@ -394,6 +403,7 @@ class FFEA_rod:
                 self.twisted_energy_negative[frame].flatten(), rod_file)
             write_array(self.material_params[frame].flatten(), rod_file)
             write_array(self.B_matrix[frame].flatten(), rod_file)
+            write_array(self.steric_energy[frame].flatten(), rod_file)
             write_array(self.steric_force[frame].flatten(), rod_file)
             write_array(self.num_neighbours[frame].flatten(), rod_file)
 
@@ -1471,6 +1481,7 @@ class anal_rod:
         self.rod.twisted_energy_negative = self.rod.twisted_energy_negative[::interval]
         self.rod.material_params = self.rod.material_params[::interval]
         self.rod.B_matrix = self.rod.B_matrix[::interval]
+        self.rod.steric_energy = self.rod.steric_energy[::interval]
         self.rod.steric_force = self.rod.steric_force[::interval]
         self.rod.num_neighbours = self.rod.num_neighbours[::interval]
         self.rod.num_frames = len(self.rod.current_r)
@@ -1673,6 +1684,8 @@ class anal_rod:
             self.rod.material_params, target_length, margin)
         self.rod.B_matrix = determine_simplification_func(
             self.rod.B_matrix, target_length, margin)
+        self.rod.steric_energy = determine_simplification_func(
+            self.rod.steric_energy, target_length, margin)
         self.rod.steric_force = determine_simplification_func(
             self.rod.steric_force, target_length, margin)
         self.rod.num_elements = len(self.rod.equil_r[0])

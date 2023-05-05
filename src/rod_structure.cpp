@@ -92,6 +92,7 @@ namespace rod
                                            internal_twisted_energy_negative(new float[length]),
                                            material_params(new float[length]),
                                            B_matrix(new float[length + (length / 3)]),
+                                           steric_energy(new float[length]),
                                            steric_force(new float[length]),
                                            num_neighbours(new int[length/3]),
                                            applied_forces(new float[length + (length / 3)]),
@@ -138,6 +139,7 @@ namespace rod
             internal_perturbed_y_energy_negative[i] /= mesoDimensions::Energy;
             internal_perturbed_z_energy_negative[i] /= mesoDimensions::Energy;
             internal_twisted_energy_negative[i] /= mesoDimensions::Energy;
+            steric_energy[i] /= mesoDimensions::Energy;
             steric_force[i] /= mesoDimensions::force;
 
             if (i % 3 == 0)
@@ -676,6 +678,7 @@ namespace rod
         internal_twisted_energy_negative = static_cast<float *>(malloc(sizeof(float) * length));
         material_params = static_cast<float *>(malloc(sizeof(float) * length));
         B_matrix = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
+        steric_energy = static_cast<float *>(malloc(sizeof(float) * (length)));
         steric_force = static_cast<float *>(malloc(sizeof(float) * length));
         num_neighbours = static_cast<int *>(malloc(sizeof(int) * (length/3)));
         applied_forces = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
@@ -863,9 +866,14 @@ namespace rod
                 if (n == line_of_last_frame + 15)
                 {
                     for (int i = 0; i < length; i++)
-                        steric_force[i] = line_vec_float.data()[i];
+                        steric_energy[i] = line_vec_float.data()[i];
                 }
                 if (n == line_of_last_frame + 16)
+                {
+                    for (int i = 0; i < length; i++)
+                        steric_force[i] = line_vec_float.data()[i];
+                }
+                if (n == line_of_last_frame + 17)
                 {
                     for (int i = 0; i < length/3; i++)
                         num_neighbours[i] = line_vec_float.data()[i];
@@ -901,6 +909,7 @@ namespace rod
         write_array(file_ptr, internal_twisted_energy_negative, length, mesoDimensions::Energy, true);
         write_mat_params_array(material_params, length, spring_constant_factor, twist_constant_factor, mesoDimensions::length);
         write_array(file_ptr, B_matrix, length + (length / 3), bending_response_factor, true);
+        write_array(file_ptr, steric_energy, length, mesoDimensions::Energy, true);
         write_array(file_ptr, steric_force, length, mesoDimensions::force, true);
         write_array(file_ptr, num_neighbours, length/3, true);
         fflush(file_ptr);
@@ -1257,6 +1266,7 @@ namespace rod
     {
         std::vector<float> element_force(3, 0);
         std::vector<float> energy(3, 0);
+        float energy_sum = 0;
         std::vector<float> node_force(6, 0);
         std::vector<float> node_force_sum(6, 0);
         float c_ab[3] = { 0 };
@@ -1309,19 +1319,19 @@ namespace rod
                 stericInt.radius_self + stericInt.radius_nbr,
                 stericInt.contact_self,
                 stericInt.contact_nbr);
-
             gradient = (energy.at(0) - energy.at(1)) / this->perturbation_amount;
-            rod::normalize(stericInt.c_ab, c_ab_norm);
-            vec3d(n) { element_force.at(n) = gradient * c_ab_norm[n]; }
+            energy_sum += energy.at(2);
 
             this->get_r(elem_id, r_self, false);
             this->get_p(elem_id, p_self, false);
+            rod::normalize(stericInt.c_ab, c_ab_norm);
+            vec3d(n) { element_force.at(n) = gradient * c_ab_norm[n]; }
+
             node_force = node_force_interpolation(
                 stericInt.contact_self,
                 r_self,
                 rod::absolute(p_self),
                 element_force);
-
             vec3d(n) { node_force_sum[n] += node_force[n]; }
             vec3d(n) { node_force_sum[n + 3] += node_force[n + 3]; }
 
@@ -1347,6 +1357,10 @@ namespace rod
                 std::vector<float>(std::next(node_force_sum.begin(), 3), node_force_sum.end()));
             std::cout << "\n";
         }
+
+        this->steric_energy[elem_id*3] = energy_sum;
+        this->steric_energy[(elem_id*3)+1] = energy_sum;
+        this->steric_energy[(elem_id*3)+2] = energy_sum;
 
         return node_force_sum;
     }
