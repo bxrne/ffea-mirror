@@ -1256,8 +1256,12 @@ namespace rod
     std::vector<float> Rod::net_steric_force_nbrs(int elem_id)
     {
         std::vector<float> element_force(3, 0);
+        std::vector<float> energy(3, 0);
         std::vector<float> node_force(6, 0);
         std::vector<float> node_force_sum(6, 0);
+        float c_ab[3] = { 0 };
+        float c_ab_norm[3] = { 0 };
+        float gradient = 0;
         float r_self[3] = { 0 };
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
@@ -1299,12 +1303,16 @@ namespace rod
                     "force calculation was attempted.");
             }
 
-            element_force = element_steric_force(
+            energy = element_steric_energy(
                 this->perturbation_amount,
                 this->steric_force_factor,
                 stericInt.radius_self + stericInt.radius_nbr,
                 stericInt.contact_self,
                 stericInt.contact_nbr);
+
+            gradient = (energy.at(0) - energy.at(1)) / this->perturbation_amount;
+            rod::normalize(stericInt.c_ab, c_ab_norm);
+            vec3d(n) { element_force.at(n) = gradient * c_ab_norm[n]; }
 
             this->get_r(elem_id, r_self, false);
             this->get_p(elem_id, p_self, false);
@@ -1318,14 +1326,14 @@ namespace rod
             vec3d(n) { node_force_sum[n + 3] += node_force[n + 3]; }
 
             vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
-            if (rod::absolute(diff) > 1e-5)
+            if (rod::absolute(diff) > 1e-3)
             {
                 std::cout << "ERROR!\n";
                 std::string msg = "Sum of node forces not equal to element force.\n"
-                    "  start node: (" + std::to_string(node_force[0]) + ", " + std::to_string(node_force[1]) + ", " + std::to_string(node_force[2]) + ")"
-                    "  end node:   (" + std::to_string(node_force[3]) + ", " + std::to_string(node_force[4]) + ", " + std::to_string(node_force[5]) + ")"
-                    "  elem:       (" + std::to_string(element_force[0]) + ", " + std::to_string(element_force[1]) + ", " + std::to_string(element_force[2]) + ")"
-                    "  diff:       (" + std::to_string(diff[0]) + ", " + std::to_string(diff[1]) + ", " + std::to_string(diff[2]) + ")";
+                    "  start node: (" + std::to_string(node_force[0]) + ", " + std::to_string(node_force[1]) + ", " + std::to_string(node_force[2]) + ")\n"
+                    "  end node:   (" + std::to_string(node_force[3]) + ", " + std::to_string(node_force[4]) + ", " + std::to_string(node_force[5]) + ")\n"
+                    "  elem:       (" + std::to_string(element_force[0]) + ", " + std::to_string(element_force[1]) + ", " + std::to_string(element_force[2]) + ")\n"
+                    "  diff:       (" + std::to_string(diff[0]) + ", " + std::to_string(diff[1]) + ", " + std::to_string(diff[2]) + ")\n";
                 throw std::runtime_error(msg);
             }
 

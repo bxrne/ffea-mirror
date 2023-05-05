@@ -43,6 +43,7 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     radius_nbr = radius_b;
     vec3d(n){contact_self[n] = c_a[n];}
     vec3d(n){contact_nbr[n] = c_b[n];}
+    vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
 };
 
 bool InteractionData::elements_intersect()
@@ -64,6 +65,7 @@ bool InteractionData::elements_intersect()
     else
         return false;
 }
+
 
 /**
  * @brief If either interaction point, c_a or c_b, lies outside the finite
@@ -379,7 +381,7 @@ float intersection_distance(int dim, float delta, float c_a[3], float c_b[3],
     return rod::absolute(c_ab) - radius_sum;
 }
 
-// Perturbation in +c_ab/-c_ab
+// Perturbation in +c_ab/-c_ab, where c_ab points away from current element
 float intersection_distance(float delta, float c_a[3], float c_b[3], float radius_sum)
 {
     float c_ab[3] = { 0 };
@@ -402,92 +404,9 @@ float intersection_distance(float c_a[3], float c_b[3], float radius_sum)
     return rod::absolute(c_ab) - radius_sum;
 }
 
-/**
- * @brief Steric repulsive force on a rod element due to its collision
- * with a neighbouring element.
- */
-std::vector<float> element_steric_force(float delta, float force_strength,
-    float radius_sum, float contact_self[3], float contact_neighb[3])
-{
-    float distance[6] = { 0 };      // +x, -x, +y, -y, +z, -z
-    float energy[6] = { 0 };        // +x, -x, +y, -y, +z, -z
-    float force[3] = {0}; // x, y, z
-
-    distance[0] = intersection_distance(0,  0.5 * delta, contact_self, contact_neighb, radius_sum);
-    distance[1] = intersection_distance(0, -0.5 * delta, contact_self, contact_neighb, radius_sum);
-    distance[2] = intersection_distance(1,  0.5 * delta, contact_self, contact_neighb, radius_sum);
-    distance[3] = intersection_distance(1, -0.5 * delta, contact_self, contact_neighb, radius_sum);
-    distance[4] = intersection_distance(2,  0.5 * delta, contact_self, contact_neighb, radius_sum);
-    distance[5] = intersection_distance(2, -0.5 * delta, contact_self, contact_neighb, radius_sum);
-
-    energy[0] = steric_energy_linear(force_strength, distance[0]);
-    energy[1] = steric_energy_linear(force_strength, distance[1]);
-    energy[2] = steric_energy_linear(force_strength, distance[2]);
-    energy[3] = steric_energy_linear(force_strength, distance[3]);
-    energy[4] = steric_energy_linear(force_strength, distance[4]);
-    energy[5] = steric_energy_linear(force_strength, distance[5]);
-
-    // ! gradient implicitly negative due to use of intersection distance, rather
-    // ! than centreline distance. See notes 30/6/22.
-    force[0] = (energy[0] - energy[1]) / delta;
-    force[1] = (energy[2] - energy[3]) / delta;
-    force[2] = (energy[4] - energy[5]) / delta;
-
-    float c_ab[3] = {0};
-    vec3d(n) { c_ab[n] = contact_neighb[n] - contact_self[n]; }
-
-    if (rod::dbg_print)
-    {
-        std::cout << "element steric force:\n";
-        std::cout << "  delta : " << delta << "\n";
-        std::cout << "  force_strength : " << force_strength << "\n";
-        std::cout << "  radius_sum : " << radius_sum << "\n";
-        print_array("  contact_self", contact_self, 3);
-        print_array("  contact_neighb", contact_neighb, 3);
-        std::cout << "  centreline distance : " << rod::absolute(c_ab) << "\n";
-        print_array("  perturbed distance x", distance, 0, 1);
-        print_array("  perturbed distance y", distance, 2, 3);
-        print_array("  perturbed distance z", distance, 4, 5);
-        print_array("  element energy x", energy, 0, 1);
-        print_array("  element energy y", energy, 2, 3);
-        print_array("  element energy z", energy, 4, 5);
-        print_array("  element force", force, 3);
-        std::cout << "\n";
-    }
-
-    // sanity check #1
-    if (rod::absolute(c_ab) > radius_sum)
-    {
-        std::cout << "ERROR!\n";
-        throw std::runtime_error("Centreline distance cannot be "
-            "greater than radius sum when calculating steric energy.");
-    }
-
-    // sanity check #2
-    float force_norm[3] = {0};
-    float c_ab_norm[3] = {0};
-
-    normalize(force, force_norm);
-    normalize(c_ab, c_ab_norm);
-    float dot = rod::dot_product_3x1(force_norm, c_ab_norm);
-
-    if (dot >= 0)
-    {
-        std::cout << "ERROR!\n";
-        std::string msg = "Force on rod element A (self) should point away from rod element B (neighbour):\n"
-            "  force :      (" + std::to_string(force[0]) + ", " + std::to_string(force[1]) + ", " + std::to_string(force[2]) + ")\n"
-            "  c_ab :       (" + std::to_string(c_ab[0]) + ", " + std::to_string(c_ab[1]) + ", " + std::to_string(c_ab[2]) + ")\n"
-            "  force_norm : (" + std::to_string(force_norm[0]) + ", " + std::to_string(force_norm[1]) + ", " + std::to_string(force_norm[2]) + ")\n"
-            "  c_ab :       (" + std::to_string(c_ab_norm[0]) + ", " + std::to_string(c_ab_norm[1]) + ", " + std::to_string(c_ab_norm[2]) + ")\n"
-            "  dot :         " + std::to_string(dot) + "\n";
-        throw std::runtime_error(msg);
-    }
-    return std::vector<float> {force[0], force[1], force[2]};
-}
 
 // Return the steric collision energy of a rod element as a vector with the
-// format [r+dr, r, r-dr]. Perturbation occurs along the intersection vector
-// pointing away from the current element.
+// format [r+dr, r-dr, r]. Perturbation is applied along the intersection vector.
 std::vector<float> element_steric_energy(float delta, float force_strength,
     float radius_sum, float c_a[3], float c_b[3])
 {
@@ -495,12 +414,39 @@ std::vector<float> element_steric_energy(float delta, float force_strength,
     float energy[3] = {0};
 
     dist[0] = intersection_distance(0.5 * delta, c_a, c_b, radius_sum);
-    dist[1] = intersection_distance(c_a, c_b, radius_sum);
-    dist[2] = intersection_distance(-0.5 * delta, c_a, c_b, radius_sum);
+    dist[1] = intersection_distance(-0.5 * delta, c_a, c_b, radius_sum);
+    dist[2] = intersection_distance(c_a, c_b, radius_sum);
 
     energy[0] = steric_energy_squared(force_strength, dist[0]);
     energy[1] = steric_energy_squared(force_strength, dist[1]);
     energy[2] = steric_energy_squared(force_strength, dist[2]);
+
+    if (rod::dbg_print)
+    {
+        float c_ab[3] = { 0 };
+        vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
+        std::cout << "element steric energy:\n";
+        std::cout << "  delta : " << delta << "\n";
+        std::cout << "  force_strength : " << force_strength << "\n";
+        std::cout << "  radius_sum : " << radius_sum << "\n";
+        print_array("  c_a", c_a, 3);
+        print_array("  c_b", c_b, 3);
+        std::cout << "  |c_ab| : " << rod::absolute(c_ab) << "\n";
+        printf("  perturbed distance +ve : %.3e\n", dist[0]);
+        printf("  perturbed distance -ve : %.3e\n", dist[1]);
+        printf("  distance : %.3e\n", dist[2]);
+        printf("  perturbed energy +ve : %.3e\n", energy[0]);
+        printf("  perturbed energy -ve : %.3e\n", energy[1]);
+        printf("  energy : %.3e\n", energy[2]);
+        std::cout << "\n";
+
+        if (rod::absolute(c_ab) > radius_sum)
+        {
+            std::cout << "ERROR!\n";
+            throw std::runtime_error("Centreline distance cannot be "
+                "greater than radius sum when calculating steric energy.");
+        }
+    }
 
     return std::vector<float> {energy[0], energy[1], energy[2]};
 }

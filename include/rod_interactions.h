@@ -45,6 +45,7 @@ struct InteractionData
     float radius_nbr;
     float contact_self[3];
     float contact_nbr[3];
+    float c_ab[3];
 
     InteractionData(
         int rod_id_a,
@@ -124,13 +125,6 @@ float intersection_distance(
     float c_a[3],
     float c_b[3],
     float radius_sum);
-
-std::vector<float> element_steric_force(
-    float delta,
-    float force_strength,
-    float radius_sum,
-    float contact_self[3],
-    float contact_neighb[3]);
 
 std::vector<float> element_steric_energy(
     float delta,
