@@ -307,7 +307,9 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
 
     if (rod::absolute(mp_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
     {
-
+        // ! EXPENSIVE: Compute for each image (27 times total) and save the minimum of THAT in the InteractionData struct
+        // ! This 'corrected' c_ab will be used to compute the force over image boundaries, before ultimately being
+        // ! applied to rods back in the absolute simulation space (central image)
         rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
 
@@ -326,6 +328,7 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
                 std::cout << "  generating interaction structs\n";
             }
 
+            // ! Save modified r_a, r_b, image ID [i,j,k], image origin coordinates [x,y,z]
             InteractionData stericDataA(
                 rod_id_a,
                 rod_id_b,
