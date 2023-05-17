@@ -83,6 +83,15 @@ void element_minimum_displacement(
     float c_a[3],
     float c_b[3]);
 
+std::vector<int> nearest_periodic_image(
+    float p_a[3],
+    float p_b[3],
+    float r_a[3],
+    float r_b[3],
+    float box_dim[3]);
+
+std::vector<int> nearest_periodic_image(float mid_ab[3], float box_dim[3]);
+
 void set_element_neighbours(
     int rod_id_a,
     int rod_id_b,

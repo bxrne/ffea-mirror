@@ -274,6 +274,33 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
 }
 
 /*
+Return the integer coordinates of the nearest image from the interaction of
+a rod element pair. Periodic boundary conditions.
+*/
+std::vector<int> nearest_periodic_image(float p_a[3], float p_b[3], float r_a[3],
+    float r_b[3], float box_dim[3])
+{
+    float mid_a[3] = { 0 };
+    float mid_b[3] = { 0 };
+    float mid_ab[3] = { 0 };
+    std::vector<int> img(3, 0);
+
+    rod::get_element_midpoint(p_a, r_a, mid_a);
+    rod::get_element_midpoint(p_b, r_b, mid_b);
+    vec3d(n) { mid_ab[n] = mid_b[n] - mid_a[n]; }
+    vec3d(n) { img.at(n) = std::floor((mid_ab[n] + 0.5 * box_dim[n]) / box_dim[n]); }
+
+    return img;
+}
+
+std::vector<int> nearest_periodic_image(float mid_ab[3], float box_dim[3])
+{
+    std::vector<int> img(3, 0);
+    vec3d(n) { img.at(n) = std::floor((mid_ab[n] + 0.5 * box_dim[n]) / box_dim[n]); }
+    return img;
+}
+
+/*
 Check if two rod elements, a and b, interact by calculating the shortest
 distance between them and comparing to the sum of their radii. If this
 passes, the interaction information is added to both elements' neighbour
@@ -284,16 +311,16 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     float radius_a, float radius_b, std::vector<InteractionData> &neighbours_a,
     std::vector<InteractionData> &neighbours_b)
 {
-    float mp_a[3] = {0};
-    float mp_b[3] = {0};
-    float mp_ab[3] = {0};
+    float mid_a[3] = {0};
+    float mid_b[3] = {0};
+    float mid_ab[3] = {0};
     float c_a[3] = {0};
     float c_b[3] = {0};
     float c_ab[3] = {0};
 
-    rod::get_element_midpoint(p_a, r_a, mp_a);
-    rod::get_element_midpoint(p_b, r_b, mp_b);
-    vec3d(n){mp_ab[n] = mp_b[n] - mp_a[n];}
+    rod::get_element_midpoint(p_a, r_a, mid_a);
+    rod::get_element_midpoint(p_b, r_b, mid_b);
+    vec3d(n){mid_ab[n] = mid_b[n] - mid_a[n];}
 
     if (rod::dbg_print)
     {
@@ -301,15 +328,12 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
         std::printf("  |p_a| :         %.3f\n", rod::absolute(p_a));
         std::printf("  |p_b| :         %.3f\n", rod::absolute(p_b));
         std::printf("  radius sum :    %.3f\n", radius_a + radius_b);
-        std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mp_ab));
+        std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mid_ab));
         std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b);
     }
 
-    if (rod::absolute(mp_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
+    if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
     {
-        // ! EXPENSIVE: Compute for each image (27 times total) and save the minimum of THAT in the InteractionData struct
-        // ! This 'corrected' c_ab will be used to compute the force over image boundaries, before ultimately being
-        // ! applied to rods back in the absolute simulation space (central image)
         rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
 
