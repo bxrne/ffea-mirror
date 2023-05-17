@@ -38,7 +38,7 @@ except:
     pass
 
 global rod_creator_version
-rod_creator_version = 1.2
+rod_creator_version = 1.3
 
 
 """

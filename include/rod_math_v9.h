@@ -73,7 +73,7 @@ namespace rod
 
 #define vec3d(x) for (int x = 0; x < 3; ++x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
 
-    static const float rod_software_version = 1.2;
+    static const float rod_software_version = 1.3;
 
     void rod_abort(std::string message);
 
