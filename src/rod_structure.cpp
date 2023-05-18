@@ -784,14 +784,26 @@ namespace rod
                 /** Then convert that into a vector<float> */
                 std::vector<float> line_vec_float;
                 line_vec_float = stof_vec(line_vec);
+                int vec_size = line_vec_float.size();
 
                 /** Check we're not going to overflow and ruin someone's life when we write into the array*/
-                assert(
-                    (unsigned)length == line_vec_float.size() ||
-                    (unsigned)length + (length / 3) == line_vec_float.size() ||
-                    (unsigned)2 * length == line_vec_float.size() || //it's definitely fine to cast length
-                    (unsigned)length/3 == line_vec_float.size()
-                    );
+                int check[4] = {
+                    (unsigned)length,
+                    (unsigned)length + (length / 3),
+                    (unsigned)2 * length,
+                    (unsigned)length / 3
+                };
+                bool result = (check[0] == vec_size || check[1] == vec_size || check[2] == vec_size || check[3] == vec_size);
+                if (not result)
+                {
+                    std::string msg = "Rod array length check failed during read."
+                        "vec_size :" + std::to_string(vec_size) + ")\n"
+                        "L :       " + std::to_string(check[0]) + "\n"
+                        "L+(L/3) : " + std::to_string(check[1]) + "\n"
+                        "2L :      " + std::to_string(check[2]) + "\n"
+                        "L/3 :     " + std::to_string(check[3]) + "\n";
+                    throw std::logic_error(msg);
+                }
 
                 /** Set our rod data arrays to the raw .data() from the vector. */
                 if (n == line_of_last_frame + 1)
