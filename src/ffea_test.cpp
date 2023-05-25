@@ -128,6 +128,12 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::rod_collision_no_crash();
     }
 
+    if (buffer.str().find("nearest_image_pbc") !=
+        std::string::npos)
+    {
+        result = ffea_test::nearest_image_pbc();
+    }
+
     return result;
 }
 
@@ -1897,4 +1903,126 @@ int ffea_test::rod_collision_no_crash()
     world->run();
 
     return 0;
+}
+
+/*
+For two interacting points, A and B (xyz float coords), in a central simulation
+box (LxLxL), surrounded by periodic images (ijk int coords), determine [i, j, k]
+of the nearest periodic image.
+xyz = {0...L}
+ijk = {-1, 0, 1}
+*/
+int ffea_test::nearest_image_pbc()
+{
+    float dim[3] = {1, 1, 1};
+    float xmin = 0.1;
+    float xmax = 0.9;
+    rod::print_array("box dim", dim, 3);
+
+    auto nimg_test = [&dim](float a[3], float b[3], int answer[3])
+    {
+        float ab[3] = {0};
+        int diff[3] = {0};
+        vec3d(n) { ab[n] = b[n] - a[n]; }
+        std::vector<int> result = rod::nearest_periodic_image(ab, dim);
+
+        rod::print_array("a", a, 3);
+        rod::print_array("b", b, 3);
+        rod::print_array("ab", ab, 3);
+        rod::print_array("expected image", answer, 3);
+        rod::print_vector("computed image", result);
+        std::cout << "\n";
+
+        vec3d(n) { diff[n] = result.at(n) - answer[n]; }
+        if (diff[0] == 0 && diff[1] == 0 && diff[2] == 0)
+            return true;
+        return false;
+    };
+
+    struct args
+    {
+        float a[3];
+        float b[3];
+        int img[3];
+
+        args(std::vector<float> a_in, std::vector<float> b_in, std::vector<int> img_in)
+        {
+            vec3d(n) { a[n] = a_in[n]; }
+            vec3d(n) { b[n] = b_in[n]; }
+            vec3d(n) { img[n] = img_in[n]; }
+        }
+
+        args(float a_in[3], float b_in[3], int img_in[3])
+        {
+            vec3d(n) { a[n] = a_in[n]; }
+            vec3d(n) { b[n] = b_in[n]; }
+            vec3d(n) { img[n] = img_in[n]; }
+        }
+    };
+
+    std::vector<args> input;
+
+    auto create_face_input = [&input, &dim](float xmin, float xmax)
+    {
+        // 3 pairs along 6 axes: +/- x, y, z
+        vec3d(n)
+        {
+            float a[3];
+            float b[3];
+            int img[3] = { 0 };
+            vec3d(n)
+            {
+                a[n] = 0.5*dim[n];
+                b[n] = 0.5*dim[n];
+            }
+
+            a[n] = xmin;
+            b[n] = xmax;
+            img[n] = 1;
+            input.push_back(args(a, b, img));
+            img[n] *= -1;
+            input.push_back(args(b, a, img));
+        };
+    };
+
+    auto create_diag_input = [&input](float xmin, float xmax)
+    {
+        int octants_a[4][3] = {{0,0,0}, {0,0,1}, {1,0,0}, {1,0,1}};
+        int octants_b[4][3] = {{1,1,1}, {1,1,0}, {0,1,1}, {0,1,0}};
+
+        // 4 pairs occupying 8 corners
+        for (int i=0; i<4; i++)
+        {
+            float a[3] = {xmin, xmin, xmin};
+            float b[3] = {xmin, xmin, xmin};
+            int img[3] = {-1, -1, -1};
+
+            vec3d(n){
+                a[n] = std::max(xmin, octants_a[i][n] * xmax);
+                b[n] = std::max(xmin, octants_b[i][n] * xmax);
+                if (octants_b[i][n] == 1)
+                    img[n] = 1;
+            };
+            input.push_back(args(a, b, img));
+            vec3d(n){img[n] *= -1;}
+            input.push_back(args(b, a, img));
+        }
+    };
+
+    create_face_input(xmin, xmax);
+    create_diag_input(xmin, xmax);
+
+    int i = 1;
+    int fail_count = 0;
+    for (auto in : input)
+    {
+        std::cout << "Input " << i << " / " << input.size() << "\n";
+        if (not nimg_test(in.a, in.b, in.img))
+            fail_count++;
+        i++;
+    }
+
+    if (fail_count == 0)
+        return 0;
+    return 1;
 }

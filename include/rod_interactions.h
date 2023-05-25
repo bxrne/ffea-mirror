@@ -90,7 +90,7 @@ std::vector<int> nearest_periodic_image(
     float r_b[3],
     float box_dim[3]);
 
-std::vector<int> nearest_periodic_image(float mid_ab[3], float box_dim[3]);
+std::vector<int> nearest_periodic_image(float displacement[3], float box_dim[3]);
 
 void set_element_neighbours(
     int rod_id_a,

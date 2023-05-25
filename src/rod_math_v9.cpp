@@ -104,86 +104,74 @@ namespace rod
     // Print the contents of an array to the stdout.
     void print_array(std::string array_name, float array[], int length)
     {
-        if (rod::dbg_print)
+        std::cout << array_name << " : [";
+        for (int i = 0; i < length; i++)
         {
-            std::cout << array_name << " : [";
-            for (int i = 0; i < length; i++)
+            if (i != length - 1)
             {
-                if (i != length - 1)
-                {
-                    std::cout << array[i] << ", ";
-                }
-                else
-                {
-                    std::cout << array[i];
-                }
+                std::cout << array[i] << ", ";
             }
-            std::cout << "]\n";
+            else
+            {
+                std::cout << array[i];
+            }
         }
+        std::cout << "]\n";
     }
 
     void print_array(std::string array_name, int array[], int length)
     {
-        if (rod::dbg_print)
+        std::cout << array_name << " : [";
+        for (int i = 0; i < length; i++)
         {
-            std::cout << array_name << " : [";
-            for (int i = 0; i < length; i++)
+            if (i != length - 1)
             {
-                if (i != length - 1)
-                {
-                    std::cout << array[i] << ", ";
-                }
-                else
-                {
-                    std::cout << array[i];
-                }
+                std::cout << array[i] << ", ";
             }
-            std::cout << "]\n";
+            else
+            {
+                std::cout << array[i];
+            }
         }
+        std::cout << "]\n";
     }
 
     // Print array slice from start to end (inclusive).
     void print_array(std::string array_name, float array[], int start, int end)
     {
-        if (rod::dbg_print)
-        {
-            if (start >= end)
-                throw std::invalid_argument("Invalid index range to print_array.");
+        if (start >= end)
+            throw std::invalid_argument("Invalid index range to print_array.");
 
-            std::cout << array_name << " : [";
-            for (int i = start; i < end + 1; i++)
+        std::cout << array_name << " : [";
+        for (int i = start; i < end + 1; i++)
+        {
+            if (i != end)
             {
-                if (i != end)
-                {
-                    std::cout << array[i] << ", ";
-                }
-                else
-                {
-                    std::cout << array[i];
-                }
+                std::cout << array[i] << ", ";
             }
-            std::cout << "]\n";
+            else
+            {
+                std::cout << array[i];
+            }
         }
+        std::cout << "]\n";
     }
 
     void print_array(std::string array_name, double array[], int length)
     {
-        if (rod::dbg_print)
+        std::cout << array_name << " : [";
+        for (int i = 0; i < length; i++)
         {
-            std::cout << array_name << " : [";
-            for (int i = 0; i < length; i++)
+            if (i != length - 1)
             {
-                if (i != length - 1)
-                {
-                    std::cout << array[i] << ", ";
-                }
-                else
-                {
-                    std::cout << array[i];
-                }
+                std::cout << array[i] << ", ";
             }
-            std::cout << "]\n";
+            else
+            {
+                std::cout << array[i];
+            }
         }
+        std::cout << "]\n";
     }
 
     /**
@@ -234,10 +222,22 @@ namespace rod
         }
     }
 
-    /**
-     Print a float vector to stdout.
-    */
+    // Print vector contents to stdout
     void print_vector(std::string vector_name, const std::vector<float> &vec)
+    {
+        std::cout << vector_name << ": (";
+        int i = 0;
+        for (auto &item : vec)
+        {
+            if (i++ < vec.size() - 1)
+                std::cout << item << ", ";
+            else
+                std::cout << item;
+        }
+        std::cout << ")\n";
+    }
+
+    void print_vector(std::string vector_name, const std::vector<int> &vec)
     {
         std::cout << vector_name << ": (";
         int i = 0;
@@ -284,7 +284,7 @@ namespace rod
         return slice;
     }
 
-    // These are just generic vector functions that will be replaced by mat_vec_fns at some point
+// These are just generic vector functions that will be replaced by mat_vec_fns at some point
 
     /**
  Normalize a 3-d vector. The there is no return value, but it populates

@@ -274,8 +274,9 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
 }
 
 /*
-Return the integer coordinates of the nearest image from the interaction of
-a rod element pair. Periodic boundary conditions.
+Return the integer coordinates of the nearest image with which to correct the
+displacement of an interacting element pair. Periodic boundary conditions.
+For displacment pointing from A to B, the returned image is nearest to B.
 */
 std::vector<int> nearest_periodic_image(float p_a[3], float p_b[3], float r_a[3],
     float r_b[3], float box_dim[3])
@@ -293,10 +294,10 @@ std::vector<int> nearest_periodic_image(float p_a[3], float p_b[3], float r_a[3]
     return img;
 }
 
-std::vector<int> nearest_periodic_image(float mid_ab[3], float box_dim[3])
+std::vector<int> nearest_periodic_image(float displacement[3], float box_dim[3])
 {
     std::vector<int> img(3, 0);
-    vec3d(n) { img.at(n) = std::floor((mid_ab[n] + 0.5 * box_dim[n]) / box_dim[n]); }
+    vec3d(n) { img.at(n) = std::floor((displacement[n] + 0.5 * box_dim[n]) / box_dim[n]); }
     return img;
 }
 
