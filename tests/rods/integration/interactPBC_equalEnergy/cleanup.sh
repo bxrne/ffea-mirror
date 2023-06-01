@@ -1,0 +1,2 @@
+rm del.*
+rm *.rodtraj
