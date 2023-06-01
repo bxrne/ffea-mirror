@@ -530,6 +530,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     shift.x = box_dim.x / 2.0 - world_centroid.x;
     shift.y = box_dim.y / 2.0 - world_centroid.y;
     shift.z = box_dim.z / 2.0 - world_centroid.z;
+
+    std::cout << "Box dimensions: (" << box_dim.x << ", " << box_dim.y << ", " << box_dim.z << ")\n";
+    std::cout << "World centroid: (" << world_centroid.x; << ", " << world_centroid.y; << ", " << world_centroid.z << ")\n";
+    std::cout << "Shift: (" << shift.x << ", " << shift.y << ", " << shift.z << ")\n";
+
     if (params.move_into_box == 1)
     { // && params.restart == 0)
         for (i = 0; i < params.num_blobs; i++)
