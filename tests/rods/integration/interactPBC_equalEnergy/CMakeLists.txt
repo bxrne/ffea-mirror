@@ -21,9 +21,13 @@
 #  the research papers on the package.
 #
 
+set (INTERACT_PBC_DIR          interactPBC_equalEnergy)
+set (INTERACT_PBC_CTEST        int_rod_${INTERACT_PBC_DIR} )
+set (INTERACT_PBC_DIR_PATH     "${PROJECT_BINARY_DIR}/tests/rods/integration/${INTERACT_PBC_DIR}/")
 
-add_subdirectory(symmetry)
-add_subdirectory(equipartition)
-add_subdirectory(connection)
-add_subdirectory(interactPBC_equalEnergy)
-add_subdirectory(stericInteract_initForceSymmetric)
+file (COPY run_test.py                          DESTINATION ${INTERACT_PBC_DIR_PATH})
+file (COPY create_straight_rod.py               DESTINATION ${INTERACT_PBC_DIR_PATH})
+file (COPY z-axis.rod                           DESTINATION ${INTERACT_PBC_DIR_PATH})
+file (COPY interact.ffea                        DESTINATION ${INTERACT_PBC_DIR_PATH})
+
+add_test(NAME ${INTERACT_PBC_CTEST} COMMAND ${PYTHON_EXECUTABLE} run_test.py)
