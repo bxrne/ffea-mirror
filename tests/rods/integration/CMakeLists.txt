@@ -25,5 +25,4 @@
 add_subdirectory(symmetry)
 add_subdirectory(equipartition)
 add_subdirectory(connection)
-add_subdirectory(stericCollision_pushApart)
-add_subdirectory(stericCollision_initForceCentralSymmetric)
+add_subdirectory(stericInteract_initForceSymmetric)

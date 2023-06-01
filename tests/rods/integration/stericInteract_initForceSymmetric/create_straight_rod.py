@@ -1,5 +1,12 @@
-import ffeatools.modules.FFEA_rod as rod
-from ffeatools.modules.FFEA_rod import rod_creator as rc
+
+try:
+    # ffeatools 1 (python 2.7)
+    import ffeatools.modules.FFEA_rod as ffea_rod
+    from ffeatools.modules.FFEA_rod import rod_creator as rc
+except ModuleNotFoundError:
+    # ffeatools 2 (python 3)
+    import ffeatools.ffea_rod as ffea_rod
+    from ffeatools.rod.rod_creator import rod_creator as rc
 
 # Default rod parameters
 num_nodes = 6
@@ -22,7 +29,7 @@ def z_func(t):
 def main():
 
     # Blank rod
-    my_rod = rod.FFEA_rod(num_elements=num_nodes)
+    my_rod = ffea_rod.ffea_rod(num_elements=num_nodes)
 
     my_nodes = rc.create_rod_parametric(x_func, y_func, z_func, 0, 10*diameter, num_nodes)
 

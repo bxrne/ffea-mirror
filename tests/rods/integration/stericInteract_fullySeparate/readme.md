@@ -1,4 +1,4 @@
-# Test name
+# Integration test: stericInteract_fullySeparate
 
 * Pairs of interacting rods are generated from a template .ffea input file.
 

@@ -4,7 +4,8 @@ import sys
 import glob
 import subprocess
 import numpy as np
-import ffeatools.modules.FFEA_rod as FFEA_rod
+
+import ffeatools.ffea_rod as ffea_rod
 
 
 def main():
@@ -29,8 +30,8 @@ def main():
 
     # load both rod trajectories
     print("Analysing output of FFEA simulation" + str("\n"))
-    rod0 = FFEA_rod.FFEA_rod(filename="outputs/1.rodtraj")
-    rod1 = FFEA_rod.FFEA_rod(filename="outputs/2.rodtraj")
+    rod0 = ffea_rod.ffea_rod(filename="outputs/1.rodtraj")
+    rod1 = ffea_rod.ffea_rod(filename="outputs/2.rodtraj")
 
     force_dim = 2.4364705882352941e-11
     print("Dividing by FFEA force unit: " + str(force_dim) + str("\n"))

@@ -21,7 +21,7 @@
 #  the research papers on the package.
 #
 
-set (COLLISION_SYM_DIR          stericCollision_initForceCentralSymmetric)
+set (COLLISION_SYM_DIR          stericInteract_initForceSymmetric)
 set (COLLISION_SYM_CTEST        int_rod_${COLLISION_SYM_DIR})
 set (COLLISION_SYM_DIR_PATH     "${PROJECT_BINARY_DIR}/tests/rods/integration/${COLLISION_SYM_DIR}/")
 

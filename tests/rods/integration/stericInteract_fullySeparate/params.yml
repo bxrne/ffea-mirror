@@ -1,4 +1,4 @@
-py2_exe_path: "/home/bsrctb/software/miniconda3/envs/py2/bin/python2"
+py2_exe_path: "python2"  # until ffeatools is fully ported to python 3
 num_nodes: 6
 radius: 2.5e-9
 length: 5.0e-8
@@ -6,4 +6,4 @@ in_dir: "input"
 out_dir: "output"
 ffea_length: 1.7e-10
 run_failed_only: False
-fail_path: "failed.txt"
+fail_info_path: "failed.csv"
