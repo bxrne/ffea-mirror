@@ -7,6 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import ffeatools.ffea_rod as ffea_rod
 
+import matplotlib as mpl
+mpl.use('Agg')
+
 def main():
 
     shutil.rmtree("outputs", ignore_errors=True)
