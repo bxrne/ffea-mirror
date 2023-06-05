@@ -399,12 +399,7 @@ namespace rod
 
         // steric interactions loop
         if (this->calc_steric_rod == 1)
-        {
-            if(rod::dbg_print)
-                std::cout << "CALCULATING ROD-ROD STERIC INTERACTIONS\n";
-
             do_steric();
-        }
 
         //This loop is for the dynamics
         for (int node_no = 0; node_no < end_node; node_no++)
@@ -570,9 +565,7 @@ namespace rod
         }  // end node loop
 
         if (this->calc_steric_rod == 1)
-        {
             this->reset_neighbour_list();
-        }
 
         return *this;
     }  // end timestep
@@ -695,17 +688,6 @@ namespace rod
         {
             applied_forces[i] = 0;
         }
-
-        // These are hardcoded default values - the real values are loaded in from the .ffea script
-        viscosity_constant_factor = mesoDimensions::pressure * mesoDimensions::time; ///poiseuille
-        this->viscosity = 0.6913 * pow(10, -3) / viscosity_constant_factor;
-        this->timestep = 1e-12 / mesoDimensions::time;
-        this->kT = 0;
-        this->perturbation_amount = 0.001 * pow(10, -9) / mesoDimensions::length; // todo: set this dynamically, maybe 1/1000 equilibrium length?
-        this->calc_noise = 1;
-        this->calc_steric_rod = 0;
-        // TODO: scale this with timestep (currently selected for 1e-13)
-        this->steric_force_factor = 20;  // maximum at ~ 486 pN (Biotin/streptavidin unfolding ~ 160 pN) [Force units]
 
         return *this;
     }

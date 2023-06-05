@@ -136,6 +136,8 @@ public:
     scalar ssint_cutoff;  ///< Cutoff distance for the surface-surface interactions.
     geoscalar steric_dr;  ///< used to calculate the numerical derivative.
     int calc_steric_rod;  // ! - This needs removing, and the FFEA parameters need an overhaul
+    int calc_ssint_rod;
+    int pbc_rod;
 
     string FFEA_script_filename;
     b_fs::path FFEA_script_path, FFEA_script_basename;

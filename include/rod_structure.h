@@ -58,14 +58,16 @@ namespace rod
         double rod_version = 999.999; /** If version number unknown, assume latest **/
         bool computed_rest_energy = false;
 
-        /** Global simulation parameters - eventually we may read this stuff in from the .ffea file **/
-        float viscosity = 1;
-        float timestep = 0.002;
-        float kT = 0;                     /** Boltzmann's constant x temperature. **/
-        float perturbation_amount = 0.01; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
-        int calc_noise = 1;
-        int calc_steric_rod = 0;
-        float steric_force_factor = 0;    /** Strength of the repulsive steric interaction force. When two elements fully overlap, the resulting force is equal to this constant. [Force units] **/
+        /** Global simulation parameters - eventually read in from the .ffea file **/
+        float viscosity = 0.6913 * pow(10, -3) / (mesoDimensions::pressure * mesoDimensions::time);  // denominator: poiseuille
+        float timestep = 1e-12 / mesoDimensions::time;
+        float kT = 0;
+        float perturbation_amount = 0.001 * pow(10, -9) / mesoDimensions::length; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
+        int calc_noise = 0;
+        int calc_steric_rod = 0;  // Repulsive overlap of elements
+        int calc_ssint_rod = 0;   // Attractive protein-protein interactions
+        int pbc_rod = 0;
+        float steric_force_factor = 20;    /** Strength of repulsive force, maximum ~ 486 pN (Biotin/streptavidin unfolding ~ 160 pN) [Force units] **/
 
         float translational_friction;
         float rotational_friction; /** these will have to be changed when I end up implementing per-element radius, to be computed on-the-fly instead most likely **/

@@ -104,7 +104,8 @@ void set_element_neighbours(
     float radius_a,
     float radius_b,
     std::vector<InteractionData> &neighbours_a,
-    std::vector<InteractionData> &neighbours_b);
+    std::vector<InteractionData> &neighbours_b,
+    bool periodic);
 
 float steric_energy_linear(
     float force_scaling_factor,

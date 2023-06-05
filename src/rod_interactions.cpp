@@ -310,7 +310,7 @@ lists.
 void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     int elem_id_b, float p_a[3], float p_b[3], float r_a[3], float r_b[3],
     float radius_a, float radius_b, std::vector<InteractionData> &neighbours_a,
-    std::vector<InteractionData> &neighbours_b)
+    std::vector<InteractionData> &neighbours_b, bool periodic)
 {
     float mid_a[3] = {0};
     float mid_b[3] = {0};
@@ -332,6 +332,9 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
         std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mid_ab));
         std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b);
     }
+
+    if (periodic)
+        std::cout << "Periodic\n";
 
     if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
     {
