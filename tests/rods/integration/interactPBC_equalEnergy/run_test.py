@@ -12,9 +12,7 @@ mpl.use('Agg')
 
 def main():
 
-    shutil.rmtree("outputs", ignore_errors=True)
-    os.makedirs("outputs")
-
+    subprocess.call(["bash", "cleanup.sh"])
     py_return_status = subprocess.call(["python", "create_straight_rod.py"])
 
     if py_return_status != 0:
@@ -38,17 +36,17 @@ def main():
     rod2b = ffea_rod.ffea_rod(filename="2B.rodtraj")
 
     r = {
-        "1a" : rod1a.current_r[-1],
-        "1b" : rod1b.current_r[-1],
-        "2a" : rod2a.current_r[-1],
-        "2b" : rod2b.current_r[-1]
+        "1a" : rod1a.current_r,
+        "1b" : rod1b.current_r,
+        "2a" : rod2a.current_r,
+        "2b" : rod2b.current_r
     }
 
     energy = {
-        "1a" : rod1a.steric_energy[-1],
-        "1b" : rod1b.steric_energy[-1],
-        "2a" : rod2a.steric_energy[-1],
-        "2b" : rod2b.steric_energy[-1]
+        "1a" : rod1a.steric_energy,
+        "1b" : rod1b.steric_energy,
+        "2a" : rod2a.steric_energy,
+        "2b" : rod2b.steric_energy
     }
 
     ax = plt.figure().add_subplot(projection='3d')
@@ -58,7 +56,7 @@ def main():
     ax.set_zlabel('z (nm)')
 
     for rod in r.keys():
-        ax.plot(r[rod][:, 0]*1e9, r[rod][:, 1]*1e9, r[rod][:, 2]*1e9, '-', label=rod)
+        ax.plot(r[rod][1, :, 0]*1e9, r[rod][1, :, 1]*1e9, r[rod][1, :, 2]*1e9, '-', label=rod)
 
     ax.view_init(elev=20., azim=-35, roll=0)
     plt.legend()
@@ -66,23 +64,50 @@ def main():
     plt.savefig("position_preview.png", dpi=400)
 
     # Check that all rods have some interaction energy
-    no_zero_energies = energy["1a"].any() and energy["1b"].any() and energy["2a"].any() and energy["2b"].any()
+    no_zero_energy = energy["1a"][-1].any() and energy["1b"][-1].any() and energy["2a"][-1].any() and energy["2b"][-1].any()
 
-    # Surface-surface energy of all elements should be identical
-    diff = 4 * energy["1a"] - (energy["1a"] + energy["1b"] + energy["2a"] + energy["2b"])
+    # Surface-surface energy 1A and 2A should be identical, as should 1B and 2B
+    diff_energy_ab = (energy["1a"][-1] - energy["2a"][-1]) + (energy["1b"][-1] - energy["2b"][-1])
 
-    print("Energies:")
-    print("1A\n", energy["1a"])
-    print("1B\n", energy["1b"])
-    print("2A\n", energy["2a"])
-    print("2B\n", energy["2b"])
-    print("diff\n", diff)
-    print(f"|diff|: {np.linalg.norm(diff)}")
-    print(f"no zero energies: {no_zero_energies}")
-    print("THIS TEST IS INCOMPLETE")
+    print("ENERGIES (t=tmax):")
+    print("1A (centre)\n", energy["1a"][-1])
+    print("1B (centre)\n", energy["1b"][-1])
+    print("2A (edge)\n", energy["2a"][-1])
+    print("2B (edge)\n", energy["2b"][-1])
+    print("diff\n", diff_energy_ab)
+    print(f"<diff>: {np.mean(diff_energy_ab):e}")
+    print(f"no zero energy rods: {no_zero_energy}\n")
 
-    if np.linalg.norm(diff) < 1e-16 and no_zero_energies:
+    # Using absolute node positions, the central rods should move further apart,
+    # but the edge rods should move closer together, since the latter will repel
+    # from their periodic images.
+    r_diff_cent = [r["1b"][0] - r["1a"][0], r["1b"][-1] - r["1a"][-1]]
+    r_diff_edge = [r["2b"][0] - r["2a"][0], r["2b"][-1] - r["2a"][-1]]
+
+    # only need to consider displacements in the y-axis
+    diff_y_cent = r_diff_cent[1][:, 1] - r_diff_cent[0][:, 1]
+    diff_y_edge = r_diff_edge[1][:, 1] - r_diff_edge[0][:, 1]
+
+    print("NODE-NODE DISPLACEMENTS:")
+    print("Central (t=0)\n", r_diff_cent[0])
+    print("Central (t=tmax)\n", r_diff_cent[1])
+    print(f"<diff_y>: {np.mean(diff_y_cent):e}")
+    print("Edge (t=0)\n", r_diff_edge[0])
+    print("Edge (t=tmax)\n", r_diff_edge[1])
+    print(f"<diff_y>: {np.mean(diff_y_edge):e}")
+
+    # Pass if:
+    # 1) central rods move apart
+    # 2) edge rods move together
+    # 3) rods 1A and 2A have identical energies (as do1B and 2B)
+    # 4) every rod has some interaction energy
+    if np.mean(diff_y_cent) > 0 and np.mean(diff_y_edge) < 0 and abs(np.mean(diff_energy_ab)) < 1e-16 and no_zero_energy:
         return 0
+
+    print(np.mean(diff_y_cent) > 0)
+    print(np.mean(diff_y_edge) < 0)
+    print(abs(np.mean(diff_energy_ab)) < 1e-16)
+    print(no_zero_energy)
 
     return 1
 

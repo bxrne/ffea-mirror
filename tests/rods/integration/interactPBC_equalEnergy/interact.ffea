@@ -1,8 +1,9 @@
 <param>
     <calc_steric_rod = 1>
+	<pbc_rod = 1>
     <calc_noise = 0>
     <restart = 0>
-    <dt = 1e-13>
+    <dt = 1e-12>
     <check = 1>
     <num_steps = 1>
     <ssint_cutoff = 1e-9>  <!-- Simulation box, dimension L = 200 nm (1176.471) -->
