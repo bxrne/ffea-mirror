@@ -1267,7 +1267,6 @@ namespace rod
         float c_ab[3] = { 0 };
         float c_ab_norm[3] = { 0 };
         float gradient = 0;
-        float r_self[3] = { 0 };
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
 
@@ -1317,14 +1316,13 @@ namespace rod
             gradient = (energy.at(0) - energy.at(1)) / this->perturbation_amount;
             energy_sum += energy.at(2);
 
-            this->get_r(elem_id, r_self, false);
             this->get_p(elem_id, p_self, false);
             rod::normalize(stericInt.c_ab, c_ab_norm);
             vec3d(n) { element_force.at(n) = gradient * c_ab_norm[n]; }
 
             node_force = node_force_interpolation(
                 stericInt.contact_self,
-                r_self,
+                stericInt.r_self,
                 rod::absolute(p_self),
                 element_force);
             vec3d(n) { node_force_sum[n] += node_force[n]; }

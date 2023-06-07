@@ -46,6 +46,9 @@ struct InteractionData
     float contact_self[3];
     float contact_nbr[3];
     float c_ab[3];
+    float img_shift[3];
+    float r_self[3];
+    float r_nbr[3];
 
     InteractionData(
         int rod_id_a,
@@ -55,7 +58,10 @@ struct InteractionData
         float rad_a,
         float rad_b,
         float c_a[3],
-        float c_b[3]);
+        float c_b[3],
+        float shift[3],
+        float r_a[3],
+        float r_b[3]);
 
     bool elements_intersect();
 
@@ -88,9 +94,11 @@ std::vector<int> nearest_periodic_image(
     float p_b[3],
     float r_a[3],
     float r_b[3],
-    float box_dim[3]);
+    std::vector<float> box_dim);
 
-std::vector<int> nearest_periodic_image(float displacement[3], float box_dim[3]);
+std::vector<int> nearest_periodic_image(
+    float displacement[3],
+    std::vector<float> box_dim);
 
 void set_element_neighbours(
     int rod_id_a,
@@ -105,7 +113,8 @@ void set_element_neighbours(
     float radius_b,
     std::vector<InteractionData> &neighbours_a,
     std::vector<InteractionData> &neighbours_b,
-    bool periodic);
+    bool periodic,
+    std::vector<float> box_dim);
 
 float steric_energy_linear(
     float force_scaling_factor,

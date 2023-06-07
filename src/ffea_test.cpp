@@ -1914,10 +1914,10 @@ ijk = {-1, 0, 1}
 */
 int ffea_test::nearest_image_pbc()
 {
-    float dim[3] = {1, 1, 1};
+    std::vector<float> dim = {1, 1, 1};
     float xmin = 0.1;
     float xmax = 0.9;
-    rod::print_array("box dim", dim, 3);
+    rod::print_vector("box dim", dim);
 
     auto nimg_test = [&dim](float a[3], float b[3], int answer[3])
     {

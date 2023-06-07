@@ -33,7 +33,8 @@ namespace rod
 {
 
 InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
-    int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3])
+    int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3],
+    float shift[3], float r_a[3], float r_b[3])
 {
     rod_id_self = rod_id_a;
     rod_id_nbr = rod_id_b;
@@ -44,6 +45,9 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     vec3d(n){contact_self[n] = c_a[n];}
     vec3d(n){contact_nbr[n] = c_b[n];}
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
+    vec3d(n){img_shift[n] = shift[n];}
+    vec3d(n){r_self[n] = r_a[n];}
+    vec3d(n){r_nbr[n] = r_b[n];}
 };
 
 bool InteractionData::elements_intersect()
@@ -275,11 +279,12 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
 
 /*
 Return the integer coordinates of the nearest image with which to correct the
-displacement of an interacting element pair. Periodic boundary conditions.
-For displacment pointing from A to B, the returned image is nearest to B.
+displacement of an interacting element pair.
+For displacment pointing from A to B, the returned image is that nearest to B,
+so the corrected displacement would require subtracting a box length from B
 */
 std::vector<int> nearest_periodic_image(float p_a[3], float p_b[3], float r_a[3],
-    float r_b[3], float box_dim[3])
+    float r_b[3], std::vector<float> box_dim)
 {
     float mid_a[3] = { 0 };
     float mid_b[3] = { 0 };
@@ -294,7 +299,7 @@ std::vector<int> nearest_periodic_image(float p_a[3], float p_b[3], float r_a[3]
     return img;
 }
 
-std::vector<int> nearest_periodic_image(float displacement[3], float box_dim[3])
+std::vector<int> nearest_periodic_image(float displacement[3], std::vector<float> box_dim)
 {
     std::vector<int> img(3, 0);
     vec3d(n) { img.at(n) = std::floor((displacement[n] + 0.5 * box_dim[n]) / box_dim[n]); }
@@ -310,7 +315,7 @@ lists.
 void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     int elem_id_b, float p_a[3], float p_b[3], float r_a[3], float r_b[3],
     float radius_a, float radius_b, std::vector<InteractionData> &neighbours_a,
-    std::vector<InteractionData> &neighbours_b, bool periodic)
+    std::vector<InteractionData> &neighbours_b, bool periodic, std::vector<float> box_dim)
 {
     float mid_a[3] = {0};
     float mid_b[3] = {0};
@@ -318,6 +323,16 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     float c_a[3] = {0};
     float c_b[3] = {0};
     float c_ab[3] = {0};
+    std::vector<int> img = {0, 0, 0};
+    float shift[3] = {0};
+
+    // PBC correction
+    if (periodic)
+    {
+        img = nearest_periodic_image(p_a, p_b, r_a, r_b, box_dim);
+        vec3d(n){shift[n] = box_dim[n] * img.at(n);}
+        vec3d(n){r_b[n] -= shift[n];}
+    }
 
     rod::get_element_midpoint(p_a, r_a, mid_a);
     rod::get_element_midpoint(p_b, r_b, mid_b);
@@ -332,9 +347,6 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
         std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mid_ab));
         std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b);
     }
-
-    if (periodic)
-        std::cout << "Periodic\n";
 
     if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
     {
@@ -365,7 +377,10 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
                 radius_a,
                 radius_b,
                 c_a,
-                c_b);
+                c_b,
+                shift,
+                r_a,
+                r_b);
             neighbours_a.push_back(stericDataA);
 
             InteractionData stericDataB(
@@ -376,7 +391,10 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
                 radius_b,
                 radius_a,
                 c_b,
-                c_a);
+                c_a,
+                shift,
+                r_b,
+                r_a);
             neighbours_b.push_back(stericDataB);
         }
         else if (rod::absolute(c_ab) <= 1e-5)
@@ -495,6 +513,13 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
 
     l1 = rod::absolute(displacement);
     l2 = element_length - l1;
+
+    if (l1 > element_length)
+    {
+        std::cout << "L1: " << l1 << "\n";
+        std::cout << "element length: " << element_length << "\n";
+        throw std::invalid_argument("Displacement along rod element, L1 = |c - r|, cannot be greater than the element length, |p|.");
+    }
 
     vec3d(n) { force[n] = element_force[n] * (element_length - l1) / element_length; }
     vec3d(n) { force[n + 3] = element_force[n] * (element_length - l2) / element_length; }
