@@ -134,6 +134,7 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::nearest_image_pbc();
     }
 
+
     return result;
 }
 

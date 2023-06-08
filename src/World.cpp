@@ -567,6 +567,13 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
     }
 
+    // Check that rods aren't too big
+    if (params.pbc_rod == 1)
+    {
+        for (int i = 0; i < params.num_rods; i++)
+            rod_box_length_check(rod_array[i], {box_dim.x, box_dim.y, box_dim.z});
+    }
+
     // Now everything has been moved into boxes etc, save all initial positions
     for (i = 0; i < params.num_blobs; ++i)
     {
@@ -2254,6 +2261,12 @@ int World::run()
             rod_blob_interface_array[i]->do_connection_timestep();
         }
 
+        if (params.pbc_rod == 1)
+        {
+            for (int i = 0; i < params.num_rods; i++)
+                rod_pbc_wrap(rod_array[i], {box_dim.x, box_dim.y, box_dim.z});
+        }
+
 #ifdef FFEA_PARALLEL_FUTURE
         // Get the thread updating the VdW-LinkedLists if it has finished.
         if (updatingPCLL_ready_to_swap() == true)
@@ -3239,6 +3252,7 @@ int World::read_and_build_system(vector<string> script_vector)
         rod_array[i]->calc_steric_rod = params.calc_steric_rod;
         rod_array[i]->calc_ssint_rod = params.calc_ssint_rod;
         rod_array[i]->pbc_rod = params.pbc_rod;
+
     }
 
     // Create rod-blob interfaces
@@ -4412,23 +4426,7 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
             // rotate that bad boy
             current_rod->rotate_rod(converted_rotation);
         }
-        // parse coupling block
-        //if (tag_out[0] == "coupling type" && rod_parent){
-        //    std::cout << "Coupling data parsed, but coupling is not yet implemented!\n";
-        //    vector<string> sub_block;
-        //    systemreader->extract_block("coupling", coupling_counter, block, &sub_block, true);
-        //    string sub_tag_out[2];
-        //    for ( auto &sub_tag_str : sub_block ) {
-        //        systemreader->parse_tag(sub_tag_str, sub_tag_out);
-        //        if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "rod")){ }
-        //        if ((sub_tag_out[0] == "to_rod_id") & (tag_out[1] == "rod")){ }
-        //        if ((sub_tag_out[0] == "to_rod_node_id") & (tag_out[1] == "rod")){ } // no way to add couplings yet
-        //        if ((sub_tag_out[0] == "from_node_id") & (tag_out[1] == "blob")){ }
-        //        if ((sub_tag_out[0] == "to_blob_id") & (tag_out[1] == "blob")){ }
-        //        if ((sub_tag_out[0] == "to_blob_node_id") & (tag_out[1] == "blob")){ }
-        //    }
-        //    coupling_counter += 1;
-        //}
+
     }
 
     return current_rod;
@@ -4479,6 +4477,57 @@ void World::update_rod_neighbour_lists(rod::Rod *rod_a, rod::Rod *rod_b)
                 params.pbc_rod,
                 {box_dim.x, box_dim.y, box_dim.z});
         }
+    }
+}
+
+// If rod centroid leaves simulation box, apply PBC wrap
+void World::rod_pbc_wrap(rod::Rod *current_rod, std::vector<float> dim)
+{
+    for (int i = 0; i < params.num_rods; i++)
+    {
+        float rod_centroid[3] = {0};
+        float rod_pbc_shift[3] = {0};
+        current_rod->get_centroid(current_rod->current_r, rod_centroid);
+
+        if (rod_centroid[0] < 0)
+            rod_pbc_shift[0] += dim[0];
+        else if (rod_centroid[0] > dim[0])
+            rod_pbc_shift[0] -= dim[0];
+
+        if (rod_centroid[1] < 0)
+            rod_pbc_shift[1] += dim[1];
+        else if (rod_centroid[1] > dim[1])
+            rod_pbc_shift[1] -= dim[1];
+
+        if (rod_centroid[2] < 0)
+            rod_pbc_shift[2] += dim[2];
+        else if (rod_centroid[2] > dim[2])
+            rod_pbc_shift[2] -= dim[2];
+
+        current_rod->translate_rod(current_rod->current_r, rod_pbc_shift);
+    }
+}
+
+void World::rod_box_length_check(rod::Rod *current_rod, std::vector<float> dim)
+{
+    float e2e = current_rod->end_to_end_length();
+    float cl = current_rod->contour_length();
+
+    if ((e2e > 0.5 * dim[0]) || (e2e > 0.5 * dim[1]) || (e2e > 0.5 * dim[2]))
+    {
+        std::string msg = "box_dim: (" +
+            std::to_string(dim[0]) + ", " +
+            std::to_string(dim[1]) + ", " +
+            std::to_string(dim[2]) + ")"
+            "Rod " + std::to_string(current_rod->rod_no) +
+            " end-to-end length " + std::to_string(e2e) + " exceeds half a box dimension.";
+        throw std::runtime_error(msg);
+    }
+
+    if ((cl > 0.5 * dim[0]) || (cl > 0.5 * dim[1]) || (cl > 0.5 * dim[2]))
+    {
+        printf("\tWARNING: Rod %d contour length of %.6e exceeds half a box dimension. "
+            "Interactions over boundaries may behave weirdly if it fully extends.", current_rod->rod_no, cl);
     }
 }
 

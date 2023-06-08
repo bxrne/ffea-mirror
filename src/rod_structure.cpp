@@ -1182,6 +1182,27 @@ namespace rod
         return material_params[(node_index * 3) + 2];
     }
 
+    // length at maximum extension of rod
+    float Rod::contour_length()
+    {
+        float p[3] = {0};
+        float length = 0;
+        for (int i=0; i < this->get_num_nodes() - 1; i++)
+        {
+            this->get_p(i, p, false);
+            length += rod::absolute(p);
+        }
+        return length;
+    }
+
+    float Rod::end_to_end_length()
+    {
+        float disp[3] = {0};
+        int end = 3 * (this->get_num_nodes() - 1);
+        vec3d(n){disp[n] = this->current_r[end + n] - this->current_r[n];}
+        return rod::absolute(disp);
+    }
+
     int Rod::get_num_steric_neighbours(int element_index)
     {
         return steric_neighbours.at(element_index).size();
@@ -1198,7 +1219,6 @@ namespace rod
         }
         return this->num_nodes;
     }
-
 
     Rod Rod::check_neighbour_list_dimensions()
     {

@@ -134,6 +134,8 @@ namespace rod
         Rod get_p(int index, OUT float p[3], bool equil);
         Rod get_r(int node_index, OUT float r[3], bool equil);
         float get_radius(int node_index);
+        float contour_length();
+        float end_to_end_length();
         int get_num_steric_neighbours(int element_index);
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();

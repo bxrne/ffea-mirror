@@ -292,6 +292,10 @@ private:
 
     void update_rod_neighbour_lists(rod::Rod* rod_a, rod::Rod* rod_b);
 
+    void rod_pbc_wrap(rod::Rod* current_rod, std::vector<float> dim);
+
+    void rod_box_length_check(rod::Rod *current_rod, std::vector<float> dim);
+
     void activate_springs();
 
     int apply_springs();

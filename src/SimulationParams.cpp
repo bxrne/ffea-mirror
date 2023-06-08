@@ -829,6 +829,11 @@ int SimulationParams::validate(int sim_mode)
     //     FFEA_ERROR_MESSG("Required: 'shear_rate', must be equal to or greater than zero.\n");
     // }
 
+    if (pbc_rod == 1 && num_interfaces > 0)
+    {
+        printf("\tWARNING: You are enabling rod periodic boundary conditions AND rod-blob interfaces. THESE HAVE NOT BEEN TESTED TOGETHER.\n");
+    }
+
     if (inc_self_ssint != 0 && inc_self_ssint != 1)
     {
         FFEA_ERROR_MESSG("Required: 'inc_self_ssint', must be 0 (no) or 1 (yes).\n");
