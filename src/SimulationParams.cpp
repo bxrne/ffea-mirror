@@ -574,14 +574,17 @@ int SimulationParams::assign(string lvalue, string rvalue)
         shear_rate = atof(rvalue.c_str());
         if (userInfo::verblevel > 1)
             cout << "\tSetting " << lvalue << " = " << shear_rate << endl;
+        shear_rate *= mesoDimensions::time;
     }
     else if (lvalue == "flow_velocity")
     {
         vector<float> u0 = vector_from_rvalue(rvalue);
         if (u0.size() != 3)
             FFEA_ERROR_MESSG("Required: 'flow_velocity' should be a vector of length 3.\n");
+        if (userInfo::verblevel > 1)
+            cout << "\tSetting " << lvalue << " = (" << u0[0] << ", " << u0[1] << ", " << u0[2] << ")" << endl;
         for (int i = 0; i < 3; i++)
-            flow_velocity[i] = u0.at(i);
+            flow_velocity[i] = u0.at(i) /= mesoDimensions::velocity;
     }
     else if (lvalue == "wall_x_1")
     {
@@ -1202,9 +1205,9 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params)
     fprintf(fout, "\n\tFlow (rod-only):\n");
     fprintf(fout, "\tflow_profile = %s\n", flow_profile);
     if (flow_profile == "uniform")
-        fprintf(fout, "\tflow_velocity = (%f, %f, %f)\n", flow_velocity[0], flow_velocity[1], flow_velocity[2]);
+        fprintf(fout, "\tflow_velocity = (%e, %e, %e)\n", flow_velocity[0], flow_velocity[1], flow_velocity[2]);
     else if (flow_profile == "shear")
-        fprintf(fout, "\tshear_rate = %f\n", shear_rate);
+        fprintf(fout, "\tshear_rate = %e\n", shear_rate);
 
     fprintf(fout, "\n\tCalculations enabled:\n");
     fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
