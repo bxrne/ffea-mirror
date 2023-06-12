@@ -118,6 +118,13 @@ public:
     int calc_preComp;    ///< Whether or not use preComputed potentials and forces
     int calc_springs;    ///< Whether or not to include the springs interactions defined in the springs block
     int calc_ctforces;   ///< Whether or not to include constant forces onto nodes defined in the ctforces block
+
+    // ! these only work for rods
+    string flow_profile;     // Type of background fluid flow. uniform: unidirectional; shear: velocity gradient in x (Lees-Edwards boundary conditions)
+    float shear_rate;        // >= 0, creates flow velocity profile [shear_rate*y, 0, 0]
+    float flow_velocity[3];  // [x,y,z] background flow velocity vector
+    // ! ------------------------
+
     int force_pbc;       ///< Whether or not to apply pbc to surface insteractions
     int kinetics_update; ///< How often to check for a state change. If rates are ~ >> dt then this can clearly be quite high
     int wall_x_1;
@@ -135,9 +142,9 @@ public:
     scalar steric_factor; ///< Proportionality factor to the Steric repulsion.
     scalar ssint_cutoff;  ///< Cutoff distance for the surface-surface interactions.
     geoscalar steric_dr;  ///< used to calculate the numerical derivative.
-    int calc_steric_rod;  // ! - This needs removing, and the FFEA parameters need an overhaul
-    int calc_ssint_rod;
-    int pbc_rod;
+    int calc_steric_rod;  // ! If the rod and blob steric interactions get integrated, remove this
+    int calc_ssint_rod;   // !
+    int pbc_rod;          // !
 
     string FFEA_script_filename;
     b_fs::path FFEA_script_path, FFEA_script_basename;
@@ -170,6 +177,8 @@ public:
      * Expects a string of the form "<system>\n<>\n<>.....\n<system>" where parameter data can be extracted from.
      */
     int extract_params(vector<string> script_vector);
+
+    std::vector<float> vector_from_rvalue(string rvalue);
 
     /** Expects a parameter label and value, which will be assigned if valid and rejected if not */
     int assign(string lvalue, string rvalue);

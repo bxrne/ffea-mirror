@@ -3252,6 +3252,10 @@ int World::read_and_build_system(vector<string> script_vector)
         rod_array[i]->calc_steric_rod = params.calc_steric_rod;
         rod_array[i]->calc_ssint_rod = params.calc_ssint_rod;
         rod_array[i]->pbc_rod = params.pbc_rod;
+        rod_array[i]->flow_profile = params.flow_profile;
+        for (int j=0;j<3;j++)
+            rod_array[i]->flow_velocity[j] = params.flow_velocity[j];
+        rod_array[i]->shear_rate = params.shear_rate;
 
     }
 

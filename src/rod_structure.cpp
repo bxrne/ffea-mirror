@@ -482,13 +482,15 @@ namespace rod
                 z_steric = this->steric_force[(node_no * 3) + 2];
             }
 
-            // Get delta r and delta twist
+            if (flow_profile == "shear")
+                flow_velocity[0] = shear_rate * current_r[(node_no*3) + 1];
+
             std::vector<float> x_force_vector{x_force, x_noise, applied_force_x, x_steric};
             std::vector<float> y_force_vector{y_force, y_noise, applied_force_y, y_steric};
             std::vector<float> z_force_vector{z_force, z_noise, applied_force_z, z_steric};
-            float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force_vector);
-            float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force_vector);
-            float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force_vector);
+            float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force_vector, flow_velocity[0]);
+            float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force_vector, flow_velocity[1]);
+            float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force_vector, flow_velocity[2]);
             float delta_twist = rod::get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
 
             // Apply our delta x

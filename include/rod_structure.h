@@ -68,6 +68,9 @@ namespace rod
         int calc_ssint_rod = 0;   // Attractive protein-protein interactions
         int pbc_rod = 0;
         float steric_force_factor = 20;    /** Strength of repulsive force, maximum ~ 486 pN (Biotin/streptavidin unfolding ~ 160 pN) [Force units] **/
+        std::string flow_profile;       // the type of background flow experienced by the rod (set by .ffea file)
+        float flow_velocity[3] = {0};   // background flow imposed on the rod (set by .ffea file)
+        float shear_rate = 0;           //
 
         float translational_friction;
         float rotational_friction; /** these will have to be changed when I end up implementing per-element radius, to be computed on-the-fly instead most likely **/

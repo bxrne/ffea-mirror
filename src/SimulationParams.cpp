@@ -65,6 +65,13 @@ SimulationParams::SimulationParams()
     calc_springs = 0;
     calc_ctforces = 0;
 
+    // ! these only work for rods
+    flow_profile = "none";
+    shear_rate = 0;
+    for (int i = 0; i < 3; i++)
+        flow_velocity[i] = 0;
+    // ! ------------------------
+
     wall_x_1 = WALL_TYPE_PBC;
     wall_x_2 = WALL_TYPE_PBC;
     wall_y_1 = WALL_TYPE_PBC;
@@ -153,6 +160,11 @@ SimulationParams::~SimulationParams()
     calc_ctforces = 0;
     calc_kinetics = 0;
 
+    flow_profile = "none";
+    shear_rate = 0;
+    for (int i = 0; i < 3; i++)
+        flow_velocity[i] = 0;
+
     wall_x_1 = -1;
     wall_x_2 = -1;
     wall_y_1 = -1;
@@ -218,6 +230,22 @@ int SimulationParams::extract_params(vector<string> script_vector)
 
     delete paramreader;
     return FFEA_OK;
+}
+
+std::vector<float> SimulationParams::vector_from_rvalue(string rvalue)
+{
+    // Split rvalue into a vector
+    std::vector<string> in;
+    std::vector<float> out;
+    rvalue = boost::erase_last_copy(boost::erase_first_copy(rvalue, "("), ")");
+    boost::split(in, rvalue, boost::is_any_of(","));
+
+    for (auto &item : in)
+    {
+        out.push_back(atof((item).c_str()));
+    }
+
+    return out;
 }
 
 int SimulationParams::assign(string lvalue, string rvalue)
@@ -535,6 +563,26 @@ int SimulationParams::assign(string lvalue, string rvalue)
         if (userInfo::verblevel > 1)
             cout << "\tSetting " << lvalue << " = " << steric_dr << endl;
     }
+    else if (lvalue == "flow_profile")
+    {
+        flow_profile = rvalue;
+        if (userInfo::verblevel > 1)
+            cout << "\tSetting " << lvalue << " = " << flow_profile << endl;
+    }
+    else if (lvalue == "shear_rate")
+    {
+        shear_rate = atof(rvalue.c_str());
+        if (userInfo::verblevel > 1)
+            cout << "\tSetting " << lvalue << " = " << shear_rate << endl;
+    }
+    else if (lvalue == "flow_velocity")
+    {
+        vector<float> u0 = vector_from_rvalue(rvalue);
+        if (u0.size() != 3)
+            FFEA_ERROR_MESSG("Required: 'flow_velocity' should be a vector of length 3.\n");
+        for (int i = 0; i < 3; i++)
+            flow_velocity[i] = u0.at(i);
+    }
     else if (lvalue == "wall_x_1")
     {
         if (rvalue == "PBC")
@@ -824,14 +872,20 @@ int SimulationParams::validate(int sim_mode)
         FFEA_ERROR_MESSG("Required: 'calc_steric_rod', must be 0 (no) or 1 (yes).\n");
     }
 
-    // if (shear_rate < 0)
-    // {
-    //     FFEA_ERROR_MESSG("Required: 'shear_rate', must be equal to or greater than zero.\n");
-    // }
+    if (flow_profile == "shear" && shear_rate < 0)
+    {
+        FFEA_ERROR_MESSG("Required: 'shear_rate', must be >= 0.\n");
+    }
+
+    float u0_mag = sqrt(pow(flow_velocity[0], 2) + pow(flow_velocity[1], 2) + pow(flow_velocity[2], 2));
+    if (shear_rate > 0 && u0_mag > 0)
+    {
+        FFEA_ERROR_MESSG("Required: only one of 'shear_rate' or 'flow_velocity' can be > 0.\n");
+    }
 
     if (pbc_rod == 1 && num_interfaces > 0)
     {
-        printf("\tWARNING: You are enabling rod periodic boundary conditions AND rod-blob interfaces. THESE HAVE NOT BEEN TESTED TOGETHER.\n");
+        printf("\tWARNING: rod periodic boundary conditions AND rod-blob interfaces are enabled. These have not been tested together.\n");
     }
 
     if (inc_self_ssint != 0 && inc_self_ssint != 1)
@@ -1144,6 +1198,13 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params)
         }
     }
     fprintf(fout, "\tnum_rods = %d\n", num_rods);
+
+    fprintf(fout, "\n\tFlow (rod-only):\n");
+    fprintf(fout, "\tflow_profile = %s\n", flow_profile);
+    if (flow_profile == "uniform")
+        fprintf(fout, "\tflow_velocity = (%f, %f, %f)\n", flow_velocity[0], flow_velocity[1], flow_velocity[2]);
+    else if (flow_profile == "shear")
+        fprintf(fout, "\tshear_rate = %f\n", shear_rate);
 
     fprintf(fout, "\n\tCalculations enabled:\n");
     fprintf(fout, "\tcalc_noise = %d\n", calc_noise);

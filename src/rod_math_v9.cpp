@@ -1078,11 +1078,22 @@ float safe_cos(float in){
     }
 
     float get_delta_r(float friction, float timestep, const std::vector<float> &forces)
-    { // In a given dimension!
+    {
         float force_sum = 0;
         for (auto& f : forces)
             force_sum += f;
         float result = (timestep / friction) * force_sum;
+        not_simulation_destroying(result, "get_delta_r is simulation destroying.");
+        return result;
+    }
+
+    float get_delta_r(float friction, float timestep, const std::vector<float>& forces,
+        const float background_flow)
+    {
+        float force_sum = 0;
+        for (auto& f : forces)
+            force_sum += f;
+        float result = (timestep / friction) * force_sum + timestep * background_flow;
         not_simulation_destroying(result, "get_delta_r is simulation destroying.");
         return result;
     }
