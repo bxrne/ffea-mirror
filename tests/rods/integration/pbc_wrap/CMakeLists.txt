@@ -21,10 +21,12 @@
 #  the research papers on the package.
 #
 
+set (WRAP_PBC_DIR          pbc_wrap)
+set (WRAP_PBC_CTEST        int_rod_${WRAP_PBC_DIR} )
+set (WRAP_PBC_DIR_PATH     "${PROJECT_BINARY_DIR}/tests/rods/integration/${WRAP_PBC_DIR}/")
 
-add_subdirectory(symmetry)
-add_subdirectory(equipartition)
-add_subdirectory(connection)
-add_subdirectory(interactPBC_equalEnergy)
-add_subdirectory(stericInteract_initForceSymmetric)
-add_subdirectory(pbc_wrap)
+file (COPY run_test.py                          DESTINATION ${WRAP_PBC_DIR_PATH})
+file (COPY create_straight_rod.py               DESTINATION ${WRAP_PBC_DIR_PATH})
+file (COPY wrap.ffea                            DESTINATION ${WRAP_PBC_DIR_PATH})
+
+add_test(NAME ${WRAP_PBC_CTEST} COMMAND ${PYTHON_EXECUTABLE} run_test.py)
