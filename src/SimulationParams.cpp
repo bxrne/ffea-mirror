@@ -1226,9 +1226,12 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params)
 
     fprintf(fout, "\n\tflow_profile = %s\n", flow_profile.c_str());
     if (flow_profile == "uniform")
-        fprintf(fout, "\tflow_velocity = (%e, %e, %e)\n", flow_velocity[0], flow_velocity[1], flow_velocity[2]);
+        fprintf(fout, "\tflow_velocity = (%e, %e, %e)\n",
+            flow_velocity[0] * mesoDimensions::velocity,
+            flow_velocity[1] * mesoDimensions::velocity,
+            flow_velocity[2] * mesoDimensions::velocity);
     else if (flow_profile == "shear")
-        fprintf(fout, "\tshear_rate = %e\n", shear_rate);
+        fprintf(fout, "\tshear_rate = %e\n", shear_rate / mesoDimensions::time);
 
     fprintf(fout, "\n\tCalculations enabled:\n");
     fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
