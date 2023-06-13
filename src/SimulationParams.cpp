@@ -160,7 +160,7 @@ SimulationParams::~SimulationParams()
     calc_ctforces = 0;
     calc_kinetics = 0;
 
-    flow_profile = "none";
+    flow_profile = "";
     shear_rate = 0;
     for (int i = 0; i < 3; i++)
         flow_velocity[i] = 0;
@@ -875,15 +875,37 @@ int SimulationParams::validate(int sim_mode)
         FFEA_ERROR_MESSG("Required: 'calc_steric_rod', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (flow_profile == "shear" && shear_rate < 0)
+    if (flow_profile != "none" and flow_profile != "uniform" and flow_profile != "shear")
     {
-        FFEA_ERROR_MESSG("Required: 'shear_rate', must be >= 0.\n");
+        FFEA_ERROR_MESSG("Required: 'flow_profile' must be set to 'none', 'uniform' or 'shear'.\n");
+    }
+    else if (flow_profile == "none")
+    {
+        for (int i=0; i<3; i++)
+            flow_velocity[i] = 0;
+        shear_rate = 0;
+    }
+    else if (flow_profile == "shear" && shear_rate < 0)
+    {
+        FFEA_ERROR_MESSG("Required: 'shear_rate' must be >= 0.\n");
     }
 
     float u0_mag = sqrt(pow(flow_velocity[0], 2) + pow(flow_velocity[1], 2) + pow(flow_velocity[2], 2));
     if (shear_rate > 0 && u0_mag > 0)
     {
-        FFEA_ERROR_MESSG("Required: only one of 'shear_rate' or 'flow_velocity' can be > 0.\n");
+        printf("\tWARNING: Required: only one of 'shear_rate' or 'flow_velocity' can be > 0.\n");
+
+        if (flow_profile == "shear")
+        {
+            printf("\t\t'flow_profile' = 'shear': 'flow_velocity' will be set to zero.\n");
+            for (int i=0; i<3; i++)
+                flow_velocity[i] = 0;
+        }
+        else if (flow_profile == "uniform")
+        {
+            printf("\t\t'flow_profile' = 'uniform': 'shear_rate' will be set to zero.\n");
+            shear_rate = 0;
+        }
     }
 
     if (pbc_rod == 1 && num_interfaces > 0)
@@ -1202,8 +1224,7 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params)
     }
     fprintf(fout, "\tnum_rods = %d\n", num_rods);
 
-    fprintf(fout, "\n\tFlow (rod-only):\n");
-    fprintf(fout, "\tflow_profile = %s\n", flow_profile);
+    fprintf(fout, "\n\tflow_profile = %s\n", flow_profile.c_str());
     if (flow_profile == "uniform")
         fprintf(fout, "\tflow_velocity = (%e, %e, %e)\n", flow_velocity[0], flow_velocity[1], flow_velocity[2]);
     else if (flow_profile == "shear")
