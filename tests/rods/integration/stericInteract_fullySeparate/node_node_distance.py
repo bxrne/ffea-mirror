@@ -7,15 +7,7 @@ import matplotlib as mpl
 mpl.use("Agg")  # Allows plotting without an X-server
 import matplotlib.pyplot as plt
 
-
-try:
-    import ffeatools.modules.FFEA_rod as rod
-except ModuleNotFoundError as e:
-    print("ModuleNotFoundError:", e)
-    if sys.version_info[0] != 2:
-        print("Script must be run with a Python 2 executable.")
-    sys.exit()
-
+import ffeatools.ffea_rod as ffea_rod
 
 def node_node_distance(node_pos_a, node_pos_b):
     """Arguments are [N, 3] numpy arrays. Return N^2 node-node distance array."""
@@ -34,7 +26,7 @@ def node_node_distance(node_pos_a, node_pos_b):
 def plot(args, dist, frame, name, rod1, rod2):
     # Discrete colorbar
     cmap = plt.cm.RdBu
-    bounds = np.array([0, args.radius * 1e9, args.radius * 2 * 1e9, dist.max() * 1e9])
+    bounds = np.array([0, args.radius * 1e9, 0.99 * args.radius * 2 * 1e9, dist.max() * 1e9])
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
 
     plt.imshow(dist * 1e9, cmap=cmap, norm=norm, interpolation="nearest")
@@ -49,7 +41,7 @@ def plot(args, dist, frame, name, rod1, rod2):
     )
     plt.close()
 
-    frames = np.arange(rod1.num_frames) + 1
+    frames = np.arange(rod1.num_frames, dtype='int') + 1
     disp = [
         np.linalg.norm(rod1.current_r[:, :] - rod1.current_r[0, :], axis=2) * 1e9,
         np.linalg.norm(rod2.current_r[:, :] - rod2.current_r[0, :], axis=2) * 1e9,
@@ -82,8 +74,8 @@ def main():
     parser.add_argument("-o", "--out_dir", type=str, required=True)
     args = parser.parse_args()
 
-    rod1 = rod.FFEA_rod(filename=args.rod_1_traj)
-    rod2 = rod.FFEA_rod(filename=args.rod_2_traj)
+    rod1 = ffea_rod.ffea_rod(filename=args.rod_1_traj)
+    rod2 = ffea_rod.ffea_rod(filename=args.rod_2_traj)
 
     frame = rod1.num_frames
     dist = node_node_distance(rod1.current_r[frame - 1], rod2.current_r[frame - 1])

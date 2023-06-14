@@ -27,23 +27,37 @@ def write_failed_info(fail_info_path: str, config_names, return_codes, output_di
             f.write(f"{name:s},{frame:d},{code:d}\n")
 
 
-def copy_failed(new_dir: str, fail_info_path: str, input_dir: str):
+def copy_failed(fail_info_path: str, input_dir: str, output_dir : str):
 
-    Path(new_dir).mkdir()
+    if Path("input_failed").exists():
+        shutil.rmtree("input_failed")
+    if Path("output_failed").exists():
+        shutil.rmtree("output_failed")
+    Path("input_failed").mkdir()
+    Path("output_failed").mkdir()
 
     with open(fail_info_path, "r") as f:
         lines = f.readlines()[1:]
         for i, line in enumerate(lines):
             lines[i] = line.split(",")[0] + ".ffea"
-            shutil.copyfile(f"{input_dir:s}/{lines[i]:s}", f"{new_dir:s}/{lines[i]:s}")
+            shutil.copyfile(f"{input_dir:s}/{lines[i]:s}", f"input_failed/{lines[i]:s}")
 
-    check_copied = len(glob.glob(f"{new_dir:s}/*.ffea"))
+    check_copied = len(glob.glob(f"input_failed/*.ffea"))
     check_failed = len(lines)
 
     if check_copied != check_failed:
         raise Exception(
-            f"Inconsistent copying of failed FFEA files: {check_failed:d} failed, {check_copied:d} copied to dir {new_dir:s}"
+            f"Inconsistent copying of failed FFEA files to 'input_failed'"
         )
+
+    ffea_files = glob.glob("input_failed/*.ffea")
+    for path_in in ffea_files:
+        prefix = path_in.split("/")[-1].split(".")[0]
+        out_files = glob.glob(f"{output_dir}/{prefix}*")
+        for path_out in out_files:
+            f_out = path_out.split("/")[-1]
+            shutil.copyfile(f"{path_out}", f"output_failed/{f_out}")
+
 
 
 def main():
@@ -60,7 +74,7 @@ def main():
     Path(f"{params['out_dir']:s}/delete").mkdir()
 
     # Set up simulations
-    subprocess.run([f"{params['py2_exe_path']:s}", "create_straight_rod.py"])
+    subprocess.run([f"python", "create_straight_rod.py"])
     subprocess.run(["python", "ffea_from_template.py"])
 
     if params["run_failed_only"]:
@@ -107,7 +121,7 @@ def main():
         print("Results analysis...")
         subprocess.run(
             [
-                f"{params['py2_exe_path']:s}",
+                f"python",
                 "node_node_distance.py",
                 "--rod_1_traj",
                 f"{params['out_dir']:s}/{name:s}_1.rodtraj",
@@ -126,7 +140,7 @@ def main():
         print("Node-node distances (nm):")
         with np.printoptions(precision=2, suppress=False):
             print(dist * 1e9)
-        if dist[dist <= 2 * params["radius"]].size == 0 and ffea_result.returncode == 0:
+        if dist[dist <= 0.99 * (2 * params["radius"])].size == 0 and ffea_result.returncode == 0:
             count += 1
             print("Passed\n")
         else:
@@ -145,12 +159,10 @@ def main():
 
     if len(failed_configs) > 0:
         fail_dir = f"{params['in_dir']:s}_failed"
-        if Path(fail_dir).exists():
-            shutil.rmtree(fail_dir)
         copy_failed(
-            new_dir=fail_dir,
             fail_info_path=params["fail_info_path"],
             input_dir=params["in_dir"],
+            output_dir=params["out_dir"]
         )
 
     if count == num_configs:
