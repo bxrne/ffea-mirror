@@ -4,5 +4,5 @@ length: 5.0e-8
 in_dir: "input"
 out_dir: "output"
 ffea_length: 1.7e-10
-run_failed_only: True
+run_failed_only: False
 fail_info_path: "failed.csv"

@@ -2,9 +2,9 @@
 	<calc_steric_rod = 1>
     <calc_noise = 0>
     <restart = 0>
-    <dt = 5e-12>
-    <check = 40>
-    <num_steps = 1000>
+    <dt = 1e-12>
+    <check = 5>
+    <num_steps = 250>
     <rng_seed = time>
     <trajectory_out_fname = ../output/delete/del.ftj>
     <measurement_out_fname = ../output/delete/del.fm>

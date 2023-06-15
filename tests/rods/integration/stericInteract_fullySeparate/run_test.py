@@ -94,6 +94,8 @@ def main():
     failed_configs = []
     failed_return_codes = []
 
+    # ! - Tests assume steric_force_factor = 20 (rod_structure.h)
+
     for i, path in enumerate(sorted(ffea_files), 1):
 
         name = path.split("/")[-1].split(".")[0]
@@ -137,9 +139,9 @@ def main():
         )
 
         dist = np.loadtxt(f"{params['out_dir']:s}/{name:s}_distanceHeatmap.txt")
-        print("Node-node distances (nm):")
-        with np.printoptions(precision=2, suppress=False):
-            print(dist * 1e9)
+        # print("Node-node distances (nm):")
+        # with np.printoptions(precision=2, suppress=False):
+        #     print(dist * 1e9)
         if dist[dist <= 0.99 * (2 * params["radius"])].size == 0 and ffea_result.returncode == 0:
             count += 1
             print("Passed\n")
