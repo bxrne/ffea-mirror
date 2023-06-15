@@ -72,55 +72,36 @@ bool InteractionData::elements_intersect()
 
 
 /**
- * @brief If either interaction point, c_a or c_b, lies outside the finite
- * length of its respective rod element, replace its value with the nearest
- * node. This is necessary for certain situations, e.g. nearly-parallel rods.
- *
- * @return: 6-element std::vector<float> containing c_a and c_b.
+ * If an interaction point (c) lies outside the finite length of its rod element,
+ * replace its value with the nearest node. Required for certain situations, e.g.
+ * nearly-parallel rods.
  */
-std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
-    float r_b[3], float p_a[3], float p_b[3])
+void finite_length_correction(float c[3], float r[3], float p[3])
 {
-    float rc_a[3] = {0};
-    float rc_b[3] = {0};
-    float dot_a = 0;
-    float dot_b = 0;
+    float r_c[3] = { 0 };
+    float dot = 0;
 
-    vec3d(n) { rc_a[n] = c_ab.at(n) - r_a[n]; }
-    vec3d(n) { rc_b[n] = c_ab.at(n + 3) - r_b[n]; }
-    dot_a = dot_product_3x1(p_a, rc_a);
-    dot_b = dot_product_3x1(p_b, rc_b);
+    vec3d(n) { r_c[n] = c[n] - r[n]; }
+    dot = dot_product_3x1(p, r_c);
 
-    if (dot_a <= 0)
+    if (dot <= 0)
     {
-        vec3d(n) { c_ab.at(n) = r_a[n]; }
+        vec3d(n) { c[n] = r[n]; }
     }
-    else if (dot_a >= rod::absolute(p_a) * rod::absolute(p_a))
+    else if (dot >= rod::absolute(p) * rod::absolute(p))
     {
-        vec3d(n) { c_ab.at(n) = r_a[n] + p_a[n]; }
-    }
-
-    if (dot_b <= 0)
-    {
-        vec3d(n) { c_ab.at(n + 3) = r_b[n]; }
-    }
-    else if (dot_b >= rod::absolute(p_b) * rod::absolute(p_b))
-    {
-        vec3d(n) { c_ab.at(n + 3) = r_b[n] + p_b[n]; }
+        vec3d(n) { c[n] = r[n] + p[n]; }
     }
 
     if (rod::dbg_print)
     {
-        std::cout << "snap to nodes:\n";
-        printf("  p_a.(c_a - r_a) : %.3e\n", dot_a);
-        printf("  p_b.(c_b - r_b) : %.3e\n", dot_b);
+        std::cout << "finite_length_correction():\n";
+        printf("  p.(c - r) : %.3e\n", dot);
     }
-
-    return c_ab;
 }
 
 
-/** @brief Compare the centreline displacement, c_ab, to the following
+/** Compare the centreline displacement, c_ab, to the following
  * rod-rod displacements:
  *
  * d1 = c_b - r_a1
@@ -128,151 +109,47 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
  * d3 = c_a - r_b1
  * d4 = c_a - r_b2
  *
- * Find the smallest displacement and, if needed, adjust c_ab such that it is
- * the smallest displacement.
- *
- * @return: 6-element std::vector<float> containing c_a and c_b.
+ * Find the smallest displacement and, if needed, adjust c_ab such that it
+ * becomes the smallest displacement.
 */
-std::vector<float> nearest_node_correction(std::vector<float> c_ab, float c_a[3],
-    float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3])
+
+void nearest_node_correction(float c_a[3], float c_b[3],
+    float r_a[3], float r_b[3], float p_a[3], float p_b[3])
 {
-    float displacements[5][3] = {0};
-    float r_a2[3] = {0};
-    float r_b2[3] = {0};
-    std::vector<float> distances(5, 0);
+    float displ[3][3] = { 0 };
+    float r_a2[3] = { 0 };
+    float r_b2[3] = { 0 };
+    std::vector<float> dist(3, 0);
 
     vec3d(n) { r_a2[n] = r_a[n] + p_a[n]; }
     vec3d(n) { r_b2[n] = r_b[n] + p_b[n]; }
-
-    vec3d(n) { displacements[0][n] = c_ab.at(n + 3) - c_ab.at(n); }
-    vec3d(n) { displacements[1][n] = c_ab.at(n + 3) - r_a[n]; }
-    vec3d(n) { displacements[2][n] = c_ab.at(n + 3) - r_a2[n]; }
-    vec3d(n) { displacements[3][n] = c_ab.at(n) - r_b[n]; }
-    vec3d(n) { displacements[4][n] = c_ab.at(n) - r_b2[n]; }
-
-    int i = 0;
-    for (auto &d : distances)
-        d = rod::absolute(displacements[i++]);
-
-    // index corresponding to the smallest distance
-    auto iter = std::min_element(distances.begin(), distances.end());
-    int index_min = std::distance(distances.begin(), iter);
-
-    switch (index_min)
-    {
-    case 0:
-        break;
-    case 1:
-        vec3d(n) { c_ab.at(n) = r_a[n]; }
-        break;
-    case 2:
-        vec3d(n) { c_ab.at(n) = r_a2[n]; }
-    case 3:
-        vec3d(n) { c_ab.at(n + 3) = r_b[n]; }
-        break;
-    case 4:
-        vec3d(n) { c_ab.at(n + 3) = r_b2[n]; }
-        break;
-    default:
-        std::cout << "ERROR!\n";
-        throw std::out_of_range("Invalid min index to switch in rod::nearest_node_connection()");
-    }
-
-    if (rod::dbg_print)
-    {
-        std::cout << "node to interaction point distance comparison:\n";
-        print_array("  r_a1",r_a,3);
-        print_array("  r_a2",r_a2,3);
-        print_array("  r_b1",r_b,3);
-        print_array("  r_b2",r_b2,3);
-        printf("  |c_ab| :       %.3f\n", distances[0]);
-        printf("  |c_b - r_a1| : %.3f\n", distances[1]);
-        printf("  |c_b - r_a2| : %.3f\n", distances[2]);
-        printf("  |c_a - r_b1| : %.3f\n", distances[3]);
-        printf("  |c_a - r_b2| : %.3f\n", distances[4]);
-        print_vector("  c_a (corrected)", c_ab.begin(), std::next(c_ab.begin(), 3));
-        print_vector("  c_b (corrected)", std::next(c_ab.begin(), 3), c_ab.end());
-        std::cout << "\n";
-    }
-
-    return c_ab;
-}
-
-std::vector<float> nearest_node_correction(float c_a[3], float c_b[3],
-    float r_a[3], float r_b[3], float p_a[3], float p_b[3])
-{
-    float r_a2[3] = {0};
-    float r_b2[3] = {0};
-    float displ[5,3] = {0};
-
-    vec3d(n){r_a2[n] = r_a[n] + p_a[n];}
-    vec3d(n){r_b2[n] = r_b[n] + p_b[n];}
-
     vec3d(n) { displ[0][n] = c_b[n] - c_a[n]; }
     vec3d(n) { displ[1][n] = c_b[n] - r_a[n]; }
     vec3d(n) { displ[2][n] = c_b[n] - r_a2[n]; }
-    vec3d(n) { displ[3][n] = c_a[n] - r_b[n]; }
-    vec3d(n) { displ[4][n] = c_a[n] - r_b2[n]; }
-
-    // dist_ab[0] = rod::absolute(displ[0]);
-    // dist_ab[1] = rod::absolute(displ[1]);
-    // dist_ab[2] = rod::absolute(displ[2]);
-    // dist_ba[0] = rod::absolute(displ[0]);
-    // dist_ba[1] = rod::absolute(displ[3]);
-    // dist_ba[2] = rod::absolute(displ[4]);
-
-    std::array<float, 3> dist_ab = { rod::absolute(displ[0]), rod::absolute(displ[1]), rod::absolute(displ[2]) };
-    std::array<float, 3> dist_ba = { rod::absolute(displ[0]), rod::absolute(displ[3]), rod::absolute(displ[4]) };
 
     // index corresponding to the smallest distance
-    int min_index_ab = std::distance(dist_ab.begin(), std::min_element(dist_ab.begin(), dist_ab.end()));
-    int min_index_ba = std::distance(dist_ba.begin(), std::min_element(dist_ba.begin(), dist_ba.end()));
+    vec3d(n) { dist[n] = rod::absolute(displ[n]); }
+    auto iter = std::min_element(dist.begin(), dist.end());
+    int index_min = std::distance(dist.begin(), iter);
 
-    switch(min_index_ab)
-    {
-        case 0:
-            break;
-        case 1:
-            vec3d(n){c_a[n] = r_a[n];}
-            break;
-        case 2:
-            vec3d(n){c_a[n] = r_a2[n];}
-            break;
-        default:
-            throw std::out_of_range("Invalid min_index_ab for switch in rod::nearest_node_correction()");
-    }
-    switch(min_index_ba)
-    {
-        case 0:
-            break;
-        case 1:
-            vec3d(n){c_b[n] = r_b[n];}
-            break;
-        case 2:
-            vec3d(n){c_b[n] = r_b2[n];}
-            break;
-        default:
-            throw std::out_of_range("Invalid min_index_ba for switch in rod::nearest_node_correction()");
-    }
+    if (index_min == 1)
+        vec3d(n) { c_a[n] = r_a[n]; }
+    else if (index_min == 2)
+        vec3d(n) { c_a[n] = r_a2[n]; }
+    else if (index_min != 0)
+        throw std::out_of_range("Invalid min index in rod::nearest_node_connection()");
 
     if (rod::dbg_print)
     {
         std::cout << "nearest_node_correction():\n";
-        print_array("  r_a1",r_a,3);
-        print_array("  r_a2",r_a2,3);
-        print_array("  r_b1",r_b,3);
-        print_array("  r_b2",r_b2,3);
-        printf("  |c_ab| :       %.3f\n", dist_ab[0]);
-        printf("  |c_b - r_a1| : %.3f\n", dist_ab[1]);
-        printf("  |c_b - r_a2| : %.3f\n", dist_ab[2]);
-        printf("  |c_a - r_b1| : %.3f\n", dist_ba[1]);
-        printf("  |c_a - r_b2| : %.3f\n", dist_ba[2]);
+        print_array("  r_a1", r_a, 3);
+        print_array("  r_a2", r_a2, 3);
+        printf("  |c_ab| :       %.3f\n", dist[0]);
+        printf("  |c_b - r_a1| : %.3f\n", dist[1]);
+        printf("  |c_b - r_a2| : %.3f\n", dist[2]);
         print_array("  c_a (corrected)", c_a, 3);
-        print_array("  c_b (corrected)", c_b, 3);
         std::cout << "\n";
     }
-
-    return std::vector<float> {c_a[0], c_a[1], c_a[2], c_b[0], c_b[1], c_b[2]};
 }
 
 /** @brief Compute the two points, c_a and c_b, that form the centreline
@@ -293,7 +170,6 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     float n_b[3] = {0};
     float r_ab[3] = {0};
     float r_ba[3] = {0};
-    bool is_parallel;
 
     normalize(p_a, l_a);
     normalize(p_b, l_b);
@@ -331,7 +207,6 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     if (rod::dbg_print)
     {
         std::cout << "minimum distance between rod elements:\n";
-        std::cout << "  rods parallel: " << is_parallel << "\n";
         print_array("  p_a", p_a, 3);
         print_array("  p_b", p_b, 3);
         print_array("  l_a", l_a, 3);
@@ -349,12 +224,13 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
         std::cout << "\n";
     }
 
-    // Apply corrections to infinite line assumption
-    std::vector<float> c_ab{c_a[0], c_a[1], c_a[2], c_b[0], c_b[1], c_b[2]};
-    c_ab = snap_to_nodes(c_ab, r_a, r_b, p_a, p_b);
-    c_ab = nearest_node_correction(c_a, c_b, r_a, r_b, p_a, p_b);
-    vec3d(n) { c_a[n] = c_ab.at(n); }
-    vec3d(n) { c_b[n] = c_ab.at(n + 3); }
+    // enforce finite length of rod element
+    finite_length_correction(c_a, r_a, p_a);
+    finite_length_correction(c_b, r_b, p_b);
+
+    // if a node is closer than c_a or c_b, use that instead
+    nearest_node_correction(c_a, c_b, r_a, r_b, p_a, p_b);
+    nearest_node_correction(c_b, c_a, r_b, r_a, p_b, p_a);
 }
 
 /*

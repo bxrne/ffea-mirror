@@ -67,22 +67,14 @@ struct InteractionData
 
 };
 
-std::vector<float> snap_to_nodes(
-    std::vector<float> c_ab,
-    float r_a[3],
-    float r_b[3],
-    float p_a[3],
-    float p_b[3]);
+// previously: snap_to_nodes
+void finite_length_correction(
+    float (&c)[3],
+    float r[3],
+    float p[3]);
 
-std::vector<float> nearest_node_correction(
-    std::vector<float> c_ab,
-    float r_a[3],
-    float r_b[3],
-    float p_a[3],
-    float p_b[3]);
-
-std::vector<float> nearest_node_correction(
-    float c_a[3],
+void nearest_node_correction(
+    float (&c_a)[3],
     float c_b[3],
     float r_a[3],
     float r_b[3],
