@@ -133,8 +133,8 @@ std::vector<float> snap_to_nodes(std::vector<float> c_ab, float r_a[3],
  *
  * @return: 6-element std::vector<float> containing c_a and c_b.
 */
-std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
-    float r_b[3], float p_a[3], float p_b[3])
+std::vector<float> nearest_node_correction(std::vector<float> c_ab, float c_a[3],
+    float c_b[3], float r_a[3], float r_b[3], float p_a[3], float p_b[3])
 {
     float displacements[5][3] = {0};
     float r_a2[3] = {0};
@@ -175,12 +175,16 @@ std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
         break;
     default:
         std::cout << "ERROR!\n";
-        throw std::out_of_range("Invalid index to vector of displacements in rod::compare_node_distances()");
+        throw std::out_of_range("Invalid min index to switch in rod::nearest_node_connection()");
     }
 
     if (rod::dbg_print)
     {
         std::cout << "node to interaction point distance comparison:\n";
+        print_array("  r_a1",r_a,3);
+        print_array("  r_a2",r_a2,3);
+        print_array("  r_b1",r_b,3);
+        print_array("  r_b2",r_b2,3);
         printf("  |c_ab| :       %.3f\n", distances[0]);
         printf("  |c_b - r_a1| : %.3f\n", distances[1]);
         printf("  |c_b - r_a2| : %.3f\n", distances[2]);
@@ -194,6 +198,82 @@ std::vector<float> compare_node_distances(std::vector<float> c_ab, float r_a[3],
     return c_ab;
 }
 
+std::vector<float> nearest_node_correction(float c_a[3], float c_b[3],
+    float r_a[3], float r_b[3], float p_a[3], float p_b[3])
+{
+    float r_a2[3] = {0};
+    float r_b2[3] = {0};
+    float displ[5,3] = {0};
+
+    vec3d(n){r_a2[n] = r_a[n] + p_a[n];}
+    vec3d(n){r_b2[n] = r_b[n] + p_b[n];}
+
+    vec3d(n) { displ[0][n] = c_b[n] - c_a[n]; }
+    vec3d(n) { displ[1][n] = c_b[n] - r_a[n]; }
+    vec3d(n) { displ[2][n] = c_b[n] - r_a2[n]; }
+    vec3d(n) { displ[3][n] = c_a[n] - r_b[n]; }
+    vec3d(n) { displ[4][n] = c_a[n] - r_b2[n]; }
+
+    // dist_ab[0] = rod::absolute(displ[0]);
+    // dist_ab[1] = rod::absolute(displ[1]);
+    // dist_ab[2] = rod::absolute(displ[2]);
+    // dist_ba[0] = rod::absolute(displ[0]);
+    // dist_ba[1] = rod::absolute(displ[3]);
+    // dist_ba[2] = rod::absolute(displ[4]);
+
+    std::array<float, 3> dist_ab = { rod::absolute(displ[0]), rod::absolute(displ[1]), rod::absolute(displ[2]) };
+    std::array<float, 3> dist_ba = { rod::absolute(displ[0]), rod::absolute(displ[3]), rod::absolute(displ[4]) };
+
+    // index corresponding to the smallest distance
+    int min_index_ab = std::distance(dist_ab.begin(), std::min_element(dist_ab.begin(), dist_ab.end()));
+    int min_index_ba = std::distance(dist_ba.begin(), std::min_element(dist_ba.begin(), dist_ba.end()));
+
+    switch(min_index_ab)
+    {
+        case 0:
+            break;
+        case 1:
+            vec3d(n){c_a[n] = r_a[n];}
+            break;
+        case 2:
+            vec3d(n){c_a[n] = r_a2[n];}
+            break;
+        default:
+            throw std::out_of_range("Invalid min_index_ab for switch in rod::nearest_node_correction()");
+    }
+    switch(min_index_ba)
+    {
+        case 0:
+            break;
+        case 1:
+            vec3d(n){c_b[n] = r_b[n];}
+            break;
+        case 2:
+            vec3d(n){c_b[n] = r_b2[n];}
+            break;
+        default:
+            throw std::out_of_range("Invalid min_index_ba for switch in rod::nearest_node_correction()");
+    }
+
+    if (rod::dbg_print)
+    {
+        std::cout << "nearest_node_correction():\n";
+        print_array("  r_a1",r_a,3);
+        print_array("  r_a2",r_a2,3);
+        print_array("  r_b1",r_b,3);
+        print_array("  r_b2",r_b2,3);
+        printf("  |c_ab| :       %.3f\n", dist_ab[0]);
+        printf("  |c_b - r_a1| : %.3f\n", dist_ab[1]);
+        printf("  |c_b - r_a2| : %.3f\n", dist_ab[2]);
+        printf("  |c_a - r_b1| : %.3f\n", dist_ba[1]);
+        printf("  |c_a - r_b2| : %.3f\n", dist_ba[2]);
+        print_array("  c_a (corrected)", c_a, 3);
+        print_array("  c_b (corrected)", c_b, 3);
+        std::cout << "\n";
+    }
+
+    return std::vector<float> {c_a[0], c_a[1], c_a[2], c_b[0], c_b[1], c_b[2]};
+}
 
 /** @brief Compute the two points, c_a and c_b, that form the centreline
  * displacement (interaction vector) joining two rod elements together, where
@@ -272,7 +352,7 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     // Apply corrections to infinite line assumption
     std::vector<float> c_ab{c_a[0], c_a[1], c_a[2], c_b[0], c_b[1], c_b[2]};
     c_ab = snap_to_nodes(c_ab, r_a, r_b, p_a, p_b);
-    c_ab = compare_node_distances(c_ab, r_a, r_b, p_a, p_b);
+    c_ab = nearest_node_correction(c_a, c_b, r_a, r_b, p_a, p_b);
     vec3d(n) { c_a[n] = c_ab.at(n); }
     vec3d(n) { c_b[n] = c_ab.at(n + 3); }
 }
@@ -341,6 +421,8 @@ void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
     if (rod::dbg_print)
     {
         std::cout << "cull distant elements:\n";
+        std::printf("  elem index a :  %d\n", elem_id_a);
+        std::printf("  elem index b :  %d\n", elem_id_b);
         std::printf("  |p_a| :         %.3f\n", rod::absolute(p_a));
         std::printf("  |p_b| :         %.3f\n", rod::absolute(p_b));
         std::printf("  radius sum :    %.3f\n", radius_a + radius_b);
