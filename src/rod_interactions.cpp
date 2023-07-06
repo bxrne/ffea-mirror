@@ -178,7 +178,6 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     // oblique / perpendicular elements
     if (rod::absolute(l_a_cross_l_b) > 1e-5)
     {
-        is_parallel = false;
         cross_product(l_a, l_a_cross_l_b, n_a);
         cross_product(l_b, l_a_cross_l_b, n_b);
 
@@ -199,7 +198,6 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
     // parallel elements
     else
     {
-        is_parallel = true;
         vec3d(n) { c_a[n] = r_a[n] + 0.5 * p_a[n]; }
         vec3d(n) { c_b[n] = r_b[n] + 0.5 * p_b[n]; }
     }
