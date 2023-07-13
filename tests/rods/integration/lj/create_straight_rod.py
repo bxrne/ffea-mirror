@@ -2,7 +2,7 @@
 from omegaconf import OmegaConf
 import ffeatools.ffea_rod as ffea_rod
 from ffeatools.rod.rod_creator import rod_creator as rc
-import ffeatools.ffea_lj as ffea_lj
+import pprint as pp
 
 # Default rod parameters
 params = OmegaConf.load("params.yml")
@@ -26,7 +26,8 @@ def z_func(t):
 
 def main():
 
-    ffea_input_script = params["ffea_input_script"]
+    ffea_input_name = params["ffea_input_name"]
+    rod_name = "z-axis"
 
     # Blank rod
     my_rod = ffea_rod.ffea_rod(num_elements=params["num_nodes"])
@@ -48,12 +49,13 @@ def main():
         bending_modulus=bend,
     )
 
-    # Since no blobs have been parameterised, we must write the Lennard-Jones matrix
-    # vdw_pairs : tList[tuple[int, int, float, float]]
-    rc.write_lj_matrix(ffea_input_script, [(0,0,1e-20,1e-9)])
+    # LJ parameter matrix
+    rc.write_lj_matrix(ffea_input_name, [(0, 0, 1e-20, 1e-9)])
 
-    my_rod.write_rod(params["in_dir"] + "/z-axis.rod")
+    # Types and positions of interaction sites
+    rc.write_vdw_sites(rod_name, [(0, 0.5)])
 
+    my_rod.write_rod(f"{params['in_dir']}{rod_name:s}.rod")
 
 if __name__ == "__main__":
     main()

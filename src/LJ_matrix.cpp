@@ -92,7 +92,7 @@ int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scala
 
     // first line should be the file type "ffea ssint forcefield params file" (.lj)
     getline(in, line);
-    if (line != "ffea vdw forcefield params file" && line != "ffea ssint forcefield params file") {
+    if (line != "ffea vdw forcefield params file" && line != "ffea ssint forcefield params file" && line != "ffea rod vdw forcefield params file") {
         in.close();
         FFEA_ERROR_MESSG("This is not a 'ffea ssint forcefield params file' (read '%s') \n", line.c_str());
     }
@@ -103,7 +103,7 @@ int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scala
     cout << bufvec.at(0) << " " << atoi(bufvec.at(1).c_str()) << endl;
     num_ssint_face_types = atoi(bufvec.at(1).c_str());
 
-    printf("\t\tNumber of ssint face types = %d\n", num_ssint_face_types);
+    printf("\t\tNumber of ssint interaction types = %d\n", num_ssint_face_types);
 
     // Allocate the memory for all these LJ pairs
     params = new(std::nothrow) map<string, scalar>[num_ssint_face_types * num_ssint_face_types];
