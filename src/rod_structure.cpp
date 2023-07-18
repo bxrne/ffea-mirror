@@ -25,7 +25,7 @@
  *      rod_structure.cpp
  *	Author: Rob Welch, University of Leeds
  *	Email: py12rw@leeds.ac.uk
-
+ *      and
  *	Author: Ryan Cocking, University of Leeds
  *	Email: bsrctb@leeds.ac.uk
  */

@@ -22,7 +22,7 @@
 //
 
 /*
- *      rod_interactions.h
+ *      rod_vdw.cpp
  *	Author: Ryan Cocking, University of Leeds
  *	Email: bsrctb@leeds.ac.uk
  */
