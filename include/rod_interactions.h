@@ -72,13 +72,9 @@ struct InteractionData
         int rod_id_b,
         int elem_id_a,
         int elem_id_b,
-        float rad_a,
-        float rad_b,
         float c_a[3],
         float c_b[3],
         float shift[3],
-        float r_a[3],
-        float r_b[3],
         float eps,
         float sig);
 

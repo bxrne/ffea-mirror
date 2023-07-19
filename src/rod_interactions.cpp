@@ -32,6 +32,7 @@
 namespace rod
 {
 
+// Steric interactions
 InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3],
     float shift[3], float r_a[3], float r_b[3])
@@ -48,32 +49,35 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     vec3d(n){img_shift[n] = shift[n];}
     vec3d(n){r_self[n] = r_a[n];}
     vec3d(n){r_nbr[n] = r_b[n];}
+
     epsilon = 0;
     sigma = 0;
     r_min = 0;
     r_min_inv = 0;
 };
 
+// VDW interactions
 InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
-    int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3],
-    float shift[3], float r_a[3], float r_b[3], float eps, float sig)
+    int elem_id_b, float c_a[3], float c_b[3], float shift[3], float eps,
+    float sig)
 {
     rod_id_self = rod_id_a;
     rod_id_nbr = rod_id_b;
     elem_id_self = elem_id_a;
     elem_id_nbr = elem_id_b;
-    radius_self = radius_a;
-    radius_nbr = radius_b;
     vec3d(n){contact_self[n] = c_a[n];}
     vec3d(n){contact_nbr[n] = c_b[n];}
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
     vec3d(n){img_shift[n] = shift[n];}
-    vec3d(n){r_self[n] = r_a[n];}
-    vec3d(n){r_nbr[n] = r_b[n];}
     epsilon = eps;
     sigma = sig;
     r_min = std::pow(2, 1/6) * sigma;
     r_min_inv = 1 / r_min;
+
+    radius_self = 0;
+    radius_nbr = 0;
+    vec3d(n){r_self[n] = 0;}
+    vec3d(n){r_nbr[n] = 0;}
 };
 
 bool InteractionData::elements_intersect()

@@ -31,7 +31,6 @@
 #define ROD_VDW
 
 #include "rod_interactions.h"
-#include "LJ_matrix.h"
 
 namespace rod
 {
@@ -52,5 +51,25 @@ namespace rod
         VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem);
 
         void get_position(float r[3], float p[3], OUT float r_site[3]);
+        void print_info();
+        void print_info(float r[3], float p[3]);
     };
+
+    void set_vdw_nbrs(
+        VDWSite site_a,
+        VDWSite site_b,
+        float p_a[3],
+        float p_b[3],
+        float r_a[3],
+        float r_b[3],
+        float radius_a,
+        float radius_b,
+        std::vector<InteractionData>& nbr_a,
+        std::vector<InteractionData>& nbr_b,
+        bool periodic,
+        std::vector<float> box_dim,
+        float vdw_cutoff,
+        float epsilon,
+        float sigma);
 }
+#endif
