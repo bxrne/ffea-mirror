@@ -4465,7 +4465,7 @@ void World::update_rod_neighbour_lists(rod::Rod *rod_a, rod::Rod *rod_b)
             rod_b->get_p(elem_b, p_b, false);
 
             // assign to both elements
-            rod::set_element_neighbours(
+            rod::set_steric_nbrs(
                 rod_a->rod_no,
                 rod_b->rod_no,
                 elem_a,

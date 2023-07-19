@@ -119,7 +119,12 @@ std::vector<int> nearest_periodic_image(
     float displacement[3],
     std::vector<float> box_dim);
 
-void set_element_neighbours(
+std::vector<int> nearest_periodic_image(
+    float a[3],
+    float b[3],
+    std::vector<float> box_dim);
+
+void set_steric_nbrs(
     int rod_id_a,
     int rod_id_b,
     int elem_id_a,

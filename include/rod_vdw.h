@@ -31,6 +31,7 @@
 #define ROD_VDW
 
 #include "rod_interactions.h"
+#include "LJ_matrix.h"
 
 namespace rod
 {
@@ -38,4 +39,18 @@ namespace rod
     float vdw_force_6_12(float r_mag_inv, float eps, float sig);
     float vdw_energy_interp(float r_mag, float eps, float r_min_inv);
     float vdw_force_interp(float r_mag, float eps, float r_min_inv);
+
+    struct VDWSite
+    {
+        int rod_id;
+        int elem_id;
+        int site_id;
+        int vdw_type;
+        float L_rod;   // position of site along rod as a fraction of its length, 0 < L < 1
+        float L_elem;
+
+        VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem);
+
+        void get_position(float r[3], float p[3], OUT float r_site[3]);
+    };
 }

@@ -286,13 +286,20 @@ std::vector<int> nearest_periodic_image(float displacement[3], std::vector<float
     return img;
 }
 
+std::vector<int> nearest_periodic_image(float a[3], float b[3], std::vector<float> box_dim)
+{
+    std::vector<int> img(3, 0);
+    vec3d(n) { img.at(n) = std::floor((b[n] - a[n] + 0.5 * box_dim[n]) / box_dim[n]); }
+    return img;
+}
+
 /*
 Check if two rod elements, a and b, interact by calculating the shortest
 distance between them and comparing to the sum of their radii. If this
 passes, the interaction information is added to both elements' neighbour
 lists.
 */
-void set_element_neighbours(int rod_id_a, int rod_id_b, int elem_id_a,
+void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
     int elem_id_b, float p_a[3], float p_b[3], float r_a[3], float r_b[3],
     float radius_a, float radius_b, std::vector<InteractionData> &neighbours_a,
     std::vector<InteractionData> &neighbours_b, bool periodic, std::vector<float> box_dim)
