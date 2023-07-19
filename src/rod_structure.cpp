@@ -1210,6 +1210,11 @@ namespace rod
         return steric_neighbours.at(element_index).size();
     }
 
+    int Rod::get_num_vdw_sites()
+    {
+        return vdw_sites.size();
+    }
+
     int Rod::get_num_nodes()
     {
         if (rod::dbg_print)

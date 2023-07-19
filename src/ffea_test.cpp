@@ -1706,7 +1706,7 @@ int ffea_test::rod_neighbour_list_construction()
     {
         for (int j = i + 1; j < num_rods; j++)
         {
-            world->update_rod_neighbour_lists(rod_array[i], rod_array[j]);
+            world->update_rod_steric_nbr_lists(rod_array[i], rod_array[j]);
         }
     }
 

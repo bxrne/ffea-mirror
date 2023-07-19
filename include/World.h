@@ -290,7 +290,9 @@ private:
 
     rod::Rod* rod_from_block(vector<string> block, int block_id, FFEA_input_reader* systemreader);
 
-    void update_rod_neighbour_lists(rod::Rod* rod_a, rod::Rod* rod_b);
+    void update_rod_steric_nbr_lists(rod::Rod* rod_a, rod::Rod* rod_b);
+
+    void update_rod_vdw_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b, SSINT_matrix *lj_matrix);
 
     void rod_pbc_wrap(rod::Rod* current_rod, std::vector<float> dim);
 
