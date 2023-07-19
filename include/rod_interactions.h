@@ -49,6 +49,10 @@ struct InteractionData
     float img_shift[3];
     float r_self[3];
     float r_nbr[3];
+    float epsilon;
+    float sigma;
+    float r_min;
+    float r_min_inv;
 
     InteractionData(
         int rod_id_a,
@@ -63,9 +67,24 @@ struct InteractionData
         float r_a[3],
         float r_b[3]);
 
-    bool elements_intersect();
+    InteractionData(
+        int rod_id_a,
+        int rod_id_b,
+        int elem_id_a,
+        int elem_id_b,
+        float rad_a,
+        float rad_b,
+        float c_a[3],
+        float c_b[3],
+        float shift[3],
+        float r_a[3],
+        float r_b[3],
+        float eps,
+        float sig);
 
+    bool elements_intersect();
 };
+
 
 // previously: snap_to_nodes
 void finite_length_correction(
