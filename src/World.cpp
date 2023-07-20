@@ -4358,7 +4358,6 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
     rod::Rod *current_rod = new rod::Rod(filename, block_id);
     current_rod->load_header(filename);
     current_rod->load_contents(filename);
-
     current_rod->set_units();
 
     if (restart)

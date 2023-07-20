@@ -54,7 +54,7 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     sigma = 0;
     r_min = 0;
     r_min_inv = 0;
-};
+}
 
 // VDW interactions
 InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
@@ -78,7 +78,7 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     radius_nbr = 0;
     vec3d(n){r_self[n] = 0;}
     vec3d(n){r_nbr[n] = 0;}
-};
+}
 
 bool InteractionData::elements_intersect()
 {
@@ -535,6 +535,141 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
     }
 
     return force;
+}
+
+// ! - these should be in rod_vdw.h, but I almost went insane trying to solve
+// ! a linker error, so they're here for now
+
+float vdw_energy_6_12(float r_mag_inv, float eps, float sig)
+{
+    return 4 * eps * (std::pow(sig * r_mag_inv, 12) - std::pow(sig * r_mag_inv, 6));
+}
+
+float vdw_force_6_12(float r_mag_inv, float eps, float sig)
+{
+    return 24 * eps * r_mag_inv * (2 * std::pow(sig * r_mag_inv, 12) - std::pow(sig * r_mag_inv, 6));
+}
+
+// r_min_inv = 1 / (2^1/6 * sigma)
+float vdw_energy_interp(float r_mag, float eps, float r_min_inv)
+{
+    return eps * (2 * std::pow(r_mag * r_min_inv, 3) - 3 * std::pow(r_mag * r_min_inv, 2));
+}
+
+// r_min_inv = 1 / (2^1/6 * sigma)
+float vdw_force_interp(float r_mag, float eps, float r_min_inv)
+{
+    return 6 * eps * r_min_inv * (std::pow(r_mag * r_min_inv, 2) - r_mag * r_min_inv);
+}
+
+VDWSite::VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem)
+{
+    int rod_id = rodid;
+    int elem_id = elemid;
+    int site_id = siteid;
+    int vdw_type = vdwtype;
+    float L_rod = lrod;
+    float L_elem = lelem;
+}
+
+// Position of VDW site is dynamic, due to rod element stretching
+void VDWSite::get_position(float r[3], float p[3], OUT float r_site[3])
+{
+    float p_hat[3] = {0};
+    rod::normalize(p, p_hat);
+    vec3d(n){r_site[n] = this->L_elem * p_hat[n];}
+}
+
+void VDWSite::print_info()
+{
+    std::printf("VDWSite info:");
+    std::printf("\trod_id:   %d\n", this->rod_id);
+    std::printf("\telem_id:  %d\n", this->elem_id);
+    std::printf("\tsite_id:  %d\n", this->site_id);
+    std::printf("\tvdw_type: %d\n", this->vdw_type);
+    std::printf("\tL_rod:    %.3f\n", this->L_rod);
+    std::printf("\tL_elem:   %.3f\n", this->L_elem);
+}
+
+void VDWSite::print_info(float r[3], float p[3])
+{
+    std::printf("VDWSite info:");
+    std::printf("\trod_id:   %d\n", this->rod_id);
+    std::printf("\telem_id:  %d\n", this->elem_id);
+    std::printf("\tsite_id:  %d\n", this->site_id);
+    std::printf("\tvdw_type: %d\n", this->vdw_type);
+    std::printf("\tL_rod:    %.3f\n", this->L_rod);
+    std::printf("\tL_elem:   %.3f\n", this->L_elem);
+    float r_site[3] = { 0 };
+    get_position(r, p, r_site);
+    rod::print_array("\tr_site", r_site, 3);
+}
+
+void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
+    float r_a[3], float r_b[3], float radius_a, float radius_b,
+    std::vector<InteractionData>& nbr_a, std::vector<InteractionData>& nbr_b,
+    bool periodic, std::vector<float> box_dim, float vdw_cutoff,
+    float epsilon, float sigma)
+{
+    float c_a[3] = { 0 };
+    float c_b[3] = { 0 };
+    float c_ab[3] = { 0 };
+    std::vector<int> img = { 0, 0, 0 };
+    float shift[3] = { 0 };
+    float mag = 0;
+
+    site_a.get_position(r_a, p_a, c_a);
+    site_b.get_position(r_b, p_b, c_b);
+
+    if (periodic)
+    {
+        img = nearest_periodic_image(c_a, c_b, box_dim);
+        vec3d(n) { shift[n] = box_dim[n] * img.at(n); }
+        vec3d(n) { c_b[n] -= shift[n]; }
+    }
+
+    vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
+    mag = rod::absolute(c_ab);
+
+    if (rod::dbg_print)
+    {
+        std::printf("  |c_ab| : %.3e\n", mag);
+        std::printf("  eps : %.3e\n", epsilon);
+        std::printf("  sig : %.3e\n", sigma);
+        site_a.print_info(r_a, p_a);
+        site_b.print_info(r_b, p_b);
+    }
+
+    if (mag > radius_a + radius_b and mag < vdw_cutoff)
+    {
+        InteractionData vdwDataA(
+            site_a.rod_id,
+            site_b.rod_id,
+            site_a.elem_id,
+            site_b.elem_id,
+            c_a,
+            c_b,
+            shift,
+            epsilon,
+            sigma);
+        nbr_a.push_back(vdwDataA);
+
+        InteractionData vdwDataB(
+            site_b.rod_id,
+            site_a.rod_id,
+            site_b.elem_id,
+            site_a.elem_id,
+            c_b,
+            c_a,
+            shift,
+            epsilon,
+            sigma);
+        nbr_b.push_back(vdwDataB);
+    }
+    else if (rod::dbg_print)
+    {
+        std::cout << "  ignored; exceeded vdw cutoff\n";
+    }
 }
 
 //    __      _

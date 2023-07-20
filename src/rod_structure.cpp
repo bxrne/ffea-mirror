@@ -885,6 +885,97 @@ namespace rod
         return *this;
     }
 
+    // Return the index of the element that the VDW site lies on, and how far
+    // along the element it is located, as a fraction of its length.
+    //
+    // 'dist_along_rod' is a fraction of the entire rod length.
+    std::pair<int, float> Rod::vdw_dist_from_elem(float dist_along_rod)
+    {
+        float lsum = 0;
+        float lsum_old = 0;
+        float p[3] = { 0 };
+        float phat[3] = { 0 };
+
+        // Traverse along rod, then store previous element if we overstep
+        for (int i = 0; i < this->get_num_nodes() - 1; i++)
+        {
+            this->get_p(i, p, false);
+            rod::normalize(p, phat);
+            lsum += rod::absolute(phat);
+
+            if (lsum > dist_along_rod)
+                return std::pair<int, float> {std::max(0, i - 1), dist_along_rod - lsum_old};
+
+            lsum_old = lsum;
+        }
+
+        // Otherwise, set to end of rod
+        return std::pair<int, float> {this->get_num_nodes() - 2, 1};
+    }
+
+    // Read in VDW interaction types and positions from the VDW file, then
+    // initialise the VDW site array.
+    Rod Rod::load_vdw(std::string filename, std::vector<VDWSite> &site_vec)
+    {
+        int num_vdw_sites = 0;
+
+        vdw_filename = filename;
+        std::ifstream infile(filename);
+        if (!infile)
+            std::cout << "IO error. Does VDW file exist?\n";
+        printf("Reading in VDW file: %s\n", filename);
+
+        int i = 0;
+        for (std::string line; getline(infile, line); i++)
+        {
+            std::vector<std::string> line_vec;
+
+            // Check file header
+            if (i == 0 && line != "ffea rod vdw file" && line != "ffea rod ssint file")
+                throw std::runtime_error("Error reading header in rod VDW file");
+            else if (i == 1)
+            {
+                boost::split(line_vec, line, boost::is_any_of(" "));
+                if (line_vec[0] != "num_sites")
+                    throw std::runtime_error("Error reading num_sites in rod VDW file");
+                num_vdw_sites = std::stoi(line_vec[1]);
+            }
+            else if (i > 1)
+            {
+                // Read in VDW file
+                boost::split(line_vec, line, boost::is_any_of(","));
+                int vdw_type = std::stoi(line_vec[0]);
+                float dist = std::stof(line_vec[1]);
+
+                if (vdw_type < -1 || vdw_type > 6)
+                {
+                    std::string err = "VDW interaction types must be in range -1 <= i <= 6 (" + std::to_string(vdw_type) + ")";
+                    throw std::runtime_error(err);
+                }
+                if (dist < 0 || dist > 1)
+                {
+                    std::string err = "VDW position along rod axis must be in range 0 <= L <= 1 " + std::to_string(dist) + ")";
+                    throw std::runtime_error(err);
+                }
+                // Create and store VDW site struct
+                std::pair<int, float> pa = this->vdw_dist_from_elem(dist);
+                site_vec.push_back(VDWSite(this->rod_no, pa.first, i - 2, vdw_type, dist, pa.second));
+            }
+        }
+
+        if (site_vec.size() != num_vdw_sites)
+        {
+            std::string err = "Size of VDW site array (" +
+                std::to_string(site_vec.size()) +
+                ") does not match number of sites read in from file (" +
+                std::to_string(num_vdw_sites) + ").";
+            throw std::out_of_range(err);
+        }
+
+        printf("Read %d VDW sites from %s\n", i, filename);
+        return *this;
+    }
+
     /**
     Write the current state of the rod to a file specified by the pointer
     *file_ptr. This will convert from MesoDimensions to SI units, so if your
@@ -1214,7 +1305,7 @@ namespace rod
 
     int Rod::get_num_vdw_sites()
     {
-        return vdw_sites.size();
+        return this->vdw_sites.size();
     }
 
     int Rod::get_num_nodes()
