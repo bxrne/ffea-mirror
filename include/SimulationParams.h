@@ -143,7 +143,7 @@ public:
     scalar ssint_cutoff;  ///< Cutoff distance for the surface-surface interactions.
     geoscalar steric_dr;  ///< used to calculate the numerical derivative.
     int calc_steric_rod;  // ! If the rod and blob steric interactions get integrated, remove this
-    int calc_ssint_rod;   // !
+    int calc_vdw_rod;   // !
     int pbc_rod;          // !
 
     string FFEA_script_filename;

@@ -43,7 +43,7 @@ SimulationParams::SimulationParams()
     ssint_cutoff = 3e-9 / mesoDimensions::length;
     calc_steric = 1;
     calc_steric_rod = 0;
-    calc_ssint_rod = 0;
+    calc_vdw_rod = 0;
     pbc_rod = 0;
     steric_factor = 1;
     steric_dr = 5e-3;
@@ -150,7 +150,7 @@ SimulationParams::~SimulationParams()
     calc_steric = 0;
     // ! please merge rod and blob parameters
     calc_steric_rod = 0;
-    calc_ssint_rod = 0;
+    calc_vdw_rod = 0;
     pbc_rod = 0;
     // --------------------------------------
     calc_es = 0;
@@ -465,11 +465,11 @@ int SimulationParams::assign(string lvalue, string rvalue)
         if (userInfo::verblevel > 1)
             cout << "\tSetting " << lvalue << " = " << calc_steric_rod << endl;
     }
-    else if (lvalue == "calc_ssint_rod")
+    else if (lvalue == "calc_vdw_rod")
     {
-        calc_ssint_rod = atoi(rvalue.c_str());
+        calc_vdw_rod = atoi(rvalue.c_str());
         if (userInfo::verblevel > 1)
-            cout << "\tSetting " << lvalue << " = " << calc_ssint_rod << endl;
+            cout << "\tSetting " << lvalue << " = " << calc_vdw_rod << endl;
     }
     else if (lvalue == "pbc_rod")
     {
@@ -865,7 +865,7 @@ int SimulationParams::validate(int sim_mode)
         FFEA_ERROR_MESSG("Required: 'calc_steric_rod', must be 0 (no) or 1 (yes).\n");
     }
 
-    if (calc_ssint_rod != 0 && calc_ssint_rod != 1)
+    if (calc_vdw_rod != 0 && calc_vdw_rod != 1)
     {
         FFEA_ERROR_MESSG("Required: 'calc_steric_rod', must be 0 (no) or 1 (yes).\n");
     }
@@ -1237,7 +1237,7 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params)
     fprintf(fout, "\tcalc_noise = %d\n", calc_noise);
     fprintf(fout, "\tcalc_stokes = %d\n", calc_stokes);
     fprintf(fout, "\tcalc_ssint = %d\n", calc_ssint);
-    fprintf(fout, "\tcalc_ssint_rod = %d\n", calc_ssint_rod);
+    fprintf(fout, "\tcalc_vdw_rod = %d\n", calc_vdw_rod);
     fprintf(fout, "\tcalc_steric = %d\n", calc_steric);
     fprintf(fout, "\tcalc_steric_rod = %d\n", calc_steric_rod);
     fprintf(fout, "\tcalc_preComp = %d\n", calc_preComp);

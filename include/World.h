@@ -265,6 +265,7 @@ private:
 
     /** @brief LJ parameters matrix */
     SSINT_matrix ssint_matrix;
+    SSINT_matrix rod_lj_matrix;
 
     /** @brief Binding Interactions matrix */
     BindingSite_matrix binding_matrix;

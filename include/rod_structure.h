@@ -65,9 +65,9 @@ namespace rod
         float kT = 0;
         float perturbation_amount = 0.001 * pow(10, -9) / mesoDimensions::length; /** Amount by which nodes are perturbed during numerical differentiation. May want to override with a local value depending on the scale of the simulation. **/
         int calc_noise = 0;
-        int calc_steric_rod = 0;  // Repulsive overlap of elements
-        int calc_ssint_rod = 0;   // Attractive protein-protein interactions
-        int pbc_rod = 0;
+        int calc_steric = 0;  // Repulsive overlap of elements
+        int calc_vdw = 0;   // Attractive protein-protein interactions
+        int pbc = 0;
         float steric_force_factor = 20;    /** Strength of repulsive force, maximum ~ 486 pN (Biotin/streptavidin unfolding ~ 160 pN) [Force units] **/
         std::string flow_profile;       // the type of background flow experienced by the rod (set by .ffea file)
         float flow_velocity[3] = {0};   // background flow imposed on the rod (set by .ffea file)
@@ -147,7 +147,8 @@ namespace rod
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();
         InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr);
-        void reset_neighbour_list();
+        void reset_nbr_list();
+        void reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list);
         Rod print_node_positions();
         std::vector<float> net_steric_force_nbrs(int elem_id);
         void do_steric();

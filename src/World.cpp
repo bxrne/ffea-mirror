@@ -291,9 +291,12 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     if (params.calc_ssint == 1 || params.calc_steric == 1)
     {
         if (ssint_matrix.init(params.ssint_in_fname, params.ssint_type, params.calc_ssint, params.ssint_cutoff) == FFEA_ERROR)
-        {
-            FFEA_ERROR_MESSG("Error when reading from ssint forcefield params file.\n")
-        }
+            FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n");
+    }
+    if (params.calc_vdw_rod == 1)
+    {
+        if (rod_lj_matrix.init(params.ssint_in_fname, "ljsteric", params.calc_vdw_rod, params.ssint_cutoff) == FFEA_ERROR)
+            FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n");
     }
 
     // detect how many threads we have for openmp
@@ -3249,9 +3252,9 @@ int World::read_and_build_system(vector<string> script_vector)
         rod_array[i]->timestep = params.dt;
         rod_array[i]->kT = params.kT;
         rod_array[i]->calc_noise = params.calc_noise;
-        rod_array[i]->calc_steric_rod = params.calc_steric_rod;
-        rod_array[i]->calc_ssint_rod = params.calc_ssint_rod;
-        rod_array[i]->pbc_rod = params.pbc_rod;
+        rod_array[i]->calc_steric = params.calc_steric_rod;
+        rod_array[i]->calc_vdw = params.calc_vdw_rod;
+        rod_array[i]->pbc = params.pbc_rod;
         rod_array[i]->flow_profile = params.flow_profile;
         for (int j=0;j<3;j++)
             rod_array[i]->flow_velocity[j] = params.flow_velocity[j];

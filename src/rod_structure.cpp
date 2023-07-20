@@ -398,7 +398,7 @@ namespace rod
         } // exit internal energy loop
 
         // steric interactions loop
-        if (this->calc_steric_rod == 1)
+        if (this->calc_steric == 1)
             do_steric();
 
         //This loop is for the dynamics
@@ -475,7 +475,7 @@ namespace rod
             float x_steric = 0;
             float y_steric = 0;
             float z_steric = 0;
-            if (this->calc_steric_rod)
+            if (this->calc_steric)
             {
                 x_steric = this->steric_force[node_no * 3];
                 y_steric = this->steric_force[(node_no * 3) + 1];
@@ -566,8 +566,10 @@ namespace rod
             step_no += 1;
         }  // end node loop
 
-        if (this->calc_steric_rod == 1)
-            this->reset_neighbour_list();
+        if (this->calc_steric == 1)
+            this->reset_nbr_list();
+        if (this->calc_steric == 1)
+            this->reset_nbr_list(this->vdw_nbrs);
 
         return *this;
     }  // end timestep
@@ -1252,16 +1254,21 @@ namespace rod
         return this->steric_neighbours.at(elem_id_self).at(elem_id_nbr);
     }
 
-    void Rod::reset_neighbour_list()
+    void Rod::reset_nbr_list()
     {
         for (int i = 0; i < this->get_num_nodes() - 1; i++)
-        {
             this->steric_neighbours.at(i).clear();
-        }
+
         if (rod::dbg_print)
-        {
             std::cout << "Reset neighbour list of rod " << this->rod_no << std::endl;
-        }
+    }
+
+    void Rod::reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list)
+    {
+        for (auto &elem_nbrs : nbr_list)
+            elem_nbrs.clear();
+        if (rod::dbg_print)
+            std::cout << "Reset neighbour list of rod " << this->rod_no << std::endl;
     }
 
     // Just a silly debug function that prints all the positional data of the rod
