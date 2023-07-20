@@ -88,7 +88,7 @@ int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scala
     if (!in.is_open())
         FFEA_FILE_ERROR_MESSG(ssint_params_fname.c_str());
 
-    printf("\tReading in vdw forcefield parameters file: %s\n", ssint_params_fname.c_str());
+    printf("\tReading in VDW forcefield parameters file: %s\n", ssint_params_fname.c_str());
 
     // first line should be the file type "ffea ssint forcefield params file" (.lj or .rodlj)
     getline(in, line);
@@ -106,14 +106,14 @@ int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scala
     cout << bufvec.at(0) << " " << atoi(bufvec.at(1).c_str()) << endl;
     num_ssint_face_types = atoi(bufvec.at(1).c_str());
 
-    printf("\t\tNumber of vdw interaction types = %d\n", num_ssint_face_types);
+    printf("\t\tNumber of VDW interaction types = %d\n", num_ssint_face_types);
 
     // Allocate the memory for all these LJ pairs
     params = new(std::nothrow) map<string, scalar>[num_ssint_face_types * num_ssint_face_types];
     if (params == NULL)
     {
         in.close();
-        FFEA_ERROR_MESSG("Unable to allocate memory for vdw matrix.\n")
+        FFEA_ERROR_MESSG("Unable to allocate memory for VDW forcefield parameter matrix.\n")
     }
 
     // Fill the matrix (with an as yet unknown number of parameters)
@@ -171,7 +171,7 @@ int SSINT_matrix::init_ssint(string ssint_params_fname, string ssint_type, scala
 
     in.close();
 
-    printf("\t\tRead %d vdw forcefield parameter entries from %s\n", num_ssint_face_types * num_ssint_face_types, ssint_params_fname.c_str());
+    printf("\t\tRead %d VDW forcefield parameter entries from %s\n", num_ssint_face_types * num_ssint_face_types, ssint_params_fname.c_str());
     return FFEA_OK;
 }
 

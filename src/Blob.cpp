@@ -3444,16 +3444,16 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     if ((in = fopen(ssint_filename, "r")) == NULL) {
         FFEA_FILE_ERROR_MESSG(ssint_filename)
     }
-    printf("\t\tReading in Van der Waals file: %s\n", ssint_filename);
+    printf("\t\tReading in VDW file: %s\n", ssint_filename);
 
     // first line should be the file type "ffea vdw file" (.vdw) or "ffea ssint file" (.ssint)
     if (fgets(line, max_line_size, in) == NULL) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error reading first line of ssint file\n")
+        FFEA_ERROR_MESSG("Error reading first line of VDW file\n")
     }
     if (strcmp(line, "walrus vdw file\n") != 0 && strcmp(line, "ffea vdw file\n") != 0 && strcmp(line, "ffea ssint file\n") != 0) {
         fclose(in);
-        FFEA_ERROR_MESSG("This is not a 'ffea ssint file' (read '%s') \n", line)
+        FFEA_ERROR_MESSG("This is not a 'ffea vdw file' (read '%s') \n", line)
     }
 
     // read in the number of faces in the file
@@ -3465,17 +3465,17 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     printf("\t\t\tNumber of faces = %d\n", num_ssint_faces);
 
     if (num_ssint_faces != num_surface_faces) {
-        FFEA_ERROR_MESSG("Number of faces specified in Van der Waals file (%d) does not agree with number in surface file (%d)\n", num_ssint_faces, num_surface_faces)
+        FFEA_ERROR_MESSG("Number of faces specified in VDW file (%d) does not agree with number in surface file (%d)\n", num_ssint_faces, num_surface_faces)
     }
 
     // Check for "ssint params:" line
     if (fgets(line, max_line_size, in) == NULL) {
         fclose(in);
-        FFEA_ERROR_MESSG("Error when looking for 'ssint params:' line\n")
+        FFEA_ERROR_MESSG("Error when looking for 'vdw params:' line\n")
     }
     if (strcmp(line, "vdw params:\n") != 0 && strcmp(line, "ssint params:\n") != 0) {
         fclose(in);
-        FFEA_ERROR_MESSG("Could not find 'ssint params:' line (found '%s' instead)\n", line)
+        FFEA_ERROR_MESSG("Could not find 'vdw params:' line (found '%s' instead)\n", line)
     }
 
     // Read in all the ssint parameters from the file, assigning them to the appropriate faces
@@ -3487,7 +3487,7 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
         for(i = 0; i < num_surface_faces; ++i) {
             if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
-                FFEA_ERROR_MESSG("Error reading from ssint file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
+                FFEA_ERROR_MESSG("Error reading from VDW file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
             } else {
                 if (ssint_type > num_ssint_face_types - 1) {
                     ssint_type = 0;
@@ -3499,10 +3499,10 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
         for (i = 0; i < num_surface_faces; i++) {
             if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
-                FFEA_ERROR_MESSG("Error reading from ssint file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
+                FFEA_ERROR_MESSG("Error reading from VDW file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
             } else {
                 if (ssint_type > num_ssint_face_types - 1) {
-                    FFEA_ERROR_MESSG("Error reading from ssint file at face %d. The given ssint face type (%d) is higher than that allowed by the ssint forcefield params file (%d). \n", i, ssint_type, num_ssint_face_types - 1);
+                    FFEA_ERROR_MESSG("Error reading from VDW file at face %d. The given VDW face type (%d) is higher than that allowed by the ssint forcefield params file (%d). \n", i, ssint_type, num_ssint_face_types - 1);
                 }
                 surface[i].set_ssint_interaction_type(ssint_type);
             }
@@ -3518,7 +3518,7 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     }
     fclose(in);
 
-    printf("\t\t\tRead %d ssint faces from %s\n", i, ssint_filename);
+    printf("\t\t\tRead %d VDW faces from %s\n", i, ssint_filename);
 
     return FFEA_OK;
 }
