@@ -69,30 +69,32 @@ namespace rod
     {
         float p_hat[3] = {0};
         rod::normalize(p, p_hat);
-        vec3d(n){r_site[n] = L_elem * p_hat[n];}
+        vec3d(n){r_site[n] = this->L_elem * p_hat[n];}
     }
 
     void VDWSite::print_info()
     {
-        std::printf("rod_id: %d\n",rod_id);
-        std::printf("elem_id: %d\n", elem_id);
-        std::printf("site_id: %d\n", site_id);
-        std::printf("vdw_type: %d\n", vdw_type);
-        std::printf("L_rod: %.3f\n", L_rod);
-        std::printf("L_elem: %.3f\n", L_elem);
+        std::printf("VDWSite info:");
+        std::printf("\trod_id:   %d\n", this->rod_id);
+        std::printf("\telem_id:  %d\n", this->elem_id);
+        std::printf("\tsite_id:  %d\n", this->site_id);
+        std::printf("\tvdw_type: %d\n", this->vdw_type);
+        std::printf("\tL_rod:    %.3f\n", this->L_rod);
+        std::printf("\tL_elem:   %.3f\n", this->L_elem);
     }
 
     void VDWSite::print_info(float r[3], float p[3])
     {
-        std::printf("rod_id: %d\n", rod_id);
-        std::printf("elem_id: %d\n", elem_id);
-        std::printf("site_id: %d\n", site_id);
-        std::printf("vdw_type: %d\n", vdw_type);
-        std::printf("L_rod: %.3f\n", L_rod);
-        std::printf("L_elem: %.3f\n", L_elem);
+        std::printf("VDWSite info:");
+        std::printf("\trod_id:   %d\n", this->rod_id);
+        std::printf("\telem_id:  %d\n", this->elem_id);
+        std::printf("\tsite_id:  %d\n", this->site_id);
+        std::printf("\tvdw_type: %d\n", this->vdw_type);
+        std::printf("\tL_rod:    %.3f\n", this->L_rod);
+        std::printf("\tL_elem:   %.3f\n", this->L_elem);
         float r_site[3] = { 0 };
         get_position(r, p, r_site);
-        rod::print_array("r_site", r_site, 3);
+        rod::print_array("\tr_site", r_site, 3);
     }
 
     void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
@@ -122,7 +124,13 @@ namespace rod
         mag = rod::absolute(c_ab);
 
         if (rod::dbg_print)
-            printf("  |c_ab| : %.3e\n", mag);
+        {
+            std::printf("  |c_ab| : %.3e\n", mag);
+            std::printf("  eps : %.3e\n", epsilon);
+            std::printf("  sig : %.3e\n", sigma);
+            site_a.print_info(r_a, p_a);
+            site_b.print_info(r_b, p_b);
+        }
 
         if (mag > radius_a + radius_b and mag < vdw_cutoff)
         {
@@ -152,7 +160,7 @@ namespace rod
         }
         else if (rod::dbg_print)
         {
-            std::cout << "  culled\n";
+            std::cout << "  ignored; exceeded vdw cutoff\n";
         }
     }
 }
