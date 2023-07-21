@@ -94,7 +94,9 @@ namespace rod
                                            B_matrix(new float[length + (length / 3)]),
                                            steric_energy(new float[length]),
                                            steric_force(new float[length]),
-                                           num_neighbours(new int[length/3]),
+                                           num_steric_nbrs(new int[length/3]),
+                                           vdw_energy(new float[length]),
+                                           num_vdw_nbrs(new int[length/3]),
                                            applied_forces(new float[length + (length / 3)]),
                                            pinned_nodes(new bool[length / 3]){};
 
@@ -141,6 +143,7 @@ namespace rod
             internal_twisted_energy_negative[i] /= mesoDimensions::Energy;
             steric_energy[i] /= mesoDimensions::Energy;
             steric_force[i] /= mesoDimensions::force;
+            vdw_energy[i] /= mesoDimensions::Energy;
 
             if (i % 3 == 0)
             {
@@ -678,10 +681,13 @@ namespace rod
         B_matrix = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         steric_energy = static_cast<float *>(malloc(sizeof(float) * (length)));
         steric_force = static_cast<float *>(malloc(sizeof(float) * length));
-        num_neighbours = static_cast<int *>(malloc(sizeof(int) * (length/3)));
+        num_steric_nbrs = static_cast<int *>(malloc(sizeof(int) * (length/3)));
         applied_forces = static_cast<float *>(malloc(sizeof(float) * (length + (length / 3))));
         pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length / 3));
-        steric_neighbours = std::vector<std::vector<InteractionData>>((length / 3) - 1);
+        steric_nbrs = std::vector<std::vector<InteractionData>>((length / 3) - 1);
+        vdw_energy = static_cast<float *>(malloc(sizeof(float) * (length)));
+        num_vdw_nbrs = static_cast<int *>(malloc(sizeof(int) * (length/3)));
+        vdw_nbrs = std::vector<std::vector<InteractionData>>((length / 3) - 1);
 
         for (int i = 0; i < length / 3; i++)
         {
@@ -875,7 +881,17 @@ namespace rod
                 if (n == line_of_last_frame + 17)
                 {
                     for (int i = 0; i < length/3; i++)
-                        num_neighbours[i] = line_vec_float.data()[i];
+                        num_steric_nbrs[i] = line_vec_float.data()[i];
+                }
+                if (n == line_of_last_frame + 18)
+                {
+                    for (int i = 0; i < length; i++)
+                        vdw_energy[i] = line_vec_float.data()[i];
+                }
+                if (n == line_of_last_frame + 19)
+                {
+                    for (int i = 0; i < length/3; i++)
+                        num_vdw_nbrs[i] = line_vec_float.data()[i];
                 }
             }
             n++;
@@ -1001,7 +1017,9 @@ namespace rod
         write_array(file_ptr, B_matrix, length + (length / 3), bending_response_factor, true);
         write_array(file_ptr, steric_energy, length, mesoDimensions::Energy, true);
         write_array(file_ptr, steric_force, length, mesoDimensions::force, true);
-        write_array(file_ptr, num_neighbours, length/3, true);
+        write_array(file_ptr, num_steric_nbrs, length/3, true);
+        write_array(file_ptr, vdw_energy, length, mesoDimensions::Energy, true);
+        write_array(file_ptr, num_vdw_nbrs, length/3, true);
         fflush(file_ptr);
         return *this;
     }
@@ -1298,9 +1316,9 @@ namespace rod
         return rod::absolute(disp);
     }
 
-    int Rod::get_num_steric_neighbours(int element_index)
+    int Rod::get_num_steric_nbrs(int element_index)
     {
-        return steric_neighbours.at(element_index).size();
+        return steric_nbrs.at(element_index).size();
     }
 
     int Rod::get_num_vdw_sites()
@@ -1323,7 +1341,7 @@ namespace rod
     Rod Rod::check_neighbour_list_dimensions()
     {
 
-        int num_rows = steric_neighbours.size();
+        int num_rows = steric_nbrs.size();
         int num_cols = 0;
         std::string msg;
 
@@ -1340,15 +1358,16 @@ namespace rod
         return *this;
     }
 
-    InteractionData Rod::get_interaction_data(int elem_id_self, int elem_id_nbr)
+    InteractionData Rod::get_interaction_data(int elem_id_self, int elem_id_nbr,
+        std::vector<std::vector<InteractionData>> nbr_list)
     {
-        return this->steric_neighbours.at(elem_id_self).at(elem_id_nbr);
+        return this->nbr_list.at(elem_id_self).at(elem_id_nbr);
     }
 
     void Rod::reset_nbr_list()
     {
         for (int i = 0; i < this->get_num_nodes() - 1; i++)
-            this->steric_neighbours.at(i).clear();
+            this->steric_nbrs.at(i).clear();
 
         if (rod::dbg_print)
             std::cout << "Reset neighbour list of rod " << this->rod_no << std::endl;
@@ -1395,42 +1414,19 @@ namespace rod
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
 
-        int num_nbrs = this->get_num_steric_neighbours(elem_id);
-        this->num_neighbours[elem_id] = num_nbrs;
+        int num_nbrs = this->get_num_steric_nbrs(elem_id);
+        this->num_steric_nbrs[elem_id] = num_nbrs;
 
         if (rod::dbg_print)
-        {
-            std::cout << "Elem " << this->rod_no << "|" << elem_id << " has "
-                << num_nbrs << " neighbours";
-
-            for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
-            {
-                if (nbr_id == 0)
-                    std::cout << ": ";
-                std::cout << get_interaction_data(elem_id, nbr_id).rod_id_nbr
-                    << "|" << get_interaction_data(elem_id, nbr_id).elem_id_nbr;
-                if (nbr_id < num_nbrs - 1)
-                    std::cout << ", ";
-            }
-            std::cout << "\n";
-
-            if (num_nbrs == 0)
-                std::cout << "No steric interactions to calculate\n";
-        }
+            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs << " steric neighbours";
 
         for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
         {
-            rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id);
+            rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id, this->steric_nbrs);
 
             // sanity check
-            if (stericInt.elements_intersect() == false)
-            {
-                std::cout << "ERROR!\n";
-                std::cout << "Rod " << stericInt.rod_id_self << ", elem " << stericInt.elem_id_self << "\n"
-                    << "Rod " << stericInt.rod_id_nbr  << ", elem " << stericInt.elem_id_nbr  << "\n";
-                throw std::runtime_error("Elements do not intersect, but a steric "
-                    "force calculation was attempted.");
-            }
+            if !stericInt.elements_intersect()
+                throw std::runtime_error("Elements do not intersect, but a steric force calculation was attempted.");
 
             energy = element_steric_energy(
                 this->perturbation_amount,
@@ -1441,6 +1437,7 @@ namespace rod
             gradient = (energy.at(0) - energy.at(1)) / this->perturbation_amount;
             energy_sum += energy.at(2);
 
+            // Project force along interaction vector
             this->get_p(elem_id, p_self, false);
             rod::normalize(stericInt.c_ab, c_ab_norm);
             vec3d(n) { element_force.at(n) = gradient * c_ab_norm[n]; }
@@ -1457,7 +1454,7 @@ namespace rod
             if (rod::absolute(diff) > 1e-3)
             {
                 std::cout << "ERROR!\n";
-                std::string msg = "Sum of node forces not equal to element force.\n"
+                std::string msg = "Sum of node forces not equal to element force (steric).\n"
                     "  start node: (" + std::to_string(node_force[0]) + ", " + std::to_string(node_force[1]) + ", " + std::to_string(node_force[2]) + ")\n"
                     "  end node:   (" + std::to_string(node_force[3]) + ", " + std::to_string(node_force[4]) + ", " + std::to_string(node_force[5]) + ")\n"
                     "  elem:       (" + std::to_string(element_force[0]) + ", " + std::to_string(element_force[1]) + ", " + std::to_string(element_force[2]) + ")\n"
@@ -1521,5 +1518,86 @@ namespace rod
 
     }
 
+    std::vector<float> Rod::net_vdw_force_nbrs(int elem_id)
+    {
+        std::vector<float> element_force(3, 0);
+        float energy_sum = 0;
+        std::vector<float> node_force(6, 0);
+        std::vector<float> node_force_sum(6, 0);
+        float c_ab_norm[3] = { 0 };
+        float p_self[3] = { 0 };
+        float diff[3] = { 0 };
+        float r_mag = 0;
+        float r_mag_inv = 0;
+
+        int num_nbrs = this->get_num_vdw_neighbours(elem_id);
+        this->num_vdw_nbrs[elem_id] = num_nbrs;
+
+        if (rod::dbg_print)
+            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs << " vdw neighbours";
+
+        for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
+        {
+            rod::InteractionData VDWInt = get_interaction_data(elem_id, nbr_id, this->vdw_nbrs);
+
+            r_mag = rod::absolute(VDWInt.c_ab);
+            r_mag_inv = 1 / r_mag;
+
+            // determine potential regime
+            if (r_mag => VDWInt.r_min)
+            {
+                energy_sum += vdw_energy_6_12(r_mag_inv, VDWInt.epsilon, VDWInt.sigma;);
+                force_mag = vdw_force_6_12(r_mag_inv, VDWInt.epsilon, VDWInt.sigma;);
+            }
+            else if (r_mag > 0 and r_mag < VDWInt.r_min)
+            {
+                energy_sum += vdw_energy_interp(r_mag, VDWInt.epsilon, VDWInt.r_min_inv);
+                force_mag = vdw_force_interp(r_mag, VDWInt.epsilon, VDWInt.r_min_inv);
+            }
+            else
+                std::throw invalid_argument("Invalid distance to VDW energy calculation.");
+
+            // Project force along interaction vector
+            rod::normalize(VDWInt.c_ab, c_ab_norm);
+            vec3d(n) { element_force.at(n) = force_mag * c_ab_norm[n]; }
+
+            this->get_p(elem_id, p_self, false);
+            node_force = node_force_interpolation(
+                VDWInt.contact_self,
+                VDWInt.r_self,
+                rod::absolute(p_self),
+                element_force);
+
+            vec3d(n) { node_force_sum[n] += node_force[n]; }
+            vec3d(n) { node_force_sum[n + 3] += node_force[n + 3]; }
+
+            vec3d(n) { diff[n] = node_force[n] + node_force[n + 3] - element_force[n]; }
+            if (rod::absolute(diff) > 1e-3)
+            {
+                std::string msg = "Sum of node forces not equal to element force (vdw).\n"
+                    "  start node: (" + std::to_string(node_force[0]) + ", " + std::to_string(node_force[1]) + ", " + std::to_string(node_force[2]) + ")\n"
+                    "  end node:   (" + std::to_string(node_force[3]) + ", " + std::to_string(node_force[4]) + ", " + std::to_string(node_force[5]) + ")\n"
+                    "  elem:       (" + std::to_string(element_force[0]) + ", " + std::to_string(element_force[1]) + ", " + std::to_string(element_force[2]) + ")\n"
+                    "  diff:       (" + std::to_string(diff[0]) + ", " + std::to_string(diff[1]) + ", " + std::to_string(diff[2]) + ")\n";
+                throw std::runtime_error(msg);
+            }
+
+        }
+
+        if (rod::dbg_print)
+        {
+            print_vector("  force sum start node",
+                std::vector<float>(node_force_sum.begin(), std::next(node_force_sum.begin(), 3)));
+            print_vector("  force sum end node",
+                std::vector<float>(std::next(node_force_sum.begin(), 3), node_force_sum.end()));
+            std::cout << "\n";
+        }
+
+        this->vdw_energy[elem_id*3] = energy_sum;
+        this->vdw_energy[(elem_id*3)+1] = energy_sum;
+        this->vdw_energy[(elem_id*3)+2] = energy_sum;
+
+        return node_force_sum;
+    }
 
 } //end namespace

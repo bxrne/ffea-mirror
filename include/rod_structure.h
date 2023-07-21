@@ -95,15 +95,17 @@ namespace rod
         float *steric_perturbed_energy_negative;
         float *steric_energy;                    // Length L array : steric repulsion energy of elements (should be L/3 array, but previous decisions make it easier this way; xi=yi=zi, and so on)
         float *steric_force;                     // Length L array: steric repulsive force interpolated onto nodes from elements [x, y, z, ...]
-
-        int *num_neighbours; // Length L/3 array. Keeps track of how many neighbours each rod element has.
+        int *num_steric_nbrs; // Length L/3 array. Keeps track of how many neighbours each rod element has.
+        float *vdw_energy;
+        int *num_vdw_nbrs;
         float *applied_forces;              /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
         bool *pinned_nodes;                 /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
+
         bool interface_at_start = false;    /** if this is true, the positioning of the start node is being handled by a rod-blob interface, so its energies will be ignored. **/
         bool interface_at_end = false;      /** if this is true, the positioning of the end node is being handled by a rod-blob interface, so its energies will be ignored. **/
         bool restarting = false;            /** If this is true, the rod will skip writing a frame of the trajectory (this is normally done so that the trajectory starts with correct box positioning) **/
 
-        std::vector<std::vector<InteractionData>> steric_neighbours; /** Steric interaction neighbour list **/
+        std::vector<std::vector<InteractionData>> steric_nbrs; /** Steric interaction neighbour list **/
         std::vector<std::vector<InteractionData>> vdw_nbrs;
         std::vector<VDWSite> vdw_sites;  // Attractive van der Waals binding sites that lie along the rod
 
@@ -144,7 +146,7 @@ namespace rod
         float get_radius(int node_index);
         float contour_length();
         float end_to_end_length();
-        int get_num_steric_neighbours(int element_index);
+        int get_num_steric_nbrs(int element_index);
         int get_num_vdw_sites();
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();
@@ -153,6 +155,7 @@ namespace rod
         void reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list);
         Rod print_node_positions();
         std::vector<float> net_steric_force_nbrs(int elem_id);
+        std::vector<float> net_vdw_force_nbrs(int elem_id);
         void do_steric();
     };
 

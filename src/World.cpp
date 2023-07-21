@@ -4476,8 +4476,8 @@ void World::update_rod_steric_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b)
                 r_b,
                 rod_a->get_radius(elem_a),
                 rod_b->get_radius(elem_b),
-                rod_a->steric_neighbours.at(elem_a),
-                rod_b->steric_neighbours.at(elem_b),
+                rod_a->steric_nbrs.at(elem_a),
+                rod_b->steric_nbrs.at(elem_b),
                 params.pbc_rod,
                 {box_dim.x, box_dim.y, box_dim.z});
         }
