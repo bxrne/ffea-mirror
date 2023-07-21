@@ -1852,26 +1852,6 @@ int ffea_test::steric_energy_two_rod_elements()
     return 1;
 }
 
-/**
- * @brief Pass if a simulation of two colliding rods does not crash.
- * ! - Compeltely redundant; can check for crash in Python. Please remove.
- */
-int ffea_test::rod_collision_no_crash()
-{
-
-    World *world;
-    world = new World();
-    if (world->init("collision_two_rods.ffea", 0, 0, 2) == FFEA_ERROR)
-    {
-        FFEA_error_text();
-        std::cout << "Errors during initialisation mean World cannot be "
-                     "constructed properly.\n";
-    }
-
-    world->run();
-
-    return 0;
-}
 
 /*
 For two interacting points, A and B (xyz float coords), in a central simulation
