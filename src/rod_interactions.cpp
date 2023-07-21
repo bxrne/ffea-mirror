@@ -32,6 +32,12 @@
 namespace rod
 {
 
+/*
+================================================================================
+    INTERACTION OBJECT
+================================================================================
+*/
+
 // Steric interactions
 InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3],
@@ -100,6 +106,11 @@ bool InteractionData::elements_intersect()
         return false;
 }
 
+/*
+================================================================================
+    STERIC INTERACTIONS
+================================================================================
+*/
 
 /**
  * If an interaction point (c) lies outside the finite length of its rod element,
@@ -267,29 +278,6 @@ displacement of an interacting element pair.
 For displacment pointing from A to B, the returned image is that nearest to B,
 so the corrected displacement would require subtracting a box length from B
 */
-std::vector<int> nearest_periodic_image(float p_a[3], float p_b[3], float r_a[3],
-    float r_b[3], std::vector<float> box_dim)
-{
-    float mid_a[3] = { 0 };
-    float mid_b[3] = { 0 };
-    float mid_ab[3] = { 0 };
-    std::vector<int> img(3, 0);
-
-    rod::get_element_midpoint(p_a, r_a, mid_a);
-    rod::get_element_midpoint(p_b, r_b, mid_b);
-    vec3d(n) { mid_ab[n] = mid_b[n] - mid_a[n]; }
-    vec3d(n) { img.at(n) = std::floor((mid_ab[n] + 0.5 * box_dim[n]) / box_dim[n]); }
-
-    return img;
-}
-
-std::vector<int> nearest_periodic_image(float displacement[3], std::vector<float> box_dim)
-{
-    std::vector<int> img(3, 0);
-    vec3d(n) { img.at(n) = std::floor((displacement[n] + 0.5 * box_dim[n]) / box_dim[n]); }
-    return img;
-}
-
 std::vector<int> nearest_periodic_image(float a[3], float b[3], std::vector<float> box_dim)
 {
     std::vector<int> img(3, 0);
@@ -317,17 +305,17 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
     std::vector<int> img = {0, 0, 0};
     float shift[3] = {0};
 
-    // PBC correction
-    if (periodic)
-    {
-        img = nearest_periodic_image(p_a, p_b, r_a, r_b, box_dim);
-        vec3d(n){shift[n] = box_dim[n] * img.at(n);}
-        vec3d(n){r_b[n] -= shift[n];}
-    }
-
     rod::get_element_midpoint(p_a, r_a, mid_a);
     rod::get_element_midpoint(p_b, r_b, mid_b);
     vec3d(n){mid_ab[n] = mid_b[n] - mid_a[n];}
+
+    // PBC correction
+    if (periodic)
+    {
+        img = nearest_periodic_image(mid_a, mid_b, box_dim);
+        vec3d(n){shift[n] = box_dim[n] * img.at(n);}
+        vec3d(n){r_b[n] -= shift[n];}
+    }
 
     if (rod::dbg_print)
     {
@@ -402,25 +390,9 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
     }
 }
 
-float steric_energy_linear(float force_scaling_factor, float intersect_distance)
-{
-    return force_scaling_factor * intersect_distance;
-}
-
 float steric_energy_squared(float force_scaling_factor, float intersect_distance)
 {
     return force_scaling_factor * intersect_distance * intersect_distance;
-}
-
-// Perturbation in +x/-x/+y/-y/+z/-z
-float intersection_distance(int dim, float delta, float c_a[3], float c_b[3],
-    float radius_sum)
-{
-    float c_ab[3] = { 0 };
-    c_b[dim] += delta;
-    vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
-
-    return rod::absolute(c_ab) - radius_sum;
 }
 
 // Perturbation in +c_ab/-c_ab, where c_ab points away from current element
@@ -445,7 +417,6 @@ float intersection_distance(float c_a[3], float c_b[3], float radius_sum)
 
     return rod::absolute(c_ab) - radius_sum;
 }
-
 
 // Return the steric collision energy of a rod element as a vector with the
 // format [r+dr, r-dr, r]. Perturbation is applied along the intersection vector.
@@ -509,9 +480,9 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
 
     if (l1 > element_length)
     {
-        std::cout << "L1: " << l1 << "\n";
+        std::cout << "distance: " << l1 << "\n";
         std::cout << "element length: " << element_length << "\n";
-        throw std::invalid_argument("Displacement along rod element, L1 = |c - r|, cannot be greater than the element length, |p|.");
+        throw std::invalid_argument("Distance along rod element, |c - r|, cannot be greater than the element length, |p|.");
     }
 
     vec3d(n) { force[n] = element_force[n] * (element_length - l1) / element_length; }
@@ -539,6 +510,12 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
 
 // ! - these should be in rod_vdw.h, but I almost went insane trying to solve
 // ! a linker error, so they're here for now
+
+/*
+================================================================================
+    VAN DER WAALS INTERACTIONS
+================================================================================
+*/
 
 float vdw_energy_6_12(float r_mag_inv, float eps, float sig)
 {

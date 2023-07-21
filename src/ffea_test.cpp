@@ -1775,30 +1775,28 @@ int ffea_test::steric_energy_two_rod_elements()
     float radius = 5e-9 / mesoDimensions::length;
     float rmax = 5 * radius;     // maximum distance
     float dr = rmax / num_steps; // step size
-    float rhat[3] = {0, 1, 0};   // direction
+    float rhat[3] = { 0, 1, 0 };   // direction
     // Rods
     float theta = M_PI / 18; // x-z rotation [radians], 10 deg
     float phi = M_PI / 6;    // x-y rotation [radians], 30 deg
     float rm_y[9];
     float rm_z[9];
     float rm[9];
-    float p_a[3] = {0, 0, 5 * radius};
-    float p_b_init[3] = {0, 0, 5 * radius};
+    float p_a[3] = { 0, 0, 5 * radius };
+    float p_b_init[3] = { 0, 0, 5 * radius };
     float p_b[3];
-    float r_a_0[3] = {0, 0, 0}; // Starting position of node 0
-    float r_b_0[3] = {-0.5f * rmax * rhat[0], -0.5f * rmax * rhat[1],
-                      -0.5f * rmax * rhat[2]};
+    float r_a_0[3] = { 0, 0, 0 }; // Starting position of node 0
+    float r_b_0[3] = { -0.5f * rmax * rhat[0], -0.5f * rmax * rhat[1], -0.5f * rmax * rhat[2] };
     // Interaction
-    float c_a[3] = {0, 0, 0}; // point of interaction on element a
-    float c_b[3] = {0, 0, 0};
-    float delta =
-        1e-12 / mesoDimensions::length; // perturbation amount [FFEA length units]
+    float c_a[3] = { 0, 0, 0 }; // point of interaction on element a
+    float c_b[3] = { 0, 0, 0 };
+    float delta = 1e-12 / mesoDimensions::length; // perturbation amount [FFEA length units]
     float strength = 10.0;               // strength of repulsive force [FFEA force units]
     // Storage
-    FILE *file_ptr;
-    float r_a_1[3] = {0, 0, 0};
-    float r_b_1[3] = {0, 0, 0};
-    float c_ab[3] = {0, 0, 0};
+    FILE* file_ptr;
+    float r_a_1[3] = { 0, 0, 0 };
+    float r_b_1[3] = { 0, 0, 0 };
+    float c_ab[3] = { 0, 0, 0 };
 
     rod::dbg_print = true;
 
@@ -1817,34 +1815,21 @@ int ffea_test::steric_energy_two_rod_elements()
 
     file_ptr = std::fopen("log.txt", "w");
     std::fprintf(file_ptr, "# radius_a: %f nm, radius_b: %f nm\n",
-                 radius * mesoDimensions::length * 1e9,
-                 radius * mesoDimensions::length * 1e9);
+        radius * mesoDimensions::length * 1e9,
+        radius * mesoDimensions::length * 1e9);
     std::fprintf(file_ptr,
-                 "# r_a_0 [3]    r_a_1 [3]    r_b_0 [3]    r_b_1 [3]    |c_ab|   "
-                 " E_pos [3]    E_neg [3]\n");
+        "# r_a_0 [3]    r_a_1 [3]    r_b_0 [3]    r_b_1 [3]    |c_ab|   "
+        " E+    E-\n");
 
     for (int step_no = 0; step_no < num_steps; step_no++)
     {
         rod::element_minimum_displacement(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
 
-        std::array<float, 6> distance = {0};
-        distance[0] = rod::intersection_distance(0,  delta, c_a, c_b, 2*radius);
-        distance[1] = rod::intersection_distance(0, -delta, c_a, c_b, 2*radius);
-        distance[2] = rod::intersection_distance(1,  delta, c_a, c_b, 2*radius);
-        distance[3] = rod::intersection_distance(1, -delta, c_a, c_b, 2*radius);
-        distance[4] = rod::intersection_distance(2,  delta, c_a, c_b, 2*radius);
-        distance[5] = rod::intersection_distance(2, -delta, c_a, c_b, 2*radius);
+        float dist_pos = rod::intersection_distance(delta, c_a, c_b, 2 * radius);
+        float dist_neg = rod::intersection_distance(delta, c_a, c_b, 2 * radius);
 
-        std::array<float, 6> energy = {0};
-        energy[0] = rod::steric_energy_linear(strength, distance[0]);
-        energy[1] = rod::steric_energy_linear(strength, distance[1]);
-        energy[2] = rod::steric_energy_linear(strength, distance[2]);
-        energy[3] = rod::steric_energy_linear(strength, distance[3]);
-        energy[4] = rod::steric_energy_linear(strength, distance[4]);
-        energy[5] = rod::steric_energy_linear(strength, distance[5]);
-
-        float positive[3] = {energy[0] , energy[2], energy[4]};
-        float negative[3] = {energy[1] , energy[3], energy[5]};
+        float enrg_pos = rod::steric_energy_squared(strength, dist_pos);
+        float enrg_neg = rod::steric_energy_squared(strength, dist_neg);
 
         // update rod position and distance
         vec3d(n) { r_b_0[n] += rhat[n] * dr; }
@@ -1852,31 +1837,13 @@ int ffea_test::steric_energy_two_rod_elements()
         vec3d(n) { r_b_1[n] = r_b_0[n] + p_b[n]; }
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
 
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", r_a_0[n] * mesoDimensions::length);
-        }
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", r_a_1[n] * mesoDimensions::length);
-        }
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", r_b_0[n] * mesoDimensions::length);
-        }
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", r_b_1[n] * mesoDimensions::length);
-        }
+        vec3d(n) { std::fprintf(file_ptr, "%e ", r_a_0[n] * mesoDimensions::length); }
+        vec3d(n) { std::fprintf(file_ptr, "%e ", r_a_1[n] * mesoDimensions::length); }
+        vec3d(n) { std::fprintf(file_ptr, "%e ", r_b_0[n] * mesoDimensions::length); }
+        vec3d(n) { std::fprintf(file_ptr, "%e ", r_b_1[n] * mesoDimensions::length); }
         std::fprintf(file_ptr, "%e ", rod::absolute(c_ab) * mesoDimensions::length);
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", positive[n] * mesoDimensions::Energy);
-        }
-        vec3d(n)
-        {
-            std::fprintf(file_ptr, "%e ", negative[n] * mesoDimensions::Energy);
-        }
+        std::fprintf(file_ptr, "%e ", enrg_pos * mesoDimensions::Energy);
+        std::fprintf(file_ptr, "%e ", enrg_neg * mesoDimensions::Energy);
         std::fprintf(file_ptr, "\n");
     }
     std::fflush(file_ptr);
@@ -1925,7 +1892,7 @@ int ffea_test::nearest_image_pbc()
         float ab[3] = {0};
         int diff[3] = {0};
         vec3d(n) { ab[n] = b[n] - a[n]; }
-        std::vector<int> result = rod::nearest_periodic_image(ab, dim);
+        std::vector<int> result = rod::nearest_periodic_image(a, b, dim);
 
         rod::print_array("a", a, 3);
         rod::print_array("b", b, 3);
