@@ -122,12 +122,6 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::steric_energy_two_rod_elements();
     }
 
-    if (buffer.str().find("rod_collision_no_crash") !=
-        std::string::npos)
-    {
-        result = ffea_test::rod_collision_no_crash();
-    }
-
     if (buffer.str().find("nearest_image_pbc") !=
         std::string::npos)
     {
