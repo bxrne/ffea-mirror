@@ -47,6 +47,7 @@ namespace rod
 {
 
     std::vector<float> stof_vec(std::vector<std::string> vec_in, int length);
+    InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr, const std::vector<std::vector<InteractionData>> &nbr_list);
     struct Rod
     {
         /** Rod metadata **/
@@ -133,7 +134,6 @@ namespace rod
         std::pair<int, float> vdw_dist_from_elem(float dist_along_rod);
         Rod load_vdw(std::string filename, std::vector<VDWSite> &site_vec);
         Rod write_frame_to_file();
-        //Rod write_array (float * array_ptr, int array_len, float unit_scale_factor);
         Rod write_mat_params_array(float *array_ptr, int array_len, float stretch_scale_factor, float twist_scale_factor, float length_scale_factor);
         Rod change_filename(std::string new_filename);
         Rod equilibrate_rod(RngStream rng[]);
@@ -147,11 +147,10 @@ namespace rod
         float get_radius(int node_index);
         float contour_length();
         float end_to_end_length();
-        int get_num_nbrs(int element_index, std::vector<std::vector<InteractionData>> &nbr_list);
+        int get_num_nbrs(int element_index, const std::vector<std::vector<InteractionData>> &nbr_list);
         int get_num_vdw_sites();
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();
-        InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr, std::vector<std::vector<InteractionData>> &nbr_list);
         void reset_nbr_list();
         void reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list);
         Rod print_node_positions();

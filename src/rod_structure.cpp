@@ -69,6 +69,12 @@ namespace rod
         return ((A) + ((B) - (A)) * (rng[thread_id].RandU01()));
     }
 
+    InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr,
+        const std::vector<std::vector<InteractionData>> &nbr_list)
+    {
+        return nbr_list.at(elem_id_self).at(elem_id_nbr);
+    }
+
     /**-----**/
     /** Rod **/
     /**-----**/
@@ -448,7 +454,6 @@ namespace rod
             float z_force = (internal_perturbed_z_energy_negative[node_no * 3] + internal_perturbed_z_energy_negative[(node_no * 3) + 1] + internal_perturbed_z_energy_negative[(node_no * 3) + 2] - (internal_perturbed_z_energy_positive[node_no * 3] + internal_perturbed_z_energy_positive[(node_no * 3) + 1] + internal_perturbed_z_energy_positive[(node_no * 3) + 2])) / perturbation_amount;
             float twist_force = (internal_twisted_energy_negative[node_no * 3] + internal_twisted_energy_negative[(node_no * 3) + 1] + internal_twisted_energy_negative[(node_no * 3) + 2] - (internal_twisted_energy_positive[node_no * 3] + internal_twisted_energy_positive[(node_no * 3) + 1] + internal_twisted_energy_positive[(node_no * 3) + 2])) / twist_perturbation;
 
-            // Get applied force, if any
             float applied_force_x = applied_forces[node_no * 4];
             float applied_force_y = applied_forces[(node_no * 4) + 1];
             float applied_force_z = applied_forces[(node_no * 4) + 2];
@@ -464,18 +469,28 @@ namespace rod
                 z_steric = this->steric_force[(node_no * 3) + 2];
             }
 
+            float x_vdw = 0;
+            float y_vdw = 0;
+            float z_vdw = 0;
+            if(this->calc_vdw)
+            {
+                x_vdw = this->vdw_force[node_no * 3];
+                y_vdw = this->vdw_force[(node_no * 3) + 1];
+                z_vdw = this->vdw_force[(node_no * 3) + 2];
+            }
+
             if (flow_profile == "shear")
                 flow_velocity[0] = shear_rate * current_r[(node_no*3) + 1];
 
-            std::vector<float> x_force_vector{x_force, x_noise, applied_force_x, x_steric};
-            std::vector<float> y_force_vector{y_force, y_noise, applied_force_y, y_steric};
-            std::vector<float> z_force_vector{z_force, z_noise, applied_force_z, z_steric};
+            std::vector<float> x_force_vector{x_force, x_noise, applied_force_x, x_steric, x_vdw};
+            std::vector<float> y_force_vector{y_force, y_noise, applied_force_y, y_steric, y_vdw};
+            std::vector<float> z_force_vector{z_force, z_noise, applied_force_z, z_steric, z_vdw};
             float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force_vector, flow_velocity[0]);
             float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force_vector, flow_velocity[1]);
             float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force_vector, flow_velocity[2]);
             float delta_twist = rod::get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
 
-            // Apply our delta x
+            // Update rod node positions
             current_r[node_no * 3] += delta_r_x;
             current_r[(node_no * 3) + 1] += delta_r_y;
             current_r[(node_no * 3) + 2] += delta_r_z;
@@ -549,7 +564,7 @@ namespace rod
         }  // end node loop
 
         if (this->calc_steric == 1)
-            this->reset_nbr_list();
+            this->reset_nbr_list(this->steric_nbrs);
         if (this->calc_steric == 1)
             this->reset_nbr_list(this->vdw_nbrs);
 
@@ -1296,7 +1311,7 @@ namespace rod
         return rod::absolute(disp);
     }
 
-    int Rod::get_num_nbrs(int element_index, std::vector<std::vector<InteractionData>> &nbr_list)
+    int Rod::get_num_nbrs(int element_index, const std::vector<std::vector<InteractionData>> &nbr_list)
     {
         return nbr_list.at(element_index).size();
     }
@@ -1338,12 +1353,6 @@ namespace rod
         return *this;
     }
 
-    InteractionData Rod::get_interaction_data(int elem_id_self, int elem_id_nbr,
-        std::vector<std::vector<InteractionData>> &nbr_list)
-    {
-        return nbr_list.at(elem_id_self).at(elem_id_nbr);
-    }
-
     void Rod::reset_nbr_list()
     {
         for (int i = 0; i < this->get_num_nodes() - 1; i++)
@@ -1355,8 +1364,9 @@ namespace rod
 
     void Rod::reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list)
     {
-        for (auto &elem_nbrs : nbr_list)
-            elem_nbrs.clear();
+        for (int i = 0; i < this->get_num_nodes() - 1; i++)
+            nbr_list.at(i).clear();
+
         if (rod::dbg_print)
             std::cout << "Reset neighbour list of rod " << this->rod_no << std::endl;
     }
