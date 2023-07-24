@@ -97,6 +97,7 @@ namespace rod
         float *steric_force;                     // Length L array: steric repulsive force interpolated onto nodes from elements [x, y, z, ...]
         int *num_steric_nbrs; // Length L/3 array. Keeps track of how many neighbours each rod element has.
         float *vdw_energy;
+        float *vdw_force;
         int *num_vdw_nbrs;
         float *applied_forces;              /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
         bool *pinned_nodes;                 /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
@@ -146,17 +147,18 @@ namespace rod
         float get_radius(int node_index);
         float contour_length();
         float end_to_end_length();
-        int get_num_steric_nbrs(int element_index);
+        int get_num_nbrs(int element_index, std::vector<std::vector<InteractionData>> &nbr_list);
         int get_num_vdw_sites();
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();
-        InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr);
+        InteractionData get_interaction_data(int elem_id_self, int elem_id_nbr, std::vector<std::vector<InteractionData>> &nbr_list);
         void reset_nbr_list();
         void reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list);
         Rod print_node_positions();
         std::vector<float> net_steric_force_nbrs(int elem_id);
         std::vector<float> net_vdw_force_nbrs(int elem_id);
         void do_steric();
+        void do_vdw();
     };
 
 } //end namespace

@@ -96,6 +96,7 @@ namespace rod
                                            steric_force(new float[length]),
                                            num_steric_nbrs(new int[length/3]),
                                            vdw_energy(new float[length]),
+                                           vdw_force(new float[length]),
                                            num_vdw_nbrs(new int[length/3]),
                                            applied_forces(new float[length + (length / 3)]),
                                            pinned_nodes(new bool[length / 3]){};
@@ -144,6 +145,7 @@ namespace rod
             steric_energy[i] /= mesoDimensions::Energy;
             steric_force[i] /= mesoDimensions::force;
             vdw_energy[i] /= mesoDimensions::Energy;
+            vdw_force[i] /= mesoDimensions::force;
 
             if (i % 3 == 0)
             {
@@ -184,51 +186,35 @@ namespace rod
     to compute dynamics and applies those dynamics to the position arrays.
     */
     Rod Rod::do_timestep(RngStream rng[])
-    { // Most exciting method
+    {
 
         // if there is a rod-blob interface, this will avoid doing dynamics
         // on nodes which are attached to blobs
         int end_node = this->get_num_nodes();
 
         int node_min = 0;
-        //if (this->interface_at_start){
-        //    node_min = 1;
-        //}
-
-        //if (this->interface_at_end){
-        //    end_node = get_num_nodes()-1;
-        //}
 
         if (rod::dbg_print)
         {
             std::cout << "Rod: " << this->rod_no << "\n";
-            std::cout << "Num nodes: " << this->get_num_nodes() << "\n"; //temp
-            std::cout << "End node: " << end_node << "\n";               //temp
+            std::cout << "Num nodes: " << this->get_num_nodes() << "\n";
+            std::cout << "End node: " << end_node << "\n";
             std::cout << "Node min: " << node_min << "\n";
-        } //temp
+        }
 
 //The first loop is over all the nodes, and it computes all the energies for each one
 #pragma omp parallel for schedule(dynamic) //most of the execution time is spent in this first loop
         for (int node_no = 0; node_no < end_node; node_no++)
         {
-
-            //std::cout << "node " << node_no << "\n";
-
             if (rod::dbg_print)
-            {
                 std::cout << "Node index : " << node_no << "\n";
-            }
 
-            // if the node is pinned, we go to the next iteration of the loop (e.g. the next node)
+            // skip pinned node
             if (pinned_nodes[node_no] == true)
-            {
                 continue;
-            }
 
             if (node_no < node_min)
-            {
                 continue;
-            }
 
             // the cutoff values tell us how many nodes in our 5 node slice 'don't exist'
             // e.g. if we are at node i = n (at the end of the rod) the end cutoff will be 2
@@ -244,8 +230,6 @@ namespace rod
             load_p(p, current_r, node_no);
 
             float energies[3]; //bend, stretch, twist (temporary variable).
-
-            // todo: these can have fewer arguments - maybe perturbation amount and cutoff values
 
             // We move the node backwards and forwards in each degree of freedom, so we end up calling get_perturbation_energy eight whole times
             // Fill the temporary variable with energies ( we basically pass the entire state of the rod to get_perturbation_energy)
@@ -397,27 +381,22 @@ namespace rod
             internal_twisted_energy_negative[node_no * 3] = energies[stretch_index];
             internal_twisted_energy_negative[(node_no * 3) + 1] = energies[bend_index];
             internal_twisted_energy_negative[(node_no * 3) + 2] = energies[twist_index];
+        }
 
-        } // exit internal energy loop
-
-        // steric interactions loop
         if (this->calc_steric == 1)
             do_steric();
 
-        //This loop is for the dynamics
+        if (this->calc_vdw == 1)
+            do_vdw();
+
+        // Dynamics
         for (int node_no = 0; node_no < end_node; node_no++)
         {
-
-            // If the node is pinned, there's nothing to do
             if (pinned_nodes[node_no] == true)
-            {
                 continue;
-            }
 
             if (node_no < node_min)
-            {
                 continue;
-            }
 
 // Grab thread ID from openMP (needed for RNG)
 #ifdef USE_OPENMP
@@ -686,6 +665,7 @@ namespace rod
         pinned_nodes = static_cast<bool *>(malloc(sizeof(bool) * length / 3));
         steric_nbrs = std::vector<std::vector<InteractionData>>((length / 3) - 1);
         vdw_energy = static_cast<float *>(malloc(sizeof(float) * (length)));
+        vdw_force = static_cast<float *>(malloc(sizeof(float) * (length)));
         num_vdw_nbrs = static_cast<int *>(malloc(sizeof(int) * (length/3)));
         vdw_nbrs = std::vector<std::vector<InteractionData>>((length / 3) - 1);
 
@@ -1316,9 +1296,9 @@ namespace rod
         return rod::absolute(disp);
     }
 
-    int Rod::get_num_steric_nbrs(int element_index)
+    int Rod::get_num_nbrs(int element_index, std::vector<std::vector<InteractionData>> &nbr_list)
     {
-        return steric_nbrs.at(element_index).size();
+        return nbr_list.at(element_index).size();
     }
 
     int Rod::get_num_vdw_sites()
@@ -1359,9 +1339,9 @@ namespace rod
     }
 
     InteractionData Rod::get_interaction_data(int elem_id_self, int elem_id_nbr,
-        std::vector<std::vector<InteractionData>> nbr_list)
+        std::vector<std::vector<InteractionData>> &nbr_list)
     {
-        return this->nbr_list.at(elem_id_self).at(elem_id_nbr);
+        return nbr_list.at(elem_id_self).at(elem_id_nbr);
     }
 
     void Rod::reset_nbr_list()
@@ -1414,18 +1394,18 @@ namespace rod
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
 
-        int num_nbrs = this->get_num_steric_nbrs(elem_id);
-        this->num_steric_nbrs[elem_id] = num_nbrs;
+        int num_nbrs_on_elem = this->get_num_nbrs(elem_id, this->steric_nbrs);
+        this->num_steric_nbrs[elem_id] = num_nbrs_on_elem;
 
         if (rod::dbg_print)
-            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs << " steric neighbours";
+            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs_on_elem << " steric neighbours";
 
-        for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
+        for (int nbr_id; nbr_id < num_nbrs_on_elem; nbr_id++)
         {
             rod::InteractionData stericInt = get_interaction_data(elem_id, nbr_id, this->steric_nbrs);
 
             // sanity check
-            if !stericInt.elements_intersect()
+            if (!stericInt.elements_intersect())
                 throw std::runtime_error("Elements do not intersect, but a steric force calculation was attempted.");
 
             energy = element_steric_energy(
@@ -1529,14 +1509,15 @@ namespace rod
         float diff[3] = { 0 };
         float r_mag = 0;
         float r_mag_inv = 0;
+        float force_mag = 0;
 
-        int num_nbrs = this->get_num_vdw_neighbours(elem_id);
-        this->num_vdw_nbrs[elem_id] = num_nbrs;
+        int num_nbrs_on_elem = this->get_num_nbrs(elem_id, this->vdw_nbrs);
+        this->num_vdw_nbrs[elem_id] = num_nbrs_on_elem;
 
         if (rod::dbg_print)
-            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs << " vdw neighbours";
+            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs_on_elem << " vdw neighbours";
 
-        for (int nbr_id; nbr_id < num_nbrs; nbr_id++)
+        for (int nbr_id; nbr_id < num_nbrs_on_elem; nbr_id++)
         {
             rod::InteractionData VDWInt = get_interaction_data(elem_id, nbr_id, this->vdw_nbrs);
 
@@ -1544,10 +1525,10 @@ namespace rod
             r_mag_inv = 1 / r_mag;
 
             // determine potential regime
-            if (r_mag => VDWInt.r_min)
+            if (r_mag >= VDWInt.r_min)
             {
-                energy_sum += vdw_energy_6_12(r_mag_inv, VDWInt.epsilon, VDWInt.sigma;);
-                force_mag = vdw_force_6_12(r_mag_inv, VDWInt.epsilon, VDWInt.sigma;);
+                energy_sum += vdw_energy_6_12(r_mag_inv, VDWInt.epsilon, VDWInt.sigma);
+                force_mag = vdw_force_6_12(r_mag_inv, VDWInt.epsilon, VDWInt.sigma);
             }
             else if (r_mag > 0 and r_mag < VDWInt.r_min)
             {
@@ -1555,7 +1536,7 @@ namespace rod
                 force_mag = vdw_force_interp(r_mag, VDWInt.epsilon, VDWInt.r_min_inv);
             }
             else
-                std::throw invalid_argument("Invalid distance to VDW energy calculation.");
+                throw std::invalid_argument("Invalid distance to VDW energy calculation.");
 
             // Project force along interaction vector
             rod::normalize(VDWInt.c_ab, c_ab_norm);
@@ -1598,6 +1579,42 @@ namespace rod
         this->vdw_energy[(elem_id*3)+2] = energy_sum;
 
         return node_force_sum;
+    }
+
+    /**
+     * @brief Compute vdw interactions for the whole rod. Loop over elements.
+     *
+     * ! Currently parallel-unfriendly
+     */
+    void Rod::do_vdw()
+    {
+        std::vector<float> node_force(6, 0);
+
+        for (int i = 0; i < this->length; i++)
+            this->vdw_force[i] = 0;
+
+        for (int i = 0; i < this->get_num_nodes() - 1; i++)
+        {
+            if(rod::dbg_print)
+                std::cout << "ROD VDW CALC " << this->rod_no << "|" << i << "\n";
+
+            node_force = net_vdw_force_nbrs(i);
+            // start node
+            this->vdw_force[i * 3] += node_force[0];
+            this->vdw_force[(i * 3) + 1] += node_force[1];
+            this->vdw_force[(i * 3) + 2] += node_force[2];
+            // end node
+            this->vdw_force[(i * 3) + 3] += node_force[3];
+            this->vdw_force[(i * 3) + 4] += node_force[4];
+            this->vdw_force[(i * 3) + 5] += node_force[5];
+        }
+
+        if (rod::dbg_print)
+        {
+            rod::print_array("  vdw_force", this->vdw_force, this->get_num_nodes());
+            std::cout << "\n";
+        }
+
     }
 
 } //end namespace

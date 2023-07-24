@@ -1719,11 +1719,11 @@ int ffea_test::rod_neighbour_list_construction()
             rod::print_array("  r1", r1, 3);
             rod::print_array("  r2", r2, 3);
             std::cout << "  num_neighbours: "
-                      << rod_array[i]->get_num_steric_neighbours(j) << std::endl;
+                      << rod_array[i]->get_num_nbrs(j, rod_array[i]->steric_nbrs) << std::endl;
             // rod::print_vector("  all coords: ",
             //                   rod_array[i]->steric_neighbours.at(j));
 
-            for (int k = 0; k < rod_array[i]->get_num_steric_neighbours(j); k++)
+            for (int k = 0; k < rod_array[i]->get_num_nbrs(j, rod_array[i]->steric_nbrs); k++)
             {
                 // ! new data goes here!
                 vec3d(n) { c_ba[n] = c_b[n] - c_a[n]; }
@@ -1733,7 +1733,7 @@ int ffea_test::rod_neighbour_list_construction()
                 rod::print_array("  c_b", c_b, 3);
                 std::cout << "  |c_ba|: " << distance << std::endl;
             }
-            num_neighbours += rod_array[i]->get_num_steric_neighbours(j);
+            num_neighbours += rod_array[i]->get_num_nbrs(j, rod_array[i]->steric_nbrs);
         }
         rod_array[i]->check_neighbour_list_dimensions();
     }
