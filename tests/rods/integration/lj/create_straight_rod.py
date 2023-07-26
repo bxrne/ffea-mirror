@@ -53,7 +53,7 @@ def main():
     rc.write_lj_matrix(ffea_input_name, [(0, 0, 1e-20, 1e-9)])
 
     # Types and positions of interaction sites
-    rc.write_vdw_sites(rod_name, [(0, 0.5)])
+    rc.write_vdw_sites(rod=my_rod, vdw_fname=rod_name + ".rodvdw", vdw_sites=[(0, 0.5)])
 
     my_rod.write_rod(f"{params['in_dir']}{rod_name:s}.rod")
 

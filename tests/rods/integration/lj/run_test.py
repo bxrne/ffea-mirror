@@ -6,6 +6,23 @@ from pathlib import Path
 from omegaconf import OmegaConf
 import numpy as np
 
+import ffeatools.ffea_rod as ffea_rod
+
+
+def analysis(rod_1_fname: str, rod_2_fname: str):
+
+    rod1 = ffea_rod.ffea_rod(filename=rod_1_fname)
+    rod2 = ffea_rod.ffea_rod(filename=rod_2_fname)
+
+    print("ROD 1:")
+    print(rod1.vdw_site_type)
+    print(rod1.vdw_site_pos)
+
+    print("ROD 2:")
+    print(rod2.vdw_site_type)
+    print(rod2.vdw_site_pos)
+
+
 def main():
 
     params = OmegaConf.load("params.yml")
@@ -15,8 +32,6 @@ def main():
     ffea_files = glob.glob(f"*.ffea")
     count = 0
     num_configs = len(ffea_files)
-
-    # ! - Tests assume steric_force_factor = 20 (rod_structure.h)
 
     for i, path in enumerate(sorted(ffea_files), 1):
 
@@ -35,6 +50,8 @@ def main():
             f.write(ffea_result.stdout)
         with open(f"{name:s}.stderr", "w") as f:
             f.write(ffea_result.stderr)
+
+        analysis()
 
         if False:
             count += 1
