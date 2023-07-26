@@ -550,7 +550,7 @@ VDWSite::VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, flo
 }
 
 // Position of VDW site is dynamic, due to rod element stretching
-void VDWSite::get_position(float r[3], float p[3], OUT float r_site[3])
+void VDWSite::position(float r[3], float p[3], OUT float r_site[3])
 {
     float p_hat[3] = {0};
     rod::normalize(p, p_hat);
@@ -578,7 +578,7 @@ void VDWSite::print_info(float r[3], float p[3])
     std::printf("\tL_rod:    %.3f\n", this->L_rod);
     std::printf("\tL_elem:   %.3f\n", this->L_elem);
     float r_site[3] = { 0 };
-    get_position(r, p, r_site);
+    position(r, p, r_site);
     rod::print_array("\tr_site", r_site, 3);
 }
 
@@ -595,8 +595,8 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     float shift[3] = { 0 };
     float mag = 0;
 
-    site_a.get_position(r_a, p_a, c_a);
-    site_b.get_position(r_b, p_b, c_b);
+    site_a.position(r_a, p_a, c_a);
+    site_b.position(r_b, p_b, c_b);
 
     if (periodic)
     {

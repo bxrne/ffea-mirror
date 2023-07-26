@@ -197,7 +197,7 @@ namespace rod
 
         VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem);
 
-        void get_position(float r[3], float p[3], OUT float r_site[3]);
+        void position(float r[3], float p[3], OUT float r_site[3]);
         void print_info();
         void print_info(float r[3], float p[3]);
     };

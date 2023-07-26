@@ -885,6 +885,11 @@ namespace rod
                 }
                 if (n == line_of_last_frame + 19)
                 {
+                    for (int i = 0; i < length; i++)
+                        vdw_force[i] = line_vec_float.data()[i];
+                }
+                if (n == line_of_last_frame + 20)
+                {
                     for (int i = 0; i < length/3; i++)
                         num_vdw_nbrs[i] = line_vec_float.data()[i];
                 }
@@ -1014,6 +1019,7 @@ namespace rod
         write_array(file_ptr, steric_force, length, mesoDimensions::force, true);
         write_array(file_ptr, num_steric_nbrs, length/3, true);
         write_array(file_ptr, vdw_energy, length, mesoDimensions::Energy, true);
+        write_array(file_ptr, vdw_force, length, mesoDimensions::force, true);
         write_array(file_ptr, num_vdw_nbrs, length/3, true);
         fflush(file_ptr);
         return *this;
