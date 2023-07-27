@@ -330,7 +330,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
         std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b);
     }
 
-    if (rod::absolute(mid_ab) <= std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
+    if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
     {
         rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
@@ -341,7 +341,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
             printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
         }
 
-        if (rod::absolute(c_ab) > 1e-5 and rod::absolute(c_ab) <= (radius_a + radius_b))
+        if (rod::absolute(c_ab) > 1e-5 and rod::absolute(c_ab) < (radius_a + radius_b))
         {
             if (rod::dbg_print)
             {
