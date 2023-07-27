@@ -64,13 +64,15 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
 
 // VDW interactions
 InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
-    int elem_id_b, float c_a[3], float c_b[3], float shift[3], float eps,
-    float sig)
+    int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3],
+    float shift[3], float eps, float sig)
 {
     rod_id_self = rod_id_a;
     rod_id_nbr = rod_id_b;
     elem_id_self = elem_id_a;
     elem_id_nbr = elem_id_b;
+    radius_self = radius_a;
+    radius_nbr = radius_b;
     vec3d(n){contact_self[n] = c_a[n];}
     vec3d(n){contact_nbr[n] = c_b[n];}
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
@@ -80,8 +82,7 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     r_min = std::pow(2, 1/6) * sigma;
     r_min_inv = 1 / r_min;
 
-    radius_self = 0;
-    radius_nbr = 0;
+
     vec3d(n){r_self[n] = 0;}
     vec3d(n){r_nbr[n] = 0;}
 }
@@ -329,7 +330,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
         std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b);
     }
 
-    if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
+    if (rod::absolute(mid_ab) <= std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
     {
         rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
@@ -340,7 +341,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
             printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
         }
 
-        if (rod::absolute(c_ab) > 1e-5 and rod::absolute(c_ab) < (radius_a + radius_b))
+        if (rod::absolute(c_ab) > 1e-5 and rod::absolute(c_ab) <= (radius_a + radius_b))
         {
             if (rod::dbg_print)
             {
@@ -624,6 +625,8 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
             site_b.rod_id,
             site_a.elem_id,
             site_b.elem_id,
+            radius_a,
+            radius_b,
             c_a,
             c_b,
             shift,
@@ -636,6 +639,8 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
             site_a.rod_id,
             site_b.elem_id,
             site_a.elem_id,
+            radius_b,
+            radius_a,
             c_b,
             c_a,
             shift,
