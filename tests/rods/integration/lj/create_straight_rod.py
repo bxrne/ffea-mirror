@@ -30,7 +30,7 @@ def main():
     rod_name = "z-axis"
 
     # Blank rod
-    my_rod = ffea_rod.ffea_rod(num_elements=params["num_nodes"])
+    my_rod = ffea_rod.ffea_rod(num_elements=params["num_nodes"], num_rods=params["num_rods"])
 
     my_nodes = rc.create_rod_parametric(
         x_func, y_func, z_func, 0, params["length"], params["num_nodes"]
@@ -53,7 +53,8 @@ def main():
     rc.write_lj_matrix(ffea_input_name, [(0, 0, 1e-20, 1e-9)])
 
     # Types and positions of interaction sites
-    rc.write_vdw_sites(rod=my_rod, vdw_fname=rod_name + ".rodvdw", vdw_sites=[(0, 0.5)])
+    for i in range(params["num_rods"]):
+        rc.write_vdw_sites(vdw_fname=f"{i+1:d}.rodvdw", vdw_sites=[(0, 0.5), (1, 0.2)])
 
     my_rod.write_rod(f"{params['in_dir']}{rod_name:s}.rod")
 

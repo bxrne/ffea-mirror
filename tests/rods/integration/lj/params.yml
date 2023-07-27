@@ -1,5 +1,8 @@
 ffea_input_name: "ljtest"
+num_rods: 2
 num_nodes: 6
 radius: 2.5e-9
 length: 5.0e-8
 ffea_length: 1.7e-10
+in_dir: ""
+out_dir: ""
