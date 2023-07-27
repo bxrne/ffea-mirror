@@ -1537,7 +1537,8 @@ namespace rod
         {
             rod::InteractionData VDWInt = get_interaction_data(elem_id, nbr_id, this->vdw_nbrs);
 
-            r_mag = rod::absolute(VDWInt.c_ab);
+            // for purposes of energy, use surface-surface distance
+            r_mag = rod::absolute(VDWInt.c_ab) - (VDWInt.radius_self + VDWInt.radius_nbr);
             r_mag_inv = 1 / r_mag;
 
             // determine potential regime
