@@ -697,7 +697,7 @@ void VdW_solver::calc_lj_factors(scalar &mag_r, int index_k, int index_l, scalar
     mag_ri_6 = mag_ri_4 * mag_ri_2;
     mag_ri_7 = mag_ri_6 * mag_ri;
     vdw_fac_6 = Rmin_6 * mag_ri_6;
-    force_mag = 12 * mag_ri_7 * Rmin_6 * Emin * (vdw_fac_6 - 1);
+    force_mag = 12 * mag_ri_7 * Rmin_6 * Emin * (vdw_fac_6 - 1);  // Why is Rmin used here in place of sigma?
     e = gauss_points[index_k].W * gauss_points[index_l].W *
                    Emin * vdw_fac_6 * (vdw_fac_6 - 2 );
 
