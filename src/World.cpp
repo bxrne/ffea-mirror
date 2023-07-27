@@ -293,6 +293,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         if (ssint_matrix.init(params.ssint_in_fname, params.ssint_type, params.calc_ssint, params.ssint_cutoff) == FFEA_ERROR)
             FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n");
     }
+
     if (params.calc_vdw_rod == 1)
     {
         if (rod_lj_matrix.init(params.ssint_in_fname, "ljsteric", params.calc_vdw_rod, params.ssint_cutoff) == FFEA_ERROR)
@@ -4394,6 +4395,7 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
         if (tag_out[0] == "output" && rod_parent && !restart)
         {
             current_rod->change_filename(tag_out[1]);
+            std::cout << "tag_out: " << tag_out[1];
         }
 
         // Scale rod
@@ -4431,6 +4433,12 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
             std::copy(rotation, rotation + 3, converted_rotation);
             // rotate that bad boy
             current_rod->rotate_rod(converted_rotation);
+        }
+
+        // Van der Waals parameters
+        if (tag_out[0] == "vdw" && rod_parent && !restart)
+        {
+            std::cout << "Please load in the rod vdw information here! (World.cpp)\n";
         }
 
     }

@@ -554,9 +554,7 @@ VDWSite::VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, flo
 // Position of VDW site is dynamic, due to rod element stretching
 void VDWSite::position(float r[3], float p[3], OUT float r_site[3])
 {
-    float p_hat[3] = {0};
-    rod::normalize(p, p_hat);
-    vec3d(n){r_site[n] = this->L_elem * p_hat[n];}
+    vec3d(n){r_site[n] = r[n] + this->L_elem * p[n];}
 }
 
 void VDWSite::print_info()
