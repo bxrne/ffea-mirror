@@ -305,6 +305,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
     float c_ab[3] = {0};
     std::vector<int> img = {0, 0, 0};
     float shift[3] = {0};
+    float radius_sum = radius_a + radius_b;
 
     rod::get_element_midpoint(p_a, r_a, mid_a);
     rod::get_element_midpoint(p_b, r_b, mid_b);
@@ -325,12 +326,12 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
         std::printf("  elem index b :  %d\n", elem_id_b);
         std::printf("  |p_a| :         %.3f\n", rod::absolute(p_a));
         std::printf("  |p_b| :         %.3f\n", rod::absolute(p_b));
-        std::printf("  radius sum :    %.3f\n", radius_a + radius_b);
+        std::printf("  radius sum :    %.3f\n", radius_sum);
         std::printf("  |midpoint ab| : %.3f\n", rod::absolute(mid_ab));
-        std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b);
+        std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_sum);
     }
 
-    if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_a + radius_b)
+    if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_sum)
     {
         rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
@@ -341,7 +342,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
             printf("  |c_ab| : %.3e\n", rod::absolute(c_ab));
         }
 
-        if (rod::absolute(c_ab) > 1e-5 and rod::absolute(c_ab) < (radius_a + radius_b))
+        if (rod::absolute(c_ab) > 1e-5 and rod::absolute(c_ab) < radius_sum)
         {
             if (rod::dbg_print)
             {
@@ -387,7 +388,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
     }
     else if (rod::dbg_print)
     {
-        std::cout << "  culled\n";
+        std::cout << "  ignored; outside steric regime\n";
     }
 }
 
@@ -595,6 +596,7 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     std::vector<int> img = { 0, 0, 0 };
     float shift[3] = { 0 };
     float mag = 0;
+    float radius_sum = radius_a + radius_b;
 
     site_a.position(r_a, p_a, c_a);
     site_b.position(r_b, p_b, c_b);
@@ -611,14 +613,16 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
 
     if (rod::dbg_print)
     {
-        std::printf("  |c_ab| : %.3e\n", mag);
-        std::printf("  eps : %.3e\n", epsilon);
-        std::printf("  sig : %.3e\n", sigma);
+        std::printf("  |c_ab|             : %.3e\n", mag);
+        std::printf("  surf-surf distance : %.3e\n", mag - radius_sum);
+        std::printf("  eps                : %.3e\n", epsilon);
+        std::printf("  sig                : %.3e\n", sigma);
         site_a.print_info(r_a, p_a);
         site_b.print_info(r_b, p_b);
     }
 
-    if (mag > radius_a + radius_b and mag < vdw_cutoff)
+    // Interactions are calculated based on surface-surface distance
+    if (mag - radius_sum > 0 and mag - radius_sum < vdw_cutoff)
     {
         InteractionData vdwDataA(
             site_a.rod_id,
@@ -648,9 +652,13 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
             sigma);
         nbr_b.push_back(vdwDataB);
     }
-    else if (rod::dbg_print)
+    else if (rod::dbg_print and mag - radius_sum >= vdw_cutoff)
     {
         std::cout << "  ignored; exceeded vdw cutoff\n";
+    }
+    else if (rod::dbg_print)
+    {
+        std::cout << "  ignored; steric regime\n";
     }
 }
 

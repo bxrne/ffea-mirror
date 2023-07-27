@@ -4520,7 +4520,7 @@ void World::update_rod_vdw_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b, SSINT_mat
                 rod_b->vdw_nbrs.at(elem_b),
                 params.pbc_rod,
                 {box_dim.x, box_dim.y, box_dim.z},
-                100,
+                params.ssint_cutoff,
                 pmap["Emin"],
                 pmap["Rmin"]);
         }
