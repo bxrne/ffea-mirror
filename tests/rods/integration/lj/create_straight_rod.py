@@ -3,6 +3,8 @@ from omegaconf import OmegaConf
 import ffeatools.ffea_rod as ffea_rod
 from ffeatools.rod.rod_creator import rod_creator as rc
 import pprint as pp
+import sys
+import numpy as np
 
 # Default rod parameters
 params = OmegaConf.load("params.yml")
@@ -52,9 +54,15 @@ def main():
     # LJ parameter matrix
     rc.write_lj_matrix(ffea_input_name, [(0, 0, 1e-20, 1e-9)])
 
+    sites = []
+    for x in np.linspace(0, 1, num=5):
+        sites.append((0, x))
+    sys.stdout.write("VDW site creation: ")
+    pp.pprint(sites)
+
     # Types and positions of interaction sites
     for i in range(params["num_rods"]):
-        rc.write_vdw_sites(vdw_fname=f"{i+1:d}.rodvdw", vdw_sites=[(0, 0.5), (1, 0.2)])
+        rc.write_vdw_sites(vdw_fname=f"{i+1:d}.rodvdw", vdw_sites=sites)
 
     my_rod.write_rod(f"{params['in_dir']}{rod_name:s}.rod")
 
