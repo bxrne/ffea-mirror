@@ -92,6 +92,7 @@ namespace rod
     void normalize(std::vector<float> in, OUT std::vector<float> out);
     void normalize_unsafe(float in[3], OUT float out[3]);
     float absolute(float in[3]);
+    float absolute(std::vector<float> in);
     void cross_product(float a[3], float b[3], float out[3]);
     void cross_product_unsafe(float a[3], float b[3], float out[3]);
     void get_rotation_matrix(float a[3], float b[3], float rotation_matrix[9]);

@@ -365,7 +365,13 @@ namespace rod
     {
         float absolute = sqrt(in[x] * in[x] + in[y] * in[y] + in[z] * in[z]);
         not_simulation_destroying(absolute, "Absolute value is simulation destroying.");
-        //    assert(absolute>0 && "Absolute value is lower than zero (WHAT?).");
+        return absolute;
+    }
+
+    float absolute(std::vector<float> in)
+    {
+        float absolute = sqrt(in[x] * in[x] + in[y] * in[y] + in[z] * in[z]);
+        not_simulation_destroying(absolute, "Absolute value is simulation destroying.");
         return absolute;
     }
 

@@ -202,16 +202,15 @@ namespace rod
         float L_elem;
 
         VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem);
-
-        void position(float r[3], float p[3], OUT float r_site[3]);
-        std::pair<int, float[3]> get_position(
-            const float length_along_rod,
-            const float p[3],
-            const int num_nodes,
-            const float contour_length);
         void print_info();
-        void print_info(float r[3], float p[3]);
     };
+
+    std::pair<int, std::vector<float>> get_vdw_site_position(
+        float* r_rod,
+        float* p_rod,
+        float length_along_rod,
+        float rod_contour_length,
+        int num_nodes);
 
     void set_vdw_nbrs(
         VDWSite site_a,
