@@ -510,9 +510,7 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
     return force;
 }
 
-// ! - these should be in rod_vdw.h, but I almost went insane trying to solve
-// ! a linker error, so they're here for now
-
+// ! - should ideally be in their own file
 /*
 ================================================================================
     VAN DER WAALS INTERACTIONS
@@ -557,16 +555,47 @@ void VDWSite::position(float r[3], float p[3], OUT float r_site[3])
     vec3d(n){r_site[n] = r[n] + this->L_elem * p[n];}
 }
 
+    // ! def get_vdw_site_pos(self, frame: int, length_along_rod: float):
+    //     """
+    //     Return the index of the element that the VDW site lies on, and the site
+    //     position.
+
+    //     'length_along_rod' is the fraction of the rod contour length at which
+    //     the site is located.
+    //     """
+    //     psum = 0
+    //     psum_prev = 0
+    //     r = self.current_r[frame, :, :]
+    //     p = self.p_i[frame, :, :]
+    //     length_along_rod *= self.get_contour_length(frame)
+
+    //     ! # traverse along rod
+    //     for node, (ri, pi) in enumerate(zip(r, p)):
+    //         pmag = np.linalg.norm(pi)
+    //         psum += pmag
+    //         factor = (length_along_rod - psum_prev) / pmag
+    //         psum_prev = psum
+
+    //         ! # store element and position if we overstep
+    //         if psum > length_along_rod:
+    //             return [node, ri + pi*factor]
+
+    //     ! # otherwise, set to end of rod
+    //     return [r.shape[0] - 1, r[-2] + p[-1]];
+
 /*
 Return the index of the element that the VDW site lies on, and the site
 position.
 
 'length_along_rod' is the fraction of the rod contour length at which
 the site is located.
-*/
-std::pair<int, float[3]> VDWSite::get_position(const float length_along_rod, const float p[3], const int num_nodes, const float contour_length)
-{
 
+! - this funciton is currently wrong. please copy FFEATools
+*/
+std::pair<int, float[3]> VDWSite::get_position(const float length_along_rod,
+    const float p[3], const int num_nodes, const float contour_length)
+{
+        float site_pos[3] = {0};
         float psum = 0;
         float psum_prev = 0;
         float pmag = 0;
@@ -574,7 +603,7 @@ std::pair<int, float[3]> VDWSite::get_position(const float length_along_rod, con
         length_along_rod *= contour_length;
 
         // Traverse along rod, then store previous element if we overstep
-        for (int node = 0; node < num_ndoes - 1; node++)
+        for (int node = 0; node < num_nodes - 1; node++)
         {
             pmag = rod::absolute(p)
             psum += pmag;
@@ -583,18 +612,17 @@ std::pair<int, float[3]> VDWSite::get_position(const float length_along_rod, con
 
             if (psum > length_along_rod)
             {
-                vec3d(n){pos[n] = r[n] + p[n] * factor;}
-                return std::pair<int, float[3]> {node, pos};
+                vec3d(n){site_pos[n] = r[n] + p[n] * factor;}
+                return std::pair<int, float[3]> {node, site_pos};
             }
 
 
         }
 
         // Otherwise, set to end of rod
-        vec3d(n){pos[n] = r[n] + p[n] * factor;}
-        return std::pair<int, float> {num_nodes - 2, pos};
+        vec3d(n){site_pos[n] = r[n] + p[n] * factor;}
+        return std::pair<int, float> {num_nodes - 2, site_pos};
     }
-}
 
 void VDWSite::print_info()
 {

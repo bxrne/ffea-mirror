@@ -180,8 +180,12 @@ namespace rod
         float element_length,
         const std::vector<float> &element_force);
 
-    // ! - these should be in rod_vdw.h, but I almost went insane trying to solve
-    // ! a linker error, so they're here for now
+    // ! - should ideally be in their own file
+    /*
+    ================================================================================
+        VAN DER WAALS INTERACTIONS
+    ================================================================================
+    */
 
     float vdw_energy_6_12(float r_mag_inv, float eps, float sig);
     float vdw_force_6_12(float r_mag_inv, float eps, float sig);
@@ -200,6 +204,11 @@ namespace rod
         VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem);
 
         void position(float r[3], float p[3], OUT float r_site[3]);
+        std::pair<int, float[3]> get_position(
+            const float length_along_rod,
+            const float p[3],
+            const int num_nodes,
+            const float contour_length);
         void print_info();
         void print_info(float r[3], float p[3]);
     };
