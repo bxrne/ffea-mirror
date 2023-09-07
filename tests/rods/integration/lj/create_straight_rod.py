@@ -55,14 +55,14 @@ def main():
     rc.write_lj_matrix(ffea_input_name, [(0, 0, 1e-20, 1e-9)])
 
     sites = []
-    for x in np.linspace(0, 1, num=5):
+    for x in np.linspace(0, 1, num=4):
         sites.append((0, x))
     sys.stdout.write("VDW site creation: ")
     pp.pprint(sites)
 
     # Types and positions of interaction sites
     for i in range(params["num_rods"]):
-        rc.write_vdw_sites(vdw_fname=f"{i+1:d}.rodvdw", vdw_sites=sites)
+        rc.write_vdw_sites(vdw_fname=f"rod{i+1:d}.rodvdw", vdw_sites=sites)
 
     my_rod.write_rod(f"{params['in_dir']}{rod_name:s}.rod")
 

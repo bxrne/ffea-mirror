@@ -539,27 +539,21 @@ float vdw_force_interp(float r_mag, float eps, float r_min_inv)
     return 6 * eps * r_min_inv * (std::pow(r_mag * r_min_inv, 2) - r_mag * r_min_inv);
 }
 
-VDWSite::VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem)
+VDWSite::VDWSite(const int rodid, const int siteid, const int vdwtype, const float lrod,
+    const float *r_rod, const float contour_length, const int num_nodes)
 {
-    int rod_id = rodid;
-    int elem_id = elemid;
-    int site_id = siteid;
-    int vdw_type = vdwtype;
-    float L_rod = lrod;
-    float L_elem = lelem;
-    float pos[3] = {0};
-}
+    rod_id = rodid;
+    site_id = siteid;
+    vdw_type = vdwtype;
+    L_rod = lrod;
 
-
-// Ensure parent element is set before this is called
-void VDWSite::update_position(const float* r_rod, const float* p_rod)
-{
-    vec3d(n) { this->pos[n] = r_rod[(this->elem_id * 3) + n] + p_rod[(this->elem_id * 3) + n] * this->L_elem; }
+    this->get_parent_element(r_rod, contour_length, L_rod, num_nodes);
+    this->update_position(r_rod);
 }
 
 void VDWSite::print_info()
 {
-    std::printf("VDWSite info:");
+    std::printf("VDWSite info:\n");
     std::printf("\trod_id:   %d\n", this->rod_id);
     std::printf("\telem_id:  %d\n", this->elem_id);
     std::printf("\tsite_id:  %d\n", this->site_id);
@@ -569,27 +563,45 @@ void VDWSite::print_info()
     rod::print_array("\tposition", this->pos, 3);
 }
 
-/*
-Determine the rod element that a VDW site belongs to.
-
-norm_dist_along_rod: fraction of the rod contour length at which the VDW site is
-                     located.
-p_rod: array pointer that contains element vectors for an entire rod
-*/
-void VDWSite::get_parent_element(float* p_rod, float norm_length_along_rod, float contour_length, int num_nodes)
+// Ensure parent element is set before this is called
+void VDWSite::update_position(const float* r_rod)
 {
+    float r1[3] = {0};
+    float r2[3] = {0};
+    float p[3] = {0};
+    vec3d(n)
+    {
+        r1[n] = r_rod[this->elem_id * 3 + n];
+        r2[n] = r_rod[(this->elem_id + 1) * 3 + n];
+    }
+    rod::get_p_i(r1, r2, p);
+    vec3d(n) { this->pos[n] = r1[n] + p[n] * this->L_elem; }
+}
+
+
+// Determine the rod element that a VDW site belongs to.
+void VDWSite::get_parent_element(const float* r_rod, const float contour_length,
+    const float norm_length_along_rod, const int num_nodes)
+{
+    float r1[3] = {0};
+    float r2[3] = {0};
+    float p[3] = {0};
     float psum = 0;
     float psum_prev = 0;
     float length_along_rod = norm_length_along_rod * contour_length;
 
     // traverse along the rod
-    for (int node = 0; node < num_nodes; ++node)
+    for (int node = 0; node < num_nodes - 1; ++node)
     {
-        std::vector<float> pi(p_rod[node * 3], p_rod[node * 3] + 3);
+        vec3d(n)
+        {
+            r1[n] = r_rod[node * 3 + n];
+            r2[n] = r_rod[(node + 1) * 3 + n];
+        }
+        rod::get_p_i(r1, r2, p);
 
-        float pmag = rod::absolute(pi);
+        float pmag = rod::absolute(p);
         psum += pmag;
-        // fraction of the element length at which the site is located
         float norm_length_along_elem = (length_along_rod - psum_prev) / pmag;
         psum_prev = psum;
 
@@ -604,9 +616,10 @@ void VDWSite::get_parent_element(float* p_rod, float norm_length_along_rod, floa
 
     // otherwise, set to the end of the rod
     this->elem_id = num_nodes - 1;
-    this->L_elem = 0.0f;
+    this->L_elem = 0;
 }
 
+// ! - currently broken
 void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     float r_a[3], float r_b[3], float radius_a, float radius_b,
     std::vector<InteractionData>& nbr_a, std::vector<InteractionData>& nbr_b,
@@ -622,6 +635,8 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     float radius_sum = radius_a + radius_b;
 
     // ! - get VDW site position
+    // site_a
+    // site_b
 
     if (periodic)
     {

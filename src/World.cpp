@@ -4393,10 +4393,7 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
 
         // Set filename
         if (tag_out[0] == "output" && rod_parent && !restart)
-        {
             current_rod->change_filename(tag_out[1]);
-            std::cout << "tag_out: " << tag_out[1];
-        }
 
         // Scale rod
         if (tag_out[0] == "scale" && rod_parent && !restart)
@@ -4435,11 +4432,9 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
             current_rod->rotate_rod(converted_rotation);
         }
 
-        // Van der Waals parameters
+        // van der Waals interaction sites
         if (tag_out[0] == "vdw" && rod_parent && !restart)
-        {
-            std::cout << "Please load in the rod vdw information here! (World.cpp)\n";
-        }
+            current_rod->load_vdw(tag_out[1]);
 
     }
 
@@ -4492,6 +4487,7 @@ void World::update_rod_steric_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b)
     }
 }
 
+// ! - currently broken
 void World::update_rod_vdw_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b, SSINT_matrix *lj_matrix)
 {
     float r_a[3] = {0};

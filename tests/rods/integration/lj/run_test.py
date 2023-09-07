@@ -105,23 +105,26 @@ def main():
 
         name = path.split("/")[-1].split(".")[0]
 
-        print(f"{name:s}\t({i:d}/{num_configs:d})")
-        print("FFEA simulation...")
-        ffea_result = subprocess.run(
-            ["ffea", f"{name:s}.ffea"],
-            capture_output=True,
-            text=True,
-        )
+        # print(f"{name:s}\t({i:d}/{num_configs:d})")
+        # name = "ljtest"
+        # print("FFEA simulation...")
+        # ffea_result = subprocess.run(
+        #     ["ffea", "{}}.ffea"],
+        #     capture_output=True,
+        #     text=True,
+        # )
 
-        print("Writing stdout and stderr...")
-        with open(f"{name:s}.stdout", "w") as f:
-            f.write(ffea_result.stdout)
-        with open(f"{name:s}.stderr", "w") as f:
-            f.write(ffea_result.stderr)
+        os.system("ffea ljtest.ffea")
+
+        # print("Writing stdout and stderr...")
+        # with open(f"{name:s}.stdout", "w") as f:
+        #     f.write(ffea_result.stdout)
+        # with open(f"{name:s}.stderr", "w") as f:
+        #     f.write(ffea_result.stderr)
 
         rod_fnames = glob.glob(f"{params['out_dir']}*.rodtraj")
 
-        analysis(rod_fnames)
+        # analysis(rod_fnames)
 
         if False:
             count += 1

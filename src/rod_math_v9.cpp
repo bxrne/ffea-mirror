@@ -551,11 +551,6 @@ namespace rod
         not_simulation_destroying(r_mid, "get_element_midpoint is simulation destroying.");
     }
 
-    void get_r_next(float r_i[3], float p_i[3], OUT float r_ip1[3])
-    {
-        vec3d(n){r_ip1[n] = r_i[n] + p_i[n];}
-    }
-
     /**
  \f[ {\mathbf  {v}}_{{\mathrm  {rot}}}={\mathbf  {v}}\cos \theta +({\mathbf  {k}}\times {\mathbf  {v}})\sin \theta +{\mathbf  {k}}({\mathbf  {k}}\cdot {\mathbf  {v}})(1-\cos \theta )~. \f]
  Where \f$ v_{rot} \f$ is the resultant vector, \f$ \theta \f$ is the angle to rotate,\f$ v \f$ is the original vector and \f$ k \f$ is the axis of rotation.

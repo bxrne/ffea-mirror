@@ -202,10 +202,16 @@ namespace rod
         float L_elem;
         float pos[3];
 
-        VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem);
-        void get_parent_element(float *p_rod, float norm_length_along_rod, float contour_length, int num_nodes);
-        void update_position(const float* r_rod, const float* p_rod);
+        VDWSite(const int rodid, const int siteid, const int vdwtype, const float lrod,  const float *r_rod,
+            const float contour_length, const int num_nodes);
         void print_info();
+        void get_parent_element(
+            const float* p_rod,
+            const float contour_length,
+            const float norm_length_along_rod,
+            const int num_nodes);
+        void update_position(const float* r_rod);
+
     };
 
     void set_vdw_nbrs(

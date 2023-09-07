@@ -73,7 +73,7 @@ namespace rod
 
 #define vec3d(x) for (int x = 0; x < 3; ++x) ///< Shorthand to loop over elements of our 1d arrays representing 3d vectors
 
-    static const float rod_software_version = 1.3;
+    static const float rod_software_version = 1.5;
 
     void rod_abort(std::string message);
 
@@ -105,7 +105,6 @@ namespace rod
     // These are utility functions specific to the math for the rods
     void get_p_i(float curr_r[3], float next_r[3], OUT float p_i[3]);
     void get_element_midpoint(float p_i[3], float r_i[3], OUT float r_mid[3]);
-    void get_r_next(float r_i[3], float p_i[3], OUT float r_ip1[3]);
     void rodrigues_rotation(float v[3], float k[3], float theta, OUT float v_rot[3]);
     float safe_cos(float in);
     float get_l_i(float p_i[3], float p_im1[3]);

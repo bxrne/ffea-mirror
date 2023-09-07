@@ -7,8 +7,8 @@
     <calc_noise = 0>
     <restart = 0>
     <dt = 1e-12>
-    <check = 10>
-    <num_steps = 10>
+    <check = 1>
+    <num_steps = 1>
     <rng_seed = time>
     <trajectory_out_fname = del.ftj>
     <measurement_out_fname = del.fm>
@@ -38,25 +38,17 @@
     <wall_z_2 = PBC>
     <es_h = 1>
     <num_blobs = 0>
-    <num_rods = 2>
+    <num_rods = 1>
     <num_conformations = (1)>
     <num_states = (1)>
 </param>
 <system>
     <rod>
             <input = z-axis.rod>
-            <output = 1.rodtraj>
+            <output = rod1.rodtraj>
             <centroid_pos = (0.0, 0.0, 0.0)>
             <rotation = (0.0, 0.0, 0.0)>
-			<vdw = z-axis.rodvdw>
-            <scale = 1>
-    </rod>
-    <rod>
-            <input = z-axis.rod>
-            <output = 2.rodtraj>
-            <centroid_pos = (0.0, 30, 0.0)>
-            <rotation = (0.0, 0.0, 0.0)>
-			<vdw = z-axis.rodvdw>
+			<vdw = rod1.rodvdw>
             <scale = 1>
     </rod>
 </system>

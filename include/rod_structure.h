@@ -131,8 +131,7 @@ namespace rod
         Rod pin_node(bool pin_state, int node_index);
         Rod load_header(std::string filename);
         Rod load_contents(std::string filename);
-        std::pair<int, float> vdw_dist_from_elem(float dist_along_rod);
-        Rod load_vdw(std::string filename, std::vector<VDWSite> &site_vec);
+        Rod load_vdw(const std::string filename);
         Rod write_frame_to_file();
         Rod write_mat_params_array(float *array_ptr, int array_len, float stretch_scale_factor, float twist_scale_factor, float length_scale_factor);
         Rod change_filename(std::string new_filename);

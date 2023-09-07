@@ -393,7 +393,7 @@ namespace rod
             do_steric();
 
         if (this->calc_vdw == 1)
-            do_vdw();
+            // do_vdw();
 
         // Dynamics
         for (int node_no = 0; node_no < end_node; node_no++)
@@ -559,7 +559,14 @@ namespace rod
                 current_m[(node_no * 3) + 2] = m_i_prime[2]; // back into the data structure you go
             }
 
-            // ! - redundant?
+            for (auto &site: this->vdw_sites)
+            {
+                // site.update_position(this->current_r);
+                // site.print_info();
+            }
+            std::cout << "\n";
+
+            // ! - redundant counter variable?
             step_no += 1;
         }  // end node loop
 
@@ -901,94 +908,75 @@ namespace rod
         return *this;
     }
 
-    // Return the index of the element that the VDW site lies on, and how far
-    // along the element it is located, as a fraction of its length.
-    //
-    // 'dist_along_rod' is a fraction of the entire rod length.
-    std::pair<int, float> Rod::vdw_dist_from_elem(float dist_along_rod)
-    {
-        float lsum = 0;
-        float lsum_old = 0;
-        float p[3] = { 0 };
-        float phat[3] = { 0 };
-
-        // Traverse along rod, then store previous element if we overstep
-        for (int i = 0; i < this->get_num_nodes() - 1; i++)
-        {
-            this->get_p(i, p, false);
-            rod::normalize(p, phat);
-            lsum += rod::absolute(phat);
-
-            if (lsum > dist_along_rod)
-                return std::pair<int, float> {std::max(0, i - 1), dist_along_rod - lsum_old};
-
-            lsum_old = lsum;
-        }
-
-        // Otherwise, set to end of rod
-        return std::pair<int, float> {this->get_num_nodes() - 2, 1};
-    }
-
-    // Read in VDW interaction types and positions from the VDW file, then
-    // initialise the VDW site array.
-    Rod Rod::load_vdw(std::string filename, std::vector<VDWSite> &site_vec)
+    // Read in VDW interaction types and positions and initialise the VDW site array.
+    Rod Rod::load_vdw(const std::string filename)
     {
         int num_vdw_sites = 0;
-
-        vdw_filename = filename;
         std::ifstream infile(filename);
         if (!infile)
-            std::cout << "IO error. Does VDW file exist?\n";
-        printf("Reading in VDW file: %s\n", filename);
+            throw std::invalid_argument("IO error. Does VDW file exist?\n");
 
-        int i = 0;
-        for (std::string line; getline(infile, line); i++)
+        int row = 0;
+        for (std::string line; getline(infile, line); ++row)
         {
             std::vector<std::string> line_vec;
 
-            // Check file header
-            if (i == 0 && line != "ffea rod vdw file" && line != "ffea rod ssint file")
-                throw std::runtime_error("Error reading header in rod VDW file");
-            else if (i == 1)
+            // File header
+            if (row == 0 && line != "ffea rod vdw file" && line != "ffea rod ssint file")
+                throw std::runtime_error("Error reading header in rod VDW file (row 0)");
+            else if (row == 1)
             {
                 boost::split(line_vec, line, boost::is_any_of(" "));
                 if (line_vec[0] != "num_sites")
-                    throw std::runtime_error("Error reading num_sites in rod VDW file");
+                    throw std::runtime_error("Error reading num_sites in rod VDW file (row 1)");
                 num_vdw_sites = std::stoi(line_vec[1]);
             }
-            else if (i > 1)
+            else if (row == 2)
             {
-                // Read in VDW file
+                if (line != "vdw params:")
+                    throw std::runtime_error("Error reading header in rod VDW file (row 2)");
+            }
+            // VDW parameters
+            else if (row > 2)
+            {
                 boost::split(line_vec, line, boost::is_any_of(","));
                 int vdw_type = std::stoi(line_vec[0]);
-                float dist = std::stof(line_vec[1]);
+                float norm_length_along_rod = std::stof(line_vec[1]);
 
                 if (vdw_type < -1 || vdw_type > 6)
                 {
-                    std::string err = "VDW interaction types must be in range -1 <= i <= 6 (" + std::to_string(vdw_type) + ")";
+                    std::string err = "VDW interaction type must be in range -1 <= row <= 6 (" + std::to_string(vdw_type) + ")";
                     throw std::runtime_error(err);
                 }
-                if (dist < 0 || dist > 1)
+                if (norm_length_along_rod < 0 || norm_length_along_rod > 1)
                 {
-                    std::string err = "VDW position along rod axis must be in range 0 <= L <= 1 " + std::to_string(dist) + ")";
+                    std::string err = "VDW normalized distance along rod axis must be in range 0 <= L <= 1 " + std::to_string(norm_length_along_rod) + ")";
                     throw std::runtime_error(err);
                 }
-                // Create and store VDW site struct
-                std::pair<int, float> pa = this->vdw_dist_from_elem(dist);
-                site_vec.push_back(VDWSite(this->rod_no, pa.first, i - 2, vdw_type, dist, pa.second));
+
+                VDWSite site(
+                    this->rod_no,
+                    row - 3,
+                    vdw_type,
+                    norm_length_along_rod,
+                    this->current_r,
+                    this->contour_length(),
+                    this->get_num_nodes()
+                );
+                this->vdw_sites.push_back(site);
             }
         }
 
-        if (site_vec.size() != num_vdw_sites)
+        if (this->vdw_sites.size() != num_vdw_sites)
         {
             std::string err = "Size of VDW site array (" +
-                std::to_string(site_vec.size()) +
+                std::to_string(this->vdw_sites.size()) +
                 ") does not match number of sites read in from file (" +
                 std::to_string(num_vdw_sites) + ").";
             throw std::out_of_range(err);
         }
 
-        printf("Read %d VDW sites from %s\n", i, filename);
+        printf("Read in %d VDW sites on rod %d\n", num_vdw_sites, this->rod_no);
         return *this;
     }
 
