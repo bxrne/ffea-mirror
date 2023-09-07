@@ -194,23 +194,19 @@ namespace rod
 
     struct VDWSite
     {
-        int rod_id;
+        int rod_id;     // Parent rod index
         int elem_id;
-        int site_id;
+        int site_id;    // Site index within parent rod
         int vdw_type;
-        float L_rod;   // position of site along rod as a fraction of its length, 0 < L < 1
+        float L_rod;    // Fraction of rod length at which site is located, 0 <= L <= 1
         float L_elem;
+        float pos[3];
 
         VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, float lelem);
+        void get_parent_element(float *p_rod, float norm_length_along_rod, float contour_length, int num_nodes);
+        void update_position(const float* r_rod, const float* p_rod);
         void print_info();
     };
-
-    std::pair<int, std::vector<float>> get_vdw_site_position(
-        float* r_rod,
-        float* p_rod,
-        float length_along_rod,
-        float rod_contour_length,
-        int num_nodes);
 
     void set_vdw_nbrs(
         VDWSite site_a,

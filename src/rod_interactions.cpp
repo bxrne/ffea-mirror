@@ -547,6 +547,14 @@ VDWSite::VDWSite(int rodid, int elemid, int siteid, int vdwtype, float lrod, flo
     int vdw_type = vdwtype;
     float L_rod = lrod;
     float L_elem = lelem;
+    float pos[3] = {0};
+}
+
+
+// Ensure parent element is set before this is called
+void VDWSite::update_position(const float* r_rod, const float* p_rod)
+{
+    vec3d(n) { this->pos[n] = r_rod[(this->elem_id * 3) + n] + p_rod[(this->elem_id * 3) + n] * this->L_elem; }
 }
 
 void VDWSite::print_info()
@@ -558,55 +566,45 @@ void VDWSite::print_info()
     std::printf("\tvdw_type: %d\n", this->vdw_type);
     std::printf("\tL_rod:    %.3f\n", this->L_rod);
     std::printf("\tL_elem:   %.3f\n", this->L_elem);
+    rod::print_array("\tposition", this->pos, 3);
 }
 
 /*
-Return the index of the element that the VDW site lies on, and the site
-position.
+Determine the rod element that a VDW site belongs to.
 
-'length_along_rod' is the fraction of the rod contour length at which
-the site is located.
-
-r_rod, p_rod: array pointers that hold data for the entire rod
-
-! have a one-time function that works out the element where the site sits, and
-! from that point on the position update can occur by only knowing the relevant
-! node position
-
+norm_dist_along_rod: fraction of the rod contour length at which the VDW site is
+                     located.
+p_rod: array pointer that contains element vectors for an entire rod
 */
-std::pair<int, std::vector<float>> get_vdw_site_position(VDWSite site, float* r_rod, float* p_rod, float length_along_rod, float rod_contour_length, int num_nodes)
+void VDWSite::get_parent_element(float* p_rod, float norm_length_along_rod, float contour_length, int num_nodes)
 {
-    // Initialize variables
     float psum = 0;
     float psum_prev = 0;
+    float length_along_rod = norm_length_along_rod * contour_length;
 
-    length_along_rod *= rod_contour_length;
-
-    // Traverse along the rod
+    // traverse along the rod
     for (int node = 0; node < num_nodes; ++node)
     {
-        // get 3-vectors of r_i, p_i
-        std::vector<float> ri(r_rod[node * 3], r_rod[node * 3] + 3);
         std::vector<float> pi(p_rod[node * 3], p_rod[node * 3] + 3);
 
         float pmag = rod::absolute(pi);
         psum += pmag;
-        float factor = (length_along_rod - psum_prev) / pmag;
+        // fraction of the element length at which the site is located
+        float norm_length_along_elem = (length_along_rod - psum_prev) / pmag;
         psum_prev = psum;
 
-        // Store element and position if we overstep
+        // return if we overstep
         if (psum > length_along_rod)
         {
-            std::vector<float> result;
-            vec3d(n) { result.push_back(ri[n] + pi[n] * factor) };
-            return std::make_pair(node, result);
+            this->elem_id = node;
+            this->L_elem = norm_length_along_elem;
+            return;
         }
     }
 
-    // Otherwise, set it to the end of the rod
-    std::vector<float> result;
-    vec3d(n) { result.push_back(r_rod[(num_nodes - 1) * n]) ;}
-    return std::make_pair(num_nodes - 1, result);
+    // otherwise, set to the end of the rod
+    this->elem_id = num_nodes - 1;
+    this->L_elem = 0.0f;
 }
 
 void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
@@ -623,10 +621,7 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     float mag = 0;
     float radius_sum = radius_a + radius_b;
 
-    // ! - position not yet sorted out!
-    // VDW_site.get_position()
-    site_a.position(r_a, p_a, c_a);
-    site_b.position(r_b, p_b, c_b);
+    // ! - get VDW site position
 
     if (periodic)
     {
@@ -644,8 +639,8 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
         std::printf("  surf-surf distance : %.3e\n", mag - radius_sum);
         std::printf("  eps                : %.3e\n", epsilon);
         std::printf("  sig                : %.3e\n", sigma);
-        site_a.print_info(r_a, p_a);
-        site_b.print_info(r_b, p_b);
+        site_a.print_info();
+        site_b.print_info();
     }
 
     // Interactions are calculated based on surface-surface distance
