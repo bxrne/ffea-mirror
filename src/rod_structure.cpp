@@ -82,7 +82,8 @@ namespace rod
     /**
     Create a rod of a known length. The rod_no is an arbitrary identifier.
     Note that this creates a rod without initialising the contents of the
-    arrays.
+    arrays. This will also not create arrays with sizes that are independent of
+    the rod length (e.g. VDW site positions).
     */
     Rod::Rod(int length, int set_rod_no) : equil_r(new float[length]),
                                            equil_m(new float[length]),
@@ -104,6 +105,7 @@ namespace rod
                                            vdw_energy(new float[length]),
                                            vdw_force(new float[length]),
                                            num_vdw_nbrs(new int[length/3]),
+                                           // vdw_site_pos initialised elsewhere
                                            applied_forces(new float[length + (length / 3)]),
                                            pinned_nodes(new bool[length / 3]){};
 
@@ -561,9 +563,17 @@ namespace rod
 
             for (auto &site: this->vdw_sites)
             {
-                // site.update_position(this->current_r);
-                // site.print_info();
+                site.update_position(this->current_r);
+                site.print_info();
             }
+
+            if (num_vdw_sites != this->vdw_sites.size())
+                throw std::logic_error("'num_vdw_sites' is not equal to the number of VDW site structs");
+
+            for (int site_index; site_index < num_vdw_sites; ++site_index)
+                vec3d(n) { vdw_site_pos[(site_index * 3) + n] = vdw_sites.at(site_index).pos[n]; }
+
+            rod::print_array("vdw_site_pos", vdw_site_pos, num_vdw_sites * 3);
             std::cout << "\n";
 
             // ! - redundant counter variable?
@@ -690,6 +700,7 @@ namespace rod
         vdw_force = static_cast<float *>(malloc(sizeof(float) * (length)));
         num_vdw_nbrs = static_cast<int *>(malloc(sizeof(int) * (length/3)));
         vdw_nbrs = std::vector<std::vector<InteractionData>>((length / 3) - 1);
+        // vdw_site_pos allocated in load_vdw()
 
         for (int i = 0; i < length / 3; i++)
         {
@@ -908,10 +919,9 @@ namespace rod
         return *this;
     }
 
-    // Read in VDW interaction types and positions and initialise the VDW site array.
+    // Read in VDW interaction types and positions and initialise the relevant arrays
     Rod Rod::load_vdw(const std::string filename)
     {
-        int num_vdw_sites = 0;
         std::ifstream infile(filename);
         if (!infile)
             throw std::invalid_argument("IO error. Does VDW file exist?\n");
@@ -976,6 +986,13 @@ namespace rod
             throw std::out_of_range(err);
         }
 
+        // site position array must be initialised here due to knowledge of num_vdw_sites
+        vdw_site_pos = static_cast<float*>(malloc(sizeof(float) * (num_vdw_sites * 3)));
+        for (int i; i < num_vdw_sites; ++i)
+            vec3d(n) { vdw_site_pos[(i * 3) + n] = vdw_sites.at(i).pos[n]; }
+
+        // ! put sanity check here to make sure sites aren't outside the bounds of the rod
+
         printf("Read in %d VDW sites on rod %d\n", num_vdw_sites, this->rod_no);
         return *this;
     }
@@ -1009,6 +1026,7 @@ namespace rod
         write_array(file_ptr, vdw_energy, length, mesoDimensions::Energy, true);
         write_array(file_ptr, vdw_force, length, mesoDimensions::force, true);
         write_array(file_ptr, num_vdw_nbrs, length/3, true);
+        write_array(file_ptr, vdw_site_pos, num_vdw_sites * 3, mesoDimensions::length, true);
         fflush(file_ptr);
         return *this;
     }

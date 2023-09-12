@@ -58,6 +58,7 @@ namespace rod
         int line_start = 0;           /** Keeps track of whether the header file has been read */
         double rod_version = 999.999; /** If version number unknown, assume latest **/
         bool computed_rest_energy = false;
+        int num_vdw_sites = 0;        /** The number of attractive van der Waals sites on the rod. Arranged by site index */
 
         /** Global simulation parameters - eventually read in from the .ffea file **/
         float viscosity = 0.6913 * pow(10, -3) / (mesoDimensions::pressure * mesoDimensions::time);  // denominator: poiseuille
@@ -100,6 +101,7 @@ namespace rod
         float *vdw_energy;
         float *vdw_force;
         int *num_vdw_nbrs;
+        float *vdw_site_pos;                // The 3D positions of the van der Waals sites on the rod. Length = 3 * num_vdw_sites [x0, y0, z0, x1, y1, z1, ...]. This array is independent of the rod length, so is initialised differently to many others.
         float *applied_forces;              /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
         bool *pinned_nodes;                 /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
 

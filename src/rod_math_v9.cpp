@@ -189,18 +189,12 @@ namespace rod
         for (int i = 0; i < array_len; i++)
         {
             if (i < array_len - 1)
-            {
                 std::fprintf(file_ptr, "%e,", array_ptr[i] * unit_scale_factor);
-            }
             else
-            {
                 std::fprintf(file_ptr, "%e", array_ptr[i] * unit_scale_factor);
-            }
         }
         if (new_line == true)
-        {
             std::fprintf(file_ptr, "\n");
-        }
     }
 
     void write_array(FILE *file_ptr, int *array_ptr, int array_len, bool new_line)
@@ -208,18 +202,26 @@ namespace rod
         for (int i = 0; i < array_len; i++)
         {
             if (i < array_len - 1)
-            {
                 std::fprintf(file_ptr, "%i,", array_ptr[i]);
-            }
             else
-            {
                 std::fprintf(file_ptr, "%i", array_ptr[i]);
-            }
         }
         if (new_line == true)
-        {
             std::fprintf(file_ptr, "\n");
+    }
+
+    template <typename T>
+    void write_vector(FILE* file_ptr, const std::vector<T>& vec, float unit_scale_factor, bool new_line)
+    {
+        for (int i = 0; i < vec.size(); i++)
+        {
+            if (i < vec.size() - 1)
+                std::fprintf(file_ptr, "%i,", vec.at(i) * unit_scale_factor);
+            else
+                std::fprintf(file_ptr, "%i", vec.at(i) * unit_scale_factor);
         }
+        if (new_line == true)
+            std::fprintf(file_ptr, "\n");
     }
 
     // Print vector contents to stdout
