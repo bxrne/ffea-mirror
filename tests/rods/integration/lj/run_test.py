@@ -116,6 +116,11 @@ def main():
 
         os.system("ffea ljtest.ffea")
 
+        rod = ffea_rod.ffea_rod(filename="rod1.rodtraj", vdw_filename="rod1.rodvdw")
+        rod.load_trajectory()
+        pp.pprint(rod.vdw_site_pos_from_rodtraj[1])
+        pp.pprint(rod.current_r[1])
+
         # print("Writing stdout and stderr...")
         # with open(f"{name:s}.stdout", "w") as f:
         #     f.write(ffea_result.stdout)

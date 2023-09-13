@@ -210,15 +210,14 @@ namespace rod
             std::fprintf(file_ptr, "\n");
     }
 
-    template <typename T>
-    void write_vector(FILE* file_ptr, const std::vector<T>& vec, float unit_scale_factor, bool new_line)
+    void write_vector(FILE* file_ptr, const std::vector<float> &vec, float unit_scale_factor, bool new_line)
     {
         for (int i = 0; i < vec.size(); i++)
         {
             if (i < vec.size() - 1)
-                std::fprintf(file_ptr, "%i,", vec.at(i) * unit_scale_factor);
+                std::fprintf(file_ptr, "%e,", vec.at(i) * unit_scale_factor);
             else
-                std::fprintf(file_ptr, "%i", vec.at(i) * unit_scale_factor);
+                std::fprintf(file_ptr, "%e", vec.at(i) * unit_scale_factor);
         }
         if (new_line == true)
             std::fprintf(file_ptr, "\n");

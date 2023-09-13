@@ -84,7 +84,7 @@ namespace rod
     void print_array(std::string array_name, double array[], int length);
     void write_array(FILE *file_ptr, float *array_ptr, int array_len, float unit_scale_factor, bool new_line);
     void write_array(FILE *file_ptr, int *array_ptr, int array_len, bool new_line);
-    template <typename T> void write_vector(FILE* file_ptr, const std::vector<T>& vec, float unit_scale_factor, bool new_line);
+    void write_vector(FILE* file_ptr, const std::vector<float> &vec, float unit_scale_factor, bool new_line);
     void print_vector(std::string vector_name, const std::vector<float> &vec);
     void print_vector(std::string vector_name, const std::vector<int> &vec);
     void print_vector(std::string vector_name, std::vector<float>::iterator start, std::vector<float>::iterator end);

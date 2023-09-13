@@ -105,7 +105,6 @@ namespace rod
                                            vdw_energy(new float[length]),
                                            vdw_force(new float[length]),
                                            num_vdw_nbrs(new int[length/3]),
-                                           // vdw_site_pos initialised elsewhere
                                            applied_forces(new float[length + (length / 3)]),
                                            pinned_nodes(new bool[length / 3]){};
 
@@ -175,6 +174,9 @@ namespace rod
         {
             B_matrix[i] /= bending_response_factor;
         }
+
+        for (int i = 0; i < vdw_site_pos.size(); i++)
+            vdw_site_pos.at(i) /= mesoDimensions::length;
 
         std::cout << "Set units of rod " << this->rod_no << "\n";
 
@@ -561,22 +563,19 @@ namespace rod
                 current_m[(node_no * 3) + 2] = m_i_prime[2]; // back into the data structure you go
             }
 
-            for (auto &site: this->vdw_sites)
+            if (this->calc_vdw)
             {
-                site.update_position(this->current_r);
-                site.print_info();
+                if (this->num_vdw_sites != this->vdw_sites.size())
+                    throw std::logic_error("'num_vdw_sites' is not equal to the number of VDW site structs");
+
+                for (int site_index; site_index < this->vdw_sites.size(); ++site_index)
+                {
+                    this->vdw_sites.at(site_index).update_position(this->current_r);
+                    // this->vdw_sites.at(site_index).print_info();
+                    vec3d(n) { vdw_site_pos.at((site_index * 3) + n) = this->vdw_sites.at(site_index).pos[n]; }
+                }
             }
 
-            if (num_vdw_sites != this->vdw_sites.size())
-                throw std::logic_error("'num_vdw_sites' is not equal to the number of VDW site structs");
-
-            for (int site_index; site_index < num_vdw_sites; ++site_index)
-                vec3d(n) { vdw_site_pos[(site_index * 3) + n] = vdw_sites.at(site_index).pos[n]; }
-
-            rod::print_array("vdw_site_pos", vdw_site_pos, num_vdw_sites * 3);
-            std::cout << "\n";
-
-            // ! - redundant counter variable?
             step_no += 1;
         }  // end node loop
 
@@ -652,6 +651,10 @@ namespace rod
                 {
                     this->num_nodes = std::stoi(line_vec[1]);
                 }
+                if (line_vec[0] == "num_vdw_sites")
+                {
+                    this->num_vdw_sites = std::stoi(line_vec[1]);
+                }
                 if (line_vec[0] == "num_rods")
                 {
                     this->num_rods = std::stoi(line_vec[1]);
@@ -700,7 +703,7 @@ namespace rod
         vdw_force = static_cast<float *>(malloc(sizeof(float) * (length)));
         num_vdw_nbrs = static_cast<int *>(malloc(sizeof(int) * (length/3)));
         vdw_nbrs = std::vector<std::vector<InteractionData>>((length / 3) - 1);
-        // vdw_site_pos allocated in load_vdw()
+        vdw_site_pos = std::vector<float>(num_vdw_sites * 3);
 
         for (int i = 0; i < length / 3; i++)
         {
@@ -792,21 +795,27 @@ namespace rod
                 int vec_size = line_vec_float.size();
 
                 /** Check we're not going to overflow and ruin someone's life when we write into the array*/
-                int check[4] = {
+                int check[5] = {
                     (unsigned)length,
                     (unsigned)length + (length / 3),
                     (unsigned)2 * length,
-                    (unsigned)length / 3
+                    (unsigned)length / 3,
+                    (unsigned)num_vdw_sites * 3
                 };
-                bool result = (check[0] == vec_size || check[1] == vec_size || check[2] == vec_size || check[3] == vec_size);
+                bool result = (check[0] == vec_size ||
+                    check[1] == vec_size ||
+                    check[2] == vec_size ||
+                    check[3] == vec_size ||
+                    check[4] == vec_size);
                 if (not result)
                 {
-                    std::string msg = "Rod array length check failed during read."
+                    std::string msg = "Rod array length check failed during read.\n"
                         "vec_size :" + std::to_string(vec_size) + ")\n"
                         "L :       " + std::to_string(check[0]) + "\n"
                         "L+(L/3) : " + std::to_string(check[1]) + "\n"
                         "2L :      " + std::to_string(check[2]) + "\n"
                         "L/3 :     " + std::to_string(check[3]) + "\n";
+                        "3*num_vdw_sites: " + std::to_string(check[4]) + "\n";
                     throw std::logic_error(msg);
                 }
 
@@ -911,6 +920,11 @@ namespace rod
                     for (int i = 0; i < length/3; i++)
                         num_vdw_nbrs[i] = line_vec_float.data()[i];
                 }
+                if (n == line_of_last_frame + 21)
+                {
+                    for (int i = 0; i < num_vdw_sites; i++)
+                        vdw_site_pos[i] = line_vec_float.data()[i];
+                }
             }
             n++;
         }
@@ -939,7 +953,13 @@ namespace rod
                 boost::split(line_vec, line, boost::is_any_of(" "));
                 if (line_vec[0] != "num_sites")
                     throw std::runtime_error("Error reading num_sites in rod VDW file (row 1)");
-                num_vdw_sites = std::stoi(line_vec[1]);
+
+                if (this->num_vdw_sites != std::stoi(line_vec[1]))
+                {
+                    std::string err = "'num_vdw_sites' set in rod ("+std::to_string(this->num_vdw_sites)+")"
+                                      " does not match value in .rodvdw header (" + std::to_string(std::stoi(line_vec[1])) + ").\n";
+                    throw std::invalid_argument(err);
+                }
             }
             else if (row == 2)
             {
@@ -986,12 +1006,9 @@ namespace rod
             throw std::out_of_range(err);
         }
 
-        // site position array must be initialised here due to knowledge of num_vdw_sites
-        vdw_site_pos = static_cast<float*>(malloc(sizeof(float) * (num_vdw_sites * 3)));
-        for (int i; i < num_vdw_sites; ++i)
-            vec3d(n) { vdw_site_pos[(i * 3) + n] = vdw_sites.at(i).pos[n]; }
-
-        // ! put sanity check here to make sure sites aren't outside the bounds of the rod
+        // initialise site position vector
+        for (int i; i < this->vdw_sites.size(); ++i)
+            vec3d(n) { this->vdw_site_pos.at((i * 3) + n) = this->vdw_sites.at(i).pos[n]; }
 
         printf("Read in %d VDW sites on rod %d\n", num_vdw_sites, this->rod_no);
         return *this;
@@ -1026,7 +1043,7 @@ namespace rod
         write_array(file_ptr, vdw_energy, length, mesoDimensions::Energy, true);
         write_array(file_ptr, vdw_force, length, mesoDimensions::force, true);
         write_array(file_ptr, num_vdw_nbrs, length/3, true);
-        write_array(file_ptr, vdw_site_pos, num_vdw_sites * 3, mesoDimensions::length, true);
+        write_vector(file_ptr, vdw_site_pos, mesoDimensions::length, true);
         fflush(file_ptr);
         return *this;
     }

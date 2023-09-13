@@ -101,7 +101,7 @@ namespace rod
         float *vdw_energy;
         float *vdw_force;
         int *num_vdw_nbrs;
-        float *vdw_site_pos;                // The 3D positions of the van der Waals sites on the rod. Length = 3 * num_vdw_sites [x0, y0, z0, x1, y1, z1, ...]. This array is independent of the rod length, so is initialised differently to many others.
+        std::vector<float> vdw_site_pos;     // Length = num_vdw_sites * 3. Must be a vector since it has to allow for there being no VDW sites on the rod.
         float *applied_forces;              /** Another [x,y,z,x,y,z...] array, this one containing the force vectors acting on each node in the rod. **/
         bool *pinned_nodes;                 /** This array is the length of the number of nodes in the rod, and it contains a boolean stating whether that node is pinned (true) or not (false). **/
 

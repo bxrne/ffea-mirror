@@ -4433,7 +4433,7 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
         }
 
         // van der Waals interaction sites
-        if (tag_out[0] == "vdw" && rod_parent && !restart)
+        if (tag_out[0] == "vdw" && rod_parent && !restart && params.calc_vdw_rod)
             current_rod->load_vdw(tag_out[1]);
 
     }
