@@ -187,10 +187,10 @@ namespace rod
     ================================================================================
     */
 
-    float vdw_energy_6_12(float r_mag_inv, float eps, float sig);
-    float vdw_force_6_12(float r_mag_inv, float eps, float sig);
-    float vdw_energy_interp(float r_mag, float eps, float r_min_inv);
-    float vdw_force_interp(float r_mag, float eps, float r_min_inv);
+    float vdw_energy_6_12(float r_inv, float eps, float sig);
+    float vdw_force_6_12(float r_inv, float eps, float sig);
+    float vdw_energy_interp(float r, float eps, float r_min_inv);
+    float vdw_force_interp(float r, float eps, float r_min_inv);
 
     struct VDWSite
     {

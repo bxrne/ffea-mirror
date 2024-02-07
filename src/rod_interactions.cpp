@@ -517,26 +517,37 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
 ================================================================================
 */
 
-float vdw_energy_6_12(float r_mag_inv, float eps, float sig)
-{
-    return 4 * eps * (std::pow(sig * r_mag_inv, 12) - std::pow(sig * r_mag_inv, 6));
+float vdw_energy_6_12(float r_inv, float eps, float sig)
+{   
+    float sr = sig * r_inv;
+    float sr3 = sr * sr * sr;
+    float sr6 = sr3 * sr3;
+    float sr12 = sr6 * sr6;
+    return 4 * eps * (sr12 - sr6);
 }
 
-float vdw_force_6_12(float r_mag_inv, float eps, float sig)
+float vdw_force_6_12(float r_inv, float eps, float sig)
 {
-    return 24 * eps * r_mag_inv * (2 * std::pow(sig * r_mag_inv, 12) - std::pow(sig * r_mag_inv, 6));
+    float sr = sig * r_inv;
+    float sr3 = sr * sr * sr;
+    float sr6 = sr3 * sr3;
+    float sr12 = sr6 * sr6;
+    return 24 * eps * r_inv * (2 * sr12 - sr6);
 }
 
 // r_min_inv = 1 / (2^1/6 * sigma)
-float vdw_energy_interp(float r_mag, float eps, float r_min_inv)
+// r = surface-surface distance
+float vdw_energy_interp(float r, float eps, float r_min_inv)
 {
-    return eps * (2 * std::pow(r_mag * r_min_inv, 3) - 3 * std::pow(r_mag * r_min_inv, 2));
+    float rr = r * r_min_inv; 
+    return eps * (2* rr * rr * rr - 3 * rr * rr);
 }
 
 // r_min_inv = 1 / (2^1/6 * sigma)
-float vdw_force_interp(float r_mag, float eps, float r_min_inv)
+float vdw_force_interp(float r, float eps, float r_min_inv)
 {
-    return 6 * eps * r_min_inv * (std::pow(r_mag * r_min_inv, 2) - r_mag * r_min_inv);
+    float rr = r * r_min_inv; 
+    return 6 * eps * r_min_inv * (rr * rr - rr);
 }
 
 VDWSite::VDWSite(const int rodid, const int siteid, const int vdwtype, const float lrod,
