@@ -116,10 +116,10 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::rod_neighbour_list_construction();
     }
 
-    if (buffer.str().find("steric_energy_two_rod_elements") !=
+    if (buffer.str().find("rod_steric_lj_potential") !=
         std::string::npos)
     {
-        result = ffea_test::steric_energy_two_rod_elements();
+        result = ffea_test::rod_steric_lj_potential();
     }
 
     if (buffer.str().find("nearest_image_pbc") !=
@@ -1751,99 +1751,76 @@ int ffea_test::rod_neighbour_list_construction()
     return 1;
 }
 
-//
-//
-/**
- * @brief Pass one rod element, b, entirely through another, a, and compute the
- * element steric interaction energy on a.
- *
- * a is aligned in the z-axis. b is rotated pi/12 radians in x-z and y-z
- * relative to a.
- *
- * @return int
- */
-int ffea_test::steric_energy_two_rod_elements()
+
+// Move two circles away from each other and compute the rod-rod interaction energies.
+int ffea_test::rod_steric_lj_potential()
 {
-    // Test parameters
+    float radius = 6;  // ~ 1 nm, approaching continuum limit (DNA width ~ 2 nm)
+    float eps = 10;    // 10 kT
+    float r_min = 2 * radius;
+    float sigma = r_min / std::pow(2, 1.0/6);  // beware integer division!
+
+    float u_max = 20;  // steric potential at complete overlap (r = -2R)
+    float r_max = 2 * radius;
+    float steric_constant = u_max / (r_max * r_max);  // steric 'spring constant'
+    float r_cutoff = 5 * radius;
+
     int num_steps = 1000;
-    float radius = 5e-9 / mesoDimensions::length;
-    float rmax = 5 * radius;     // maximum distance
-    float dr = rmax / num_steps; // step size
-    float rhat[3] = { 0, 1, 0 };   // direction
-    // Rods
-    float theta = M_PI / 18; // x-z rotation [radians], 10 deg
-    float phi = M_PI / 6;    // x-y rotation [radians], 30 deg
-    float rm_y[9];
-    float rm_z[9];
-    float rm[9];
-    float p_a[3] = { 0, 0, 5 * radius };
-    float p_b_init[3] = { 0, 0, 5 * radius };
-    float p_b[3];
-    float r_a_0[3] = { 0, 0, 0 }; // Starting position of node 0
-    float r_b_0[3] = { -0.5f * rmax * rhat[0], -0.5f * rmax * rhat[1], -0.5f * rmax * rhat[2] };
-    // Interaction
-    float c_a[3] = { 0, 0, 0 }; // point of interaction on element a
-    float c_b[3] = { 0, 0, 0 };
-    float delta = 1e-12 / mesoDimensions::length; // perturbation amount [FFEA length units]
-    float strength = 10.0;               // strength of repulsive force [FFEA force units]
-    // Storage
-    FILE* file_ptr;
-    float r_a_1[3] = { 0, 0, 0 };
-    float r_b_1[3] = { 0, 0, 0 };
-    float c_ab[3] = { 0, 0, 0 };
+    float dr = (r_cutoff + r_max) / num_steps;
+    float r = -r_max;
+    float u = 0;
 
-    rod::dbg_print = true;
-
-    // rotate b in x-z by theta, then in x-y by phi
-    rod::get_cartesian_rotation_matrix(1, theta, rm_y);
-    rod::get_cartesian_rotation_matrix(2, phi, rm_z);
-    rod::matmul_3x3_3x3(rm_y, rm_z, rm);
-    rod::apply_rotation_matrix(p_b_init, rm, p_b);
-    rod::print_array("rm_y", rm_z, 9);
-    rod::print_array("rm_z", rm_z, 9);
-    rod::print_array("rm", rm, 9);
-    rod::print_array("p_b_init", p_b_init, 3);
-    rod::print_array("p_b", p_b, 3);
-    // shift backwards in z
-    r_a_0[2] -= 0.25 * rmax;
-
-    file_ptr = std::fopen("log.txt", "w");
-    std::fprintf(file_ptr, "# radius_a: %f nm, radius_b: %f nm\n",
-        radius * mesoDimensions::length * 1e9,
-        radius * mesoDimensions::length * 1e9);
-    std::fprintf(file_ptr,
-        "# r_a_0 [3]    r_a_1 [3]    r_b_0 [3]    r_b_1 [3]    |c_ab|   "
-        " E+    E-\n");
+    FILE* file_ptr1;
+    file_ptr1 = std::fopen("log.csv", "w");
+    
+    std::fprintf(file_ptr1, "r,u\n");
 
     for (int step_no = 0; step_no < num_steps; step_no++)
     {
-        rod::element_minimum_displacement(p_a, p_b, r_a_0, r_b_0, c_a, c_b);
+        if (r < 0)
+        {
+            u = rod::steric_energy_squared(steric_constant, r);
+        }
+        else if (r < r_min and r >= 0)
+        {
+            u = rod::vdw_energy_interp(r, eps, 1 / r_min);
+        }
+        else if (r > r_min)
+        {
+            u = rod::vdw_energy_6_12(1 / r, eps, sigma);
+        }
+        else
+        {
+            std::cout << "ERROR: invalid range for surface-surface distance\n";
+            return 1;
+        }
+        std::fprintf(file_ptr1, "%e,%e\n", r * mesoDimensions::length, u * mesoDimensions::Energy);
 
-        float dist_pos = rod::intersection_distance(delta, c_a, c_b, 2 * radius);
-        float dist_neg = rod::intersection_distance(delta, c_a, c_b, 2 * radius);
-
-        float enrg_pos = rod::steric_energy_squared(strength, dist_pos);
-        float enrg_neg = rod::steric_energy_squared(strength, dist_neg);
-
-        // update rod position and distance
-        vec3d(n) { r_b_0[n] += rhat[n] * dr; }
-        vec3d(n) { r_a_1[n] = r_a_0[n] + p_a[n]; }
-        vec3d(n) { r_b_1[n] = r_b_0[n] + p_b[n]; }
-        vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
-
-        vec3d(n) { std::fprintf(file_ptr, "%e ", r_a_0[n] * mesoDimensions::length); }
-        vec3d(n) { std::fprintf(file_ptr, "%e ", r_a_1[n] * mesoDimensions::length); }
-        vec3d(n) { std::fprintf(file_ptr, "%e ", r_b_0[n] * mesoDimensions::length); }
-        vec3d(n) { std::fprintf(file_ptr, "%e ", r_b_1[n] * mesoDimensions::length); }
-        std::fprintf(file_ptr, "%e ", rod::absolute(c_ab) * mesoDimensions::length);
-        std::fprintf(file_ptr, "%e ", enrg_pos * mesoDimensions::Energy);
-        std::fprintf(file_ptr, "%e ", enrg_neg * mesoDimensions::Energy);
-        std::fprintf(file_ptr, "\n");
+        r += dr;
     }
-    std::fflush(file_ptr);
-    std::fclose(file_ptr);
 
-    return 1;
+    std::fflush(file_ptr1);
+    std::fclose(file_ptr1);
+
+    FILE* file_ptr2;
+    file_ptr2 = std::fopen("const.csv", "w");
+
+    std::fprintf(file_ptr2, "R,r_min,sigma,eps,k,r0,rN,kT\n");
+    std::fprintf(file_ptr2, "%e,%e,%e,%e,%e,%e,%e,%e\n", 
+        radius * mesoDimensions::length, 
+        r_min * mesoDimensions::length, 
+        sigma * mesoDimensions::length,
+        eps * mesoDimensions::Energy, 
+        steric_constant * (mesoDimensions::Energy / (mesoDimensions::length * mesoDimensions::length)), 
+        -r_max * mesoDimensions::length, 
+        r_cutoff * mesoDimensions::length,
+        mesoDimensions::Energy
+    );
+
+    std::fflush(file_ptr2);
+    std::fclose(file_ptr2);
+
+    return 0;
 }
 
 

@@ -21,8 +21,8 @@
 #  the research papers on the package.
 # 
 
-set (STERICENERGYDIR "${PROJECT_BINARY_DIR}/tests/rods/unit/steric_energy_two_rod_elements/")
-file (COPY steric_energy_two_rod_elements.ffeatest DESTINATION ${STERICENERGYDIR})
+set (STERICENERGYDIR "${PROJECT_BINARY_DIR}/tests/rods/unit/rod_steric_lj_potential/")
+file (COPY rod_steric_lj_potential.ffeatest DESTINATION ${STERICENERGYDIR})
 file (COPY test_and_plot.py DESTINATION ${STERICENERGYDIR})
-add_test(NAME steric_energy_two_rod_elements COMMAND ${PYTHON_EXECUTABLE} test_and_plot.py)
-set_tests_properties(steric_energy_two_rod_elements PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})
+add_test(NAME rod_steric_lj_potential COMMAND ${PYTHON_EXECUTABLE} test_and_plot.py)
+set_tests_properties(rod_steric_lj_potential PROPERTIES ENVIRONMENT PYTHONPATH=${PROJECT_SOURCE_DIR}/ffeatools/modules:$ENV{PYTHONPATH})
