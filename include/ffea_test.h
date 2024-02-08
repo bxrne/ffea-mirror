@@ -73,4 +73,5 @@ struct ffea_test
     static int rod_neighbour_list_construction();
     static int rod_steric_lj_potential();
     static int nearest_image_pbc();
+    static int rod_vdw_site_placement();
 };

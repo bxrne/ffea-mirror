@@ -128,6 +128,11 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::nearest_image_pbc();
     }
 
+    if (buffer.str().find("rod_vdw_site_placement") !=
+        std::string::npos)
+    {
+        result = ffea_test::rod_vdw_site_placement();
+    }
 
     return result;
 }
@@ -1943,5 +1948,51 @@ int ffea_test::nearest_image_pbc()
 
     if (fail_count == 0)
         return 0;
+    return 1;
+}
+
+int ffea_test::rod_vdw_site_placement()
+{
+    std::string rod_file;
+    std::string rodvdw_file;
+    rod::Rod **rod_array = NULL;
+    int num_rods = 2;
+
+    World *world;
+    world = new World();
+
+    // Create rods
+    std::cout << "loading rods...\n";
+    rod_array = new rod::Rod *[num_rods];
+
+    string rod_names[2] = {"curvy", "straight"};
+
+    for (int i = 0; i < num_rods; i++)
+    {
+        std::cout << "\n";
+        rod_file = rod_names[i] + ".rod";
+        rodvdw_file = rod_names[i] + "_1.rodvdw";
+
+        std::cout << ".rod filename :     " << rod_file << "\n";
+        std::cout << ".rodvdw filename :  " << rodvdw_file << "\n";
+
+        rod::Rod *current_rod = new rod::Rod(rod_file, i);
+        current_rod->load_header(rod_file);
+        current_rod->load_contents(rod_file);
+        current_rod->set_units();
+        current_rod->load_vdw(rodvdw_file);
+        std::cout << "  Loaded rod from " << rod_file << std::endl;
+        std::cout << "  Loaded VDW sites from " << rodvdw_file << std::endl;
+        rod_array[i] = current_rod;
+
+        rod::print_vector("vdw_site_pos", current_rod->vdw_site_pos);
+
+        for (auto &site : current_rod->vdw_sites)
+            site.print_info();
+    }
+
+    // vdw_sites = vector of VDWSite objects
+    // vdw_site_pos = vector of x, y, z floats (num_sites * 3)
+
     return 1;
 }

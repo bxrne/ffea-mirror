@@ -96,57 +96,18 @@ def main():
 
     os.system("./cleanup.sh")
     subprocess.run([f"python", "create_rod_with_vdw_sites.py"])
-
-    ffea_files = glob.glob(f"*.ffea")
-    count = 0
-    num_configs = len(ffea_files)
-
-    for i, path in enumerate(sorted(ffea_files), 1):
-
-        name = path.split("/")[-1].split(".")[0]
-
-        # print(f"{name:s}\t({i:d}/{num_configs:d})")
-        # name = "ljtest"
-        # print("FFEA simulation...")
-        # ffea_result = subprocess.run(
-        #     ["ffea", "{}}.ffea"],
-        #     capture_output=True,
-        #     text=True,
-        # )
-
-        os.system("ffea ljtest.ffea")
-
-        rod = ffea_rod.ffea_rod(filename="rod1.rodtraj", vdw_filename="rod1.rodvdw")
-        rod.load_trajectory()
-        pp.pprint(rod.vdw_site_pos_from_rodtraj[1])
-        pp.pprint(rod.current_r[1])
-
-        # print("Writing stdout and stderr...")
-        # with open(f"{name:s}.stdout", "w") as f:
-        #     f.write(ffea_result.stdout)
-        # with open(f"{name:s}.stderr", "w") as f:
-        #     f.write(ffea_result.stderr)
-
-        rod_fnames = glob.glob(f"{params['out_dir']}*.rodtraj")
-
-        # analysis(rod_fnames)
-
-        if False:
-            count += 1
-            print("Passed\n")
-        else:
-            print("Failed\n")
-
-    print(f"Total passed: {count:d}/{num_configs:d}")
+    ffea_result = subprocess.run([f"ffea", "rod_vdw_site_placement.ffeatest"])
+    # ffea_result = 1
 
     if Path("FFEA_meta.json").exists():
         Path("FFEA_meta.json").unlink()
 
-    if count == num_configs:
+    print(f"FFEA return code: {ffea_result.returncode:d}")
+
+    if ffea_result.returncode == 0:
         return 0
     else:
         return 1
-
 
 if __name__ == "__main__":
     main()
