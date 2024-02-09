@@ -1961,20 +1961,22 @@ int ffea_test::rod_vdw_site_placement()
     World *world;
     world = new World();
 
+    std::string site_file;
+    FILE* file_ptr;
+
     // Create rods
-    std::cout << "loading rods...\n";
+    std::cout << "Loading rods...\n";
     rod_array = new rod::Rod *[num_rods];
 
     string rod_names[2] = {"curvy", "straight"};
 
     for (int i = 0; i < num_rods; i++)
     {
-        std::cout << "\n";
         rod_file = rod_names[i] + ".rod";
-        rodvdw_file = rod_names[i] + "_1.rodvdw";
+        rodvdw_file = rod_names[i] + ".rodvdw";
 
-        std::cout << ".rod filename :     " << rod_file << "\n";
-        std::cout << ".rodvdw filename :  " << rodvdw_file << "\n";
+        std::cout << "  .rod filename :     " << rod_file << "\n";
+        std::cout << "  .rodvdw filename :  " << rodvdw_file << "\n";
 
         rod::Rod *current_rod = new rod::Rod(rod_file, i);
         current_rod->load_header(rod_file);
@@ -1985,14 +1987,56 @@ int ffea_test::rod_vdw_site_placement()
         std::cout << "  Loaded VDW sites from " << rodvdw_file << std::endl;
         rod_array[i] = current_rod;
 
-        rod::print_vector("vdw_site_pos", current_rod->vdw_site_pos);
+        // rod::print_vector("vdw_site_pos", current_rod->vdw_site_pos);
 
-        for (auto &site : current_rod->vdw_sites)
-            site.print_info();
+        std::cout << "num_vdw_sites : " << current_rod->num_vdw_sites << "\n";
+        
+        std::ifstream in_file;
+        std::string row;
+        std::string coord;
+        float pos_from_file[3] = {0};
+        float pos_from_rod[3] = {0};
+        float diff[3] = {0};
+
+        in_file.open(rod_names[i] + "_vdw_pos.csv");
+
+        std::cout << "Reading " + rod_names[i] + "_vdw_pos.csv...\n";
+        for (int j=0; j < current_rod->num_vdw_sites; j++)
+        {
+            // read the file stream into a string, representing a whole row
+            std::getline(in_file, row, '\n');
+
+            // pass the row to a string stream (needs to be reset here)
+            std::stringstream ss;
+            ss << row;
+
+            vec3d(n)
+            {
+                // read the comma-separated values of the string stream into an array
+                std::getline(ss, coord, ',');
+                pos_from_file[n] = std::stof(coord);
+            }
+
+            vec3d(n){pos_from_rod[n] = current_rod->vdw_site_pos.at((3 * j) + n) * mesoDimensions::length;}
+
+            vec3d(n){diff[n] = pos_from_file[n] - pos_from_rod[n];}
+
+            rod::print_array("  pos_from_file",pos_from_file,3);
+            rod::print_array("  pos_from_rod",pos_from_rod,3);
+            rod::print_array("  diff",diff,3);
+            std::cout << "  |diff| : " << rod::absolute(diff) << "\n";
+            std::cout << "\n";
+
+            if (rod::absolute(diff) > 1.0e-8)
+            {
+                std::cout << "Fail. Difference too large.\n";
+                return 1;
+            }
+                
+        }
+
+        in_file.close();
     }
 
-    // vdw_sites = vector of VDWSite objects
-    // vdw_site_pos = vector of x, y, z floats (num_sites * 3)
-
-    return 1;
+    return 0;
 }
