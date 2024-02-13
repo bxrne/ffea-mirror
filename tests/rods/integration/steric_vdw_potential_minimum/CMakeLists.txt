@@ -21,12 +21,16 @@
 #  the research papers on the package.
 #
 
+set (VDW_MIN_DIR          steric_vdw_potential_minimum)
+set (VDW_MIN_CTEST        int_rod_${VDW_MIN_DIR})
+set (VDW_MIN_DIR_PATH     "${PROJECT_BINARY_DIR}/tests/rods/integration/${VDW_MIN_DIR}/")
 
-add_subdirectory(symmetry)
-add_subdirectory(equipartition)
-add_subdirectory(connection)
-add_subdirectory(interactPBC_equalEnergy)
-add_subdirectory(stericInteract_initForceSymmetric)
-add_subdirectory(stericInteract_fullySeparate)
-add_subdirectory(pbc_wrap)
-add_subdirectory(steric_vdw_potential_minimum)
+file (COPY run_test.py                  DESTINATION ${VDW_MIN_DIR_PATH})
+file (COPY create_straight_rod_vdw.py   DESTINATION ${VDW_MIN_DIR_PATH})
+file (COPY params.yml                   DESTINATION ${VDW_MIN_DIR_PATH})
+file (COPY z-axis.rod                   DESTINATION ${VDW_MIN_DIR_PATH})
+file (COPY steric_twoRods.ffea          DESTINATION ${VDW_MIN_DIR_PATH})
+file (COPY interp_twoRods.ffea          DESTINATION ${VDW_MIN_DIR_PATH})
+file (COPY lj_twoRods.ffea              DESTINATION ${VDW_MIN_DIR_PATH})
+
+add_test(NAME ${VDW_MIN_CTEST} COMMAND ${PYTHON_EXECUTABLE} run_test.py)
