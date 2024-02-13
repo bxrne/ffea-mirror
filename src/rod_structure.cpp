@@ -1432,6 +1432,8 @@ namespace rod
         float gradient = 0;
         float p_self[3] = { 0 };
         float diff[3] = { 0 };
+        float force_constant = 0;
+        float radius_sum = 0;
 
         int num_nbrs_on_elem = this->get_num_nbrs(elem_id, this->steric_nbrs);
         this->num_steric_nbrs[elem_id] = num_nbrs_on_elem;
@@ -1447,9 +1449,13 @@ namespace rod
             if (!stericInt.elements_intersect())
                 throw std::runtime_error("Elements do not intersect, but a steric force calculation was attempted.");
 
+            // steric force constant depends on the radius of the rod
+            radius_sum = stericInt.radius_self + stericInt.radius_nbr;
+            force_constant = this->max_steric_energy / (radius_sum * radius_sum);
+
             energy = element_steric_energy(
                 this->perturbation_amount,
-                this->steric_force_factor,
+                force_constant,
                 stericInt.radius_self + stericInt.radius_nbr,
                 stericInt.contact_self,
                 stericInt.contact_nbr);

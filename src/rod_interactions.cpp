@@ -422,7 +422,7 @@ float intersection_distance(float c_a[3], float c_b[3], float radius_sum)
 
 // Return the steric collision energy of a rod element as a vector with the
 // format [r+dr, r-dr, r]. Perturbation is applied along the intersection vector.
-std::vector<float> element_steric_energy(float delta, float force_strength,
+std::vector<float> element_steric_energy(float delta, float force_constant,
     float radius_sum, float c_a[3], float c_b[3])
 {
     float dist[3] = {0};
@@ -432,9 +432,9 @@ std::vector<float> element_steric_energy(float delta, float force_strength,
     dist[1] = intersection_distance(-0.5 * delta, c_a, c_b, radius_sum);
     dist[2] = intersection_distance(c_a, c_b, radius_sum);
 
-    energy[0] = steric_energy_squared(force_strength, dist[0]);
-    energy[1] = steric_energy_squared(force_strength, dist[1]);
-    energy[2] = steric_energy_squared(force_strength, dist[2]);
+    energy[0] = steric_energy_squared(force_constant, dist[0]);
+    energy[1] = steric_energy_squared(force_constant, dist[1]);
+    energy[2] = steric_energy_squared(force_constant, dist[2]);
 
     if (rod::dbg_print)
     {
@@ -442,7 +442,7 @@ std::vector<float> element_steric_energy(float delta, float force_strength,
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
         std::cout << "element steric energy:\n";
         std::cout << "  delta : " << delta << "\n";
-        std::cout << "  force_strength : " << force_strength << "\n";
+        std::cout << "  force_constant : " << force_constant << "\n";
         std::cout << "  radius_sum : " << radius_sum << "\n";
         print_array("  c_a", c_a, 3);
         print_array("  c_b", c_b, 3);

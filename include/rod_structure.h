@@ -69,7 +69,7 @@ namespace rod
         int calc_steric = 0;  // Repulsive overlap of elements
         int calc_vdw = 0;   // Attractive protein-protein interactions
         int pbc = 0;
-        float steric_force_factor = 20;    /** Strength of repulsive force, maximum ~ 486 pN (Biotin/streptavidin unfolding ~ 160 pN) [Force units] **/
+        float max_steric_energy = 50;    /** Potential energy when two rod elements are fully overlapped [energy units] **/
         std::string flow_profile;       // the type of background flow experienced by the rod (set by .ffea file)
         float flow_velocity[3] = {0};   // background flow imposed on the rod (set by .ffea file)
         float shear_rate = 0;           //
