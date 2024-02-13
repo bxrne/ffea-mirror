@@ -296,8 +296,9 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
     if (params.calc_vdw_rod == 1)
     {
-        if (rod_lj_matrix.init(params.ssint_in_fname, "ljsteric", params.calc_vdw_rod, params.ssint_cutoff) == FFEA_ERROR)
-            FFEA_ERROR_MESSG("Error when reading from vdw forcefield params file.\n");
+        if (rod_lj_matrix.init(params.rod_lj_in_fname, "ljsteric", params.calc_vdw_rod, params.ssint_cutoff) == FFEA_ERROR)
+            FFEA_ERROR_MESSG("Error when reading from rod Lennard-Jones params file (.rodlj).\n");
+            
     }
 
     // detect how many threads we have for openmp
@@ -4432,7 +4433,7 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
             current_rod->rotate_rod(converted_rotation);
         }
 
-        // van der Waals interaction sites
+        // van der Waals interaction sites (.rodvdw file)
         if (tag_out[0] == "vdw" && rod_parent && !restart && params.calc_vdw_rod)
             current_rod->load_vdw(tag_out[1]);
 

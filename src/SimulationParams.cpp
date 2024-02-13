@@ -99,6 +99,7 @@ SimulationParams::SimulationParams()
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
     ssint_in_fname_set = 0;
+    rod_lj_in_fname_set = 0;
     trajbeads_fname_set = 0;
 
     trajectory_out_fname = "\n";
@@ -106,6 +107,7 @@ SimulationParams::SimulationParams()
     measurement_out_fname = "\n";
     ssint_in_fname = "\n";
     bsite_in_fname = "\n";
+    rod_lj_in_fname = "\n";
     icheckpoint_fname = "\n";
     ocheckpoint_fname = "\n";
     detailed_meas_out_fname = "\n";
@@ -186,6 +188,7 @@ SimulationParams::~SimulationParams()
     ocheckpoint_fname_set = 0;
     bsite_in_fname_set = 0;
     ssint_in_fname_set = 0;
+    rod_lj_in_fname_set = 0;
 
     trajectory_out_fname = "\n";
     measurement_out_fname = "\n";
@@ -194,6 +197,7 @@ SimulationParams::~SimulationParams()
     ocheckpoint_fname = "\n";
     bsite_in_fname = "\n";
     ssint_in_fname = "\n";
+    rod_lj_in_fname = "\n";
     detailed_meas_out_fname = "\n";
     ctforces_fname = "\n";
     springs_fname = "\n";
@@ -733,6 +737,14 @@ int SimulationParams::assign(string lvalue, string rvalue)
         if (userInfo::verblevel > 1)
             cout << "\tSetting " << lvalue << " = " << ssint_in_fname << endl;
     }
+    else if (lvalue == "rod_lj_in_fname" || lvalue == "rod_lj_in_fname" || lvalue == "rod_vdw_forcefield_params" || lvalue == "rod_lj_params")
+    {
+        b_fs::path auxpath = FFEA_script_path / rvalue;
+        rod_lj_in_fname = auxpath.string();
+        rod_lj_in_fname_set = 1;
+        if (userInfo::verblevel > 1)
+            cout << "\tSetting " << lvalue << " = " << rod_lj_in_fname << endl;
+    }
     else if (lvalue == "checkpoint_in")
     {
         b_fs::path auxpath = FFEA_script_path / rvalue;
@@ -867,7 +879,7 @@ int SimulationParams::validate(int sim_mode)
 
     if (calc_vdw_rod != 0 && calc_vdw_rod != 1)
     {
-        FFEA_ERROR_MESSG("Required: 'calc_steric_rod', must be 0 (no) or 1 (yes).\n");
+        FFEA_ERROR_MESSG("Required: 'calc_vdw_rod', must be 0 (no) or 1 (yes).\n");
     }
 
     if (pbc_rod != 0 && pbc_rod != 1)
@@ -960,6 +972,14 @@ int SimulationParams::validate(int sim_mode)
         if (inc_self_ssint == 1)
         {
             printf("\tFRIENDLY WARNING: No face-face interactions will be computed as calc_ssint = 0.\n");
+        }
+    }
+
+    if (calc_vdw_rod == 1)
+    {
+        if (rod_lj_in_fname_set == 0)
+        {
+            FFEA_ERROR_MESSG("Rod Lennard-Jones parameters file name required (rod_lj_params).\n");
         }
     }
 
@@ -1259,6 +1279,9 @@ void SimulationParams::write_to_file(FILE *fout, PreComp_params &pc_params)
             fprintf(fout, "\tsteric_factor = %e\n", steric_factor);
         }
     }
+
+    if (calc_vdw_rod == 1)
+        fprintf(fout, "\trod_lj_in_fname = %s\n", rod_lj_in_fname.c_str());
 
     fprintf(fout, "\n\tSimulation box configuration:\n");
     fprintf(fout, "\tes_update = %d\n", es_update);

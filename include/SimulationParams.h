@@ -154,6 +154,7 @@ public:
     string detailed_meas_out_fname;
     string ssint_in_fname;
     string bsite_in_fname;
+    string rod_lj_in_fname;
     string icheckpoint_fname;      ///< Input Checkpoint file name
     string ocheckpoint_fname;      ///< Output Checkpoint file name
     string ctforces_fname;         ///< Input file containing constant forces onto a list of nodes.
@@ -199,6 +200,7 @@ private:
     int icheckpoint_fname_set;
     int ocheckpoint_fname_set;
     int ssint_in_fname_set;
+    int rod_lj_in_fname_set;
     int bsite_in_fname_set;
 
     /** Check if the file oFile exists, and if so
