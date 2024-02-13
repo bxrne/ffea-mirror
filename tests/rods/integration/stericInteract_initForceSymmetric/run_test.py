@@ -131,7 +131,7 @@ def main():
         print("Rod 0, steric force is on central element only (PASS)")
         central_element = True
 
-    print("Rod 0 forces (pN):")
+    print("Rod 0 forces:")
     print(force0)
     print("")
 
@@ -143,7 +143,7 @@ def main():
         print("Rod 1, steric force is on central element only (PASS)")
         central_element = True
 
-    print("Rod 1 forces (pN):")
+    print("Rod 1 forces:")
     print(force1)
     print("")
 
@@ -170,7 +170,7 @@ def main():
 
     # rods are initially separated in x only
     try:
-        ss_dist = abs(rod0.equil_r[1, 0, 0] - rod1.equil_r[1, 0, 0]) - (radius0+radius1)
+        ss_dist = abs(rod0.current_r[1, 0, 0] - rod1.current_r[1, 0, 0]) - (radius0+radius1)
     except:
         ss_dist = -2.5e-9
 
