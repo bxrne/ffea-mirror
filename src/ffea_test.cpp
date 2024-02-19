@@ -134,6 +134,12 @@ int ffea_test::do_ffea_test(std::string filename)
         result = ffea_test::rod_vdw_site_placement();
     }
 
+    if (buffer.str().find("point_lies_within_rod_element") !=
+        std::string::npos)
+    {
+        result = ffea_test::point_lies_within_rod_element();
+    }
+
     return result;
 }
 
@@ -1447,21 +1453,30 @@ int ffea_test::lower_sphere()
 // where c = r2 when t = 1. t is a multiplier.
 int ffea_test::point_lies_within_rod_element()
 {
-    float p[3] = {2, 1, 5};
-    float r1[3] = {-1, 0, -3};
+
     float t[6] = {-1, 0, 0.3, 0.7, 1, 1.5};
-    float c_init[3] = {0.0, 0.0, 0.0};
-    float c_out[3] = {0.0, 0.0, 0.0};
-    float c_answer[3] = {0.0, 0.0, 0.0};
-    float delta[3] = {0.0, 0.0, 0.0};
+    float c_init[3] = {0};
+    float c_out[3] = {0};
+
+    float c_answer[3] = {0};
+    float delta[3] = {0};
     int pass_count = 0;
 
-    rod::dbg_print = true;
+
+    float r1[3] = {0};
+    float p[3] = {0, 0, 1};
+
+
+    //rod::dbg_print = true;
 
     for (int i = 0; i < 6; i++)
     {
+        std::cout << "=================== CASE " << i << " ===================\n";
         vec3d(n) { c_init[n] = r1[n] + p[n] * t[i]; }
-        // rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b)
+
+        // enforce finite length of rod element
+        rod::finite_length_correction(c_init, r1, p, c_out);
+
         switch (i)
         {
         case 0:
@@ -1491,18 +1506,21 @@ int ffea_test::point_lies_within_rod_element()
         default:
             return 1;
         }
-        vec3d(n) { delta[n] = c_out[n] - c_answer[n]; }
-        if (rod::absolute(delta) < 0.01)
-        {
-            pass_count++;
-        }
 
         std::cout << "t = " << t[i] << std::endl;
         rod::print_array("c initial", c_init, 3);
         rod::print_array("c computed", c_out, 3);
         rod::print_array("c expected", c_answer, 3);
-        std::cout << "TEST RESULT: case = " << i << ", pass_count = " << pass_count
-                  << std::endl;
+
+        vec3d(n) { delta[n] = c_out[n] - c_answer[n]; }
+        if (rod::absolute(delta) < 0.01)
+        {
+            pass_count++;
+            std::cout << "PASS\n";
+        }
+        else
+            std::cout << "FAIL\n";
+
     }
 
     if (pass_count == 6)

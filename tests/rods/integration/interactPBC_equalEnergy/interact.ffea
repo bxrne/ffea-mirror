@@ -1,12 +1,12 @@
 <param>
     <calc_steric_rod = 1>
-	<pbc_rod = 1>
+    <pbc_rod = 1>
     <calc_noise = 0>
     <restart = 0>
-    <dt = 1e-12>
+    <dt = 1e-11>
     <check = 1>
-    <num_steps = 1>
-    <ssint_cutoff = 1e-9>  <!-- Simulation box, dimension L = 200 nm (1176.471) -->
+    <num_steps = 5>
+    <ssint_cutoff = 1e-9>  <!-- Simulation box, dimension h = 200 nm (1176.471) -->
     <es_N_x = 200>
     <es_N_y = 200>
     <es_N_z = 200>
@@ -42,9 +42,9 @@
     <num_states = (1)>
 </param>
 <system>
-    <!-- Rods have radius R = 2.5 nm (14.706), length l = 50 nm (294.118), and point in z -->
+    <!-- Rods have radius R = 2.5 nm (14.706), length L = 50 nm (294.118), and point in z -->
     <!-- Initial centreline separation of R -->
-    <!-- Object are positioned relative to 0.5(w, h, d), NOT (0,0,0) -->
+    <!-- Object are positioned relative to 0.5(hx, hy, hz), NOT (0,0,0) -->
     <rod>
             <input = z-axis.rod>
             <output = 1A.rodtraj>
@@ -62,14 +62,14 @@
     <rod>
             <input = z-axis.rod>
             <output = 2A.rodtraj>
-            <centroid_pos = (0.0, -580.883, 0.0)>  <!-- -0.5L + 0.5R, left edge -->
+            <centroid_pos = (0.0, -580.883, 0.0)>  <!-- -0.5h + 0.5R, left edge -->
             <rotation = (0.0, 0.0, 0.0)>
             <scale = 1>
     </rod>
     <rod>
             <input = z-axis.rod>
             <output = 2B.rodtraj>
-            <centroid_pos = (0.0, 580.883, 0.0)>  <!--  0.5L - 0.5R, right edge -->
+            <centroid_pos = (0.0, 580.883, 0.0)>  <!--  0.5h - 0.5R, right edge -->
             <rotation = (0.0, 0.0, 0.0)>
             <scale = 1>
     </rod>

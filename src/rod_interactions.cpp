@@ -142,6 +142,31 @@ void finite_length_correction(float c[3], float r[3], float p[3])
     }
 }
 
+// stupid implementation to get around a linker error
+void finite_length_correction(float c[3], float r[3], float p[3], OUT float c_out[3])
+{
+    float r_c[3] = { 0 };
+    float dot = 0;
+
+    vec3d(n) { r_c[n] = c[n] - r[n]; }
+    dot = dot_product_3x1(p, r_c);
+
+    if (dot <= 0)
+    {
+        vec3d(n) { c_out[n] = r[n]; }
+    }
+    else if (dot >= rod::absolute(p) * rod::absolute(p))
+    {
+        vec3d(n) { c_out[n] = r[n] + p[n]; }
+    }
+
+    if (rod::dbg_print)
+    {
+        std::cout << "finite_length_correction():\n";
+        printf("  p.(c - r) : %.3e\n", dot);
+    }
+}
+
 
 /** Compare the centreline displacement, c_ab, to the following
  * rod-rod displacements:
@@ -283,6 +308,16 @@ std::vector<int> nearest_periodic_image(float a[3], float b[3], std::vector<floa
 {
     std::vector<int> img(3, 0);
     vec3d(n) { img.at(n) = std::floor((b[n] - a[n] + 0.5 * box_dim[n]) / box_dim[n]); }
+
+    if (dbg_print)
+    {
+        std::cout << "nearest_periodic_image:\n";
+        print_array("  a", a, 3);
+        print_array("  b", b, 3);
+        print_vector("  box_dim", box_dim);
+        print_vector("  img", img);
+    }
+    
     return img;
 }
 
@@ -318,6 +353,10 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
         vec3d(n){shift[n] = box_dim[n] * img.at(n);}
         vec3d(n){r_b[n] -= shift[n];}
     }
+
+    // TODO: midpoint needs a recalc here, to include pbc shift
+    rod::get_element_midpoint(p_b, r_b, mid_b);
+    vec3d(n){mid_ab[n] = mid_b[n] - mid_a[n];}
 
     if (rod::dbg_print)
     {
@@ -388,7 +427,7 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
     }
     else if (rod::dbg_print)
     {
-        std::cout << "  ignored; outside steric regime\n";
+        std::cout << "  ignored; outside steric regime\n\n";
     }
 }
 

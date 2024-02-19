@@ -28,5 +28,6 @@ set (INTERACT_PBC_DIR_PATH     "${PROJECT_BINARY_DIR}/tests/rods/integration/${I
 file (COPY run_test.py                          DESTINATION ${INTERACT_PBC_DIR_PATH})
 file (COPY create_straight_rod.py               DESTINATION ${INTERACT_PBC_DIR_PATH})
 file (COPY interact.ffea                        DESTINATION ${INTERACT_PBC_DIR_PATH})
+file (COPY cleanup.sh                           DESTINATION ${INTERACT_PBC_DIR_PATH})
 
 add_test(NAME ${INTERACT_PBC_CTEST} COMMAND ${PYTHON_EXECUTABLE} run_test.py)

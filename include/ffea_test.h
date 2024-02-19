@@ -44,6 +44,8 @@
 #include "Solver.h"
 #include "SparseSubstitutionSolver.h"
 #include "World.h"
+#include "rod_interactions.h"
+
 
 // ffea_test allows you to build unit tests in FFEA that can be accessed via a
 // .ffeatest script file The reason is that otherwise, you'd have to compile a

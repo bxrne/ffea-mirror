@@ -28,5 +28,6 @@ set (WRAP_PBC_DIR_PATH     "${PROJECT_BINARY_DIR}/tests/rods/integration/${WRAP_
 file (COPY run_test.py                          DESTINATION ${WRAP_PBC_DIR_PATH})
 file (COPY create_straight_rod.py               DESTINATION ${WRAP_PBC_DIR_PATH})
 file (COPY wrap.ffea                            DESTINATION ${WRAP_PBC_DIR_PATH})
+file (COPY cleanup.sh                           DESTINATION ${WRAP_PBC_DIR_PATH})
 
 add_test(NAME ${WRAP_PBC_CTEST} COMMAND ${PYTHON_EXECUTABLE} run_test.py)

@@ -396,7 +396,7 @@ namespace rod
         if (this->calc_steric == 1)
             do_steric();
 
-        if (this->calc_vdw == 1)
+        //if (this->calc_vdw == 1)
             // do_vdw();
 
         // Dynamics
@@ -489,10 +489,19 @@ namespace rod
             std::vector<float> x_force_vector{x_force, x_noise, applied_force_x, x_steric, x_vdw};
             std::vector<float> y_force_vector{y_force, y_noise, applied_force_y, y_steric, y_vdw};
             std::vector<float> z_force_vector{z_force, z_noise, applied_force_z, z_steric, z_vdw};
+
             float delta_r_x = rod::get_delta_r(translational_friction, timestep, x_force_vector, flow_velocity[0]);
             float delta_r_y = rod::get_delta_r(translational_friction, timestep, y_force_vector, flow_velocity[1]);
             float delta_r_z = rod::get_delta_r(translational_friction, timestep, z_force_vector, flow_velocity[2]);
             float delta_twist = rod::get_delta_r(rotational_friction, timestep, twist_force, twist_noise, applied_force_twist);
+
+            if (dbg_print)
+            {   std::cout << "dynamics, node " << node_no << ":\n";
+                std::cout << "  delta_r_x :   " << delta_r_x << "\n";
+                std::cout << "  delta_r_y :   " << delta_r_y << "\n";
+                std::cout << "  delta_r_z :   " << delta_r_z << "\n";
+                std::cout << "  delta_twist : " << delta_twist << "\n";
+            }
 
             // Update rod node positions
             current_r[node_no * 3] += delta_r_x;

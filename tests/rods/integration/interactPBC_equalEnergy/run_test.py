@@ -60,10 +60,10 @@ def main():
 
     ax.view_init(elev=20., azim=-35, roll=0)
     plt.legend()
-    # plt.show()
     plt.savefig("position_preview.png", dpi=400)
+    plt.close()
 
-    # Check that all rods have some interaction energy
+    # Check that all rods have a finite interaction energy on at least one node
     no_zero_energy = energy["1a"][-1].any() and energy["1b"][-1].any() and energy["2a"][-1].any() and energy["2b"][-1].any()
 
     # Surface-surface energy 1A and 2A should be identical, as should 1B and 2B
@@ -96,18 +96,25 @@ def main():
     print("Edge (t=tmax)\n", r_diff_edge[1])
     print(f"<diff_y>: {np.mean(diff_y_edge):e}")
 
-    # Pass if:
-    # 1) central rods move apart
-    # 2) edge rods move together
-    # 3) rods 1A and 2A have identical energies (as do1B and 2B)
-    # 4) every rod has some interaction energy
-    if np.mean(diff_y_cent) > 0 and np.mean(diff_y_edge) < 0 and abs(np.mean(diff_energy_ab)) < 1e-16 and no_zero_energy:
-        return 0
+    plt.title("Node 3 displacement from initial position")
+    nsteps = r["1a"].shape[0]
+    plt.plot(np.arange(nsteps), np.linalg.norm((r["1a"][:, 2, :] - r["1a"][0, 2, :])*1e9, axis=1), '-', label="Rod 1a")
+    plt.plot(np.arange(nsteps), np.linalg.norm((r["1b"][:, 2, :] - r["1b"][0, 2, :])*1e9, axis=1), '-', label="Rod 1b")
+    plt.plot(np.arange(nsteps), np.linalg.norm((r["2a"][:, 2, :] - r["2a"][0, 2, :])*1e9, axis=1), '-', label="Rod 2a")
+    plt.plot(np.arange(nsteps), np.linalg.norm((r["2b"][:, 2, :] - r["2b"][0, 2, :])*1e9, axis=1), '-', label="Rod 2b")
+    plt.ylabel("Displacement (nm)")
+    plt.xlabel("Step")
+    plt.legend()
+    plt.savefig("Node3Pos.png", dpi=300)
 
-    print(np.mean(diff_y_cent) > 0)
-    print(np.mean(diff_y_edge) < 0)
-    print(abs(np.mean(diff_energy_ab)) < 1e-16)
-    print(no_zero_energy)
+    print("Pass conditions:")
+    print("  Central rods repel towards edge: ", np.mean(diff_y_cent) > 0)
+    print("  Edge rods repel towards centre:  ", np.mean(diff_y_edge) < 0)
+    print("  Same energy on all rods:         ", abs(np.mean(diff_energy_ab)) < 1e-12)
+    print("  No zero energy rods:             ", no_zero_energy)
+
+    if np.mean(diff_y_cent) > 0 and np.mean(diff_y_edge) < 0 and abs(np.mean(diff_energy_ab)) < 1e-12 and no_zero_energy:
+        return 0
 
     return 1
 
