@@ -125,5 +125,7 @@ def main():
             for pos in site_pos:
                 f.write(f"{pos[0]:6e},{pos[1]:6e},{pos[2]:6e}\n")
 
+        # rc.preview_rod(my_rod.current_r[0], vdw_site=site_pos)
+
 if __name__ == "__main__":
     main()
