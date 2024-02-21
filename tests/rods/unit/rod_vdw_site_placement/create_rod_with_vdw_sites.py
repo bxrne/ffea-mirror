@@ -49,7 +49,7 @@ def get_parent_element(r_frame, contour_length, norm_length_along_rod, num_nodes
     for node in range(num_nodes - 1):
         r1 = r_frame[node, :]
         r2 = r_frame[node + 1, :]
-        
+
         p = r2 - r1
 
         pmag = np.linalg.norm(p)
@@ -125,7 +125,7 @@ def main():
             for pos in site_pos:
                 f.write(f"{pos[0]:6e},{pos[1]:6e},{pos[2]:6e}\n")
 
-        # rc.preview_rod(my_rod.current_r[0], vdw_site=site_pos)
+        # rc.preview_rod(my_rod.current_r[0], vdw_site=site_pos, scale=1e9, save=True)
 
 if __name__ == "__main__":
     main()
