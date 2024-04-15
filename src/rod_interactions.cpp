@@ -317,7 +317,7 @@ std::vector<int> nearest_periodic_image(float a[3], float b[3], std::vector<floa
         print_vector("  box_dim", box_dim);
         print_vector("  img", img);
     }
-    
+
     return img;
 }
 
@@ -354,7 +354,6 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
         vec3d(n){r_b[n] -= shift[n];}
     }
 
-    // TODO: midpoint needs a recalc here, to include pbc shift
     rod::get_element_midpoint(p_b, r_b, mid_b);
     vec3d(n){mid_ab[n] = mid_b[n] - mid_a[n];}
 
@@ -370,7 +369,9 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
         std::printf("  cutoff     :    %.3f\n", std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_sum);
     }
 
-    if (rod::absolute(mid_ab) < std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_sum)
+    float cutoff = std::max(rod::absolute(p_a), rod::absolute(p_b)) + radius_sum;
+
+    if (rod::absolute(mid_ab) < cutoff)
     {
         rod::element_minimum_displacement(p_a, p_b, r_a, r_b, c_a, c_b);
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
@@ -390,7 +391,6 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
                 std::cout << "  generating interaction structs\n";
             }
 
-            // ! Save modified r_a, r_b, image ID [i,j,k], image origin coordinates [x,y,z]
             InteractionData stericDataA(
                 rod_id_a,
                 rod_id_b,
@@ -425,9 +425,13 @@ void set_steric_nbrs(int rod_id_a, int rod_id_b, int elem_id_a,
             throw std::runtime_error("Rod elements have fully overlapped.");
         }
     }
-    else if (rod::dbg_print)
+    else if (rod::dbg_print and rod::absolute(mid_ab) >= cutoff)
     {
         std::cout << "  ignored; outside steric regime\n\n";
+    }
+    else if (rod::dbg_print)
+    {
+        throw std::runtime_error("Invalid distance to rod::set_steric_nbrs()");
     }
 }
 
@@ -557,7 +561,7 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
 */
 
 float vdw_energy_6_12(float r_inv, float eps, float sig)
-{   
+{
     float sr = sig * r_inv;
     float sr3 = sr * sr * sr;
     float sr6 = sr3 * sr3;
@@ -578,14 +582,14 @@ float vdw_force_6_12(float r_inv, float eps, float sig)
 // r = surface-surface distance
 float vdw_energy_interp(float r, float eps, float r_min_inv)
 {
-    float rr = r * r_min_inv; 
+    float rr = r * r_min_inv;
     return eps * (2* rr * rr * rr - 3 * rr * rr);
 }
 
 // r_min_inv = 1 / (2^1/6 * sigma)
 float vdw_force_interp(float r, float eps, float r_min_inv)
 {
-    float rr = r * r_min_inv; 
+    float rr = r * r_min_inv;
     return 6 * eps * r_min_inv * (rr * rr - rr);
 }
 
@@ -685,8 +689,9 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     float radius_sum = radius_a + radius_b;
 
     // ! - get VDW site position
-    // site_a
-    // site_b
+    // centreline distance is just point-to-point distance of sites, nothing fancy
+    vec3d(n){c_a[n] = site_a.pos[n];}
+    vec3d(n){c_b[n] = site_b.pos[n];}
 
     if (periodic)
     {
@@ -743,9 +748,13 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     {
         std::cout << "  ignored; exceeded vdw cutoff\n";
     }
+    else if (rod::dbg_print and mag - radius_sum <= 0)
+    {
+        std::cout << "  ignored; within steric regime\n";
+    }
     else if (rod::dbg_print)
     {
-        std::cout << "  ignored; steric regime\n";
+        throw std::runtime_error("Invalid distance to rod::set_vdw_nbrs()");
     }
 }
 

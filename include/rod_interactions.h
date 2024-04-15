@@ -91,9 +91,9 @@ namespace rod
         float p[3]);
 
     void finite_length_correction(
-        float c[3], 
-        float r[3], 
-        float p[3], 
+        float c[3],
+        float r[3],
+        float p[3],
         OUT float c_out[3]);
 
     void nearest_node_correction(

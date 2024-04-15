@@ -137,7 +137,16 @@ def main():
 
         # test function located in: src/ffea_test.cpp
         print("Calling FFEA from Python script")
-        subprocess.call(["ffea", ffea_script_name + ".ffea"])
+        ffea_proc = subprocess.run(["ffea", ffea_script_name + ".ffea"], capture_output=True, text=True)
+
+        print("====FFEA STDOUT===")
+        print(ffea_proc.stdout)
+        print("====FFEA STDERR===")
+        print(ffea_proc.stderr)
+
+
+        if ffea_proc.returncode != 0:
+            sys.exit("Error calling FFEA")
 
         # load both rod trajectories
         print("Analysing output of FFEA simulation\n")

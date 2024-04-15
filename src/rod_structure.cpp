@@ -1006,6 +1006,8 @@ namespace rod
             }
         }
 
+        infile.close();
+
         if (this->vdw_sites.size() != num_vdw_sites)
         {
             std::string err = "Size of VDW site array (" +
@@ -1020,6 +1022,7 @@ namespace rod
             vec3d(n) { this->vdw_site_pos.at((i * 3) + n) = this->vdw_sites.at(i).pos[n]; }
 
         printf("Read in %d VDW sites on rod %d\n", num_vdw_sites, this->rod_no);
+
         return *this;
     }
 
