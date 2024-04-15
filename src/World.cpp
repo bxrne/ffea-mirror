@@ -298,7 +298,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     {
         if (rod_lj_matrix.init(params.rod_lj_in_fname, "ljsteric", params.calc_vdw_rod, params.ssint_cutoff) == FFEA_ERROR)
             FFEA_ERROR_MESSG("Error when reading from rod Lennard-Jones params file (.rodlj).\n");
-            
+
     }
 
     // detect how many threads we have for openmp
@@ -4373,7 +4373,6 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
     int coupling_counter = 0;
     for (auto &tag_str : block)
     {
-
         systemreader->parse_tag(tag_str, tag_out);
 
         // Are we in a <rod> block?
@@ -4394,13 +4393,14 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
 
         // Set filename
         if (tag_out[0] == "output" && rod_parent && !restart)
+        {
             current_rod->change_filename(tag_out[1]);
+        }
 
         // Scale rod
         if (tag_out[0] == "scale" && rod_parent && !restart)
         {
             float scale = stof(tag_out[1]);
-            //std::cout << "I have been told to scale this rod by a factor of " << scale << " but I can't.\n";
             current_rod->scale_rod(scale);
         }
 
@@ -4435,7 +4435,9 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
 
         // van der Waals interaction sites (.rodvdw file)
         if (tag_out[0] == "vdw" && rod_parent && !restart && params.calc_vdw_rod)
+        {
             current_rod->load_vdw(tag_out[1]);
+        }
 
     }
 
