@@ -10,7 +10,7 @@
     <trajectory_out_fname = outputs/del.ftj>
     <measurement_out_fname = outputs/del.fm>
     <checkpoint_out = outputs/del.fcp>
-    <rod_lj_params = lj_twoRods.rodlj>
+    <rod_lj_params = example.rodlj>
     <epsilon = 0.01>
     <max_iterations_cg = 1000>
     <kappa = 2e9>
@@ -46,8 +46,8 @@
     <rod>
             <input = z-axis.rod>
             <output = outputs/lj1.rodtraj>
-            <centroid_pos = (0.0,0.0,0.0)>
-            <rotation = (0.00, 0.00, 0,00)>
+            <centroid_pos = (0.0, 0.0, 0.0)>
+            <rotation = (0.00, 0.00, 0.00)>
             <scale = 1>
             <vdw = z-axis.rodvdw>
     </rod>
@@ -55,7 +55,7 @@
             <input = z-axis.rod>
             <output = outputs/lj2.rodtraj>
             <centroid_pos = (38.24, 0.0, 0.0)>   < ! -- 6.5 nm = 2R + 1.5r_eq [FFEA units] -- >
-            <rotation = (1.57, 0.00, 0,00)>     < ! -- 1/2 pi rad -- >
+            <rotation = (1.57, 0.00, 0.00)>     < ! -- 1/2 pi rad -- >
             <scale = 1>
             <vdw = z-axis.rodvdw>
     </rod>

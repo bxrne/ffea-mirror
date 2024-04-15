@@ -53,16 +53,14 @@ def main():
     rc.set_params(rod=my_rod, stretch_constant=stretch,
                 torsion_constant=twist, radius=radius,
                 bending_modulus=bend)
-    
+
     # LJ parameter matrix (SI units)
     sig = float(params["r_min"]) / np.power(2, 1.0/6)
     eps = params["eps_kT"] * params["ffea_energy"]
     lj_params = [(0, 0, eps, sig)]
 
-    # each .ffea script needs a .rodlj file
-    ffea_inputs = glob.glob("*.ffea")
-    for f in ffea_inputs:
-        rc.write_lj_matrix(f.split(".")[0], lj_params)
+    # each .ffea script can use the same .rodlj file
+    rc.write_lj_matrix("example", lj_params)
 
     # Types and positions of interaction sites
     rc.write_vdw_sites(rod=my_rod, vdw_fname=f"{rod_name:s}.rodvdw", vdw_sites=sites)
