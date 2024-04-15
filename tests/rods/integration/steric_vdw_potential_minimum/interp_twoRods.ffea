@@ -54,8 +54,8 @@
     <rod>
             <input = z-axis.rod>
             <output = outputs/interp2.rodtraj>
-            <centroid_pos = (32.35, 0.0, 0.0)>   < ! -- 5.5 nm = 2R + 0.5r_eq [FFEA units] -- >
-            <rotation = (1.57, 0.00, 0.00)>     < ! -- 1/2 pi rad -- >
+            <centroid_pos = (32.35, 0.0, 0.0)>   <!-- 5.5 nm = 2R + 0.5r_eq [FFEA units] -->
+            <rotation = (1.57, 0.00, 0.00)>     <!-- 1/2 pi rad -->
             <scale = 1>
             <vdw = z-axis.rodvdw>
     </rod>
