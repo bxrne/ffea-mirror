@@ -152,7 +152,6 @@ namespace rod
         int get_num_vdw_sites();
         int get_num_nodes();
         Rod check_neighbour_list_dimensions();
-        void reset_nbr_list();
         void reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list);
         Rod print_node_positions();
         std::vector<float> net_steric_force_nbrs(int elem_id);

@@ -673,7 +673,7 @@ void VDWSite::get_parent_element(const float* r_rod, const float contour_length,
     this->L_elem = 0;
 }
 
-// ! - currently broken
+
 void set_vdw_nbrs(const VDWSite site_a, const VDWSite site_b, float p_a[3], float p_b[3],
     float r_a[3], float r_b[3], float radius_a, float radius_b,
     std::vector<InteractionData>& nbr_a, std::vector<InteractionData>& nbr_b,
@@ -706,6 +706,7 @@ void set_vdw_nbrs(const VDWSite site_a, const VDWSite site_b, float p_a[3], floa
     {
         std::printf("  |c_ab|             : %.3e\n", mag);
         std::printf("  surf-surf distance : %.3e\n", mag - radius_sum);
+        std::printf("  vdw_cutoff         : %.3e\n", vdw_cutoff);
         std::printf("  eps                : %.3e\n", epsilon);
         std::printf("  sig                : %.3e\n", sigma);
         site_a.print_info();

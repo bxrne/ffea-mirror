@@ -6,6 +6,7 @@
     <dt = 1e-11>
     <check = 100>
     <num_steps = 10000>
+    <vdw_cutoff = 5e-9>
     <rng_seed = time>
     <trajectory_out_fname = outputs/del.ftj>
     <measurement_out_fname = outputs/del.fm>
@@ -21,7 +22,6 @@
     <calc_vdw = 0>
     <calc_kinetics = 0>
     <vdw_type = steric>
-    <vdw_cutoff = 5e-10>
     <inc_self_vdw = 0>
     <vdw_steric_factor = 2e3>
     <calc_es = 0>

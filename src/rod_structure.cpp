@@ -481,7 +481,12 @@ namespace rod
                 x_vdw = this->vdw_force[node_no * 3];
                 y_vdw = this->vdw_force[(node_no * 3) + 1];
                 z_vdw = this->vdw_force[(node_no * 3) + 2];
+
+                if (rod::dbg_print)
+                    std::cout << "vdw_force, node " << node_no << ": (" << x_vdw << ", " << y_vdw << ", " << z_vdw << ")\n";
             }
+
+
 
             if (flow_profile == "shear")
                 flow_velocity[0] = shear_rate * current_r[(node_no*3) + 1];
@@ -1394,15 +1399,6 @@ namespace rod
         return *this;
     }
 
-    void Rod::reset_nbr_list()
-    {
-        for (int i = 0; i < this->get_num_nodes() - 1; i++)
-            this->steric_nbrs.at(i).clear();
-
-        if (rod::dbg_print)
-            std::cout << "Reset neighbour list of rod " << this->rod_no << std::endl;
-    }
-
     void Rod::reset_nbr_list(std::vector<std::vector<InteractionData>> &nbr_list)
     {
         for (int i = 0; i < this->get_num_nodes() - 1; i++)
@@ -1648,6 +1644,7 @@ namespace rod
     {
         std::vector<float> node_force(6, 0);
 
+        // reset force from last timestep
         for (int i = 0; i < this->length; i++)
             this->vdw_force[i] = 0;
 
@@ -1657,6 +1654,7 @@ namespace rod
                 std::cout << "ROD VDW CALC " << this->rod_no << "|" << i << "\n";
 
             node_force = net_vdw_force_nbrs(i);
+
             // start node
             this->vdw_force[i * 3] += node_force[0];
             this->vdw_force[(i * 3) + 1] += node_force[1];
@@ -1665,12 +1663,7 @@ namespace rod
             this->vdw_force[(i * 3) + 3] += node_force[3];
             this->vdw_force[(i * 3) + 4] += node_force[4];
             this->vdw_force[(i * 3) + 5] += node_force[5];
-        }
 
-        if (rod::dbg_print)
-        {
-            rod::print_array("  vdw_force", this->vdw_force, this->get_num_nodes());
-            std::cout << "\n";
         }
 
     }
