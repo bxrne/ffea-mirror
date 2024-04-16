@@ -8,6 +8,7 @@ import sys
 import glob
 import subprocess
 import numpy as np
+import pprint
 
 from omegaconf import OmegaConf
 
@@ -31,7 +32,7 @@ def lj_6_12(r, r_eq, eps):
         r_eq:  distance where U = -eps
         eps:   potential well depth
 
-        r > 0 when called, so force = - dU / dr
+        r > 0 when called
 
     return U, F
     """
@@ -45,7 +46,7 @@ def lj_interp(r, r_eq, eps):
     """
         Interpolative potential, ben Hanson thesis p74-77
 
-        r > 0 when called, so force = - dU / dr
+        r > 0 when called
 
     return U, F
     """
@@ -58,7 +59,7 @@ def steric(r, k):
     """
         Quadratic repulsive potential.
 
-        r < 0 when called, so force = - dU / dr
+        r < 0 when called
 
     return U, F
     """
@@ -125,10 +126,11 @@ def main():
 
     steric_energy_max = get_max_steric_energy() * energy_dim
 
-    err_lim = 1e-12
+    err_lim = 1e-13
     print(f"Error threshold: {err_lim:e}\n")
 
     pass_count = 0
+    passes = {}
 
     # =========================== FFEA SCRIPTS =========================== #
     for i, ffea_path in enumerate(ffea_scripts):
@@ -137,19 +139,21 @@ def main():
 
         # test function located in: src/ffea_test.cpp
         print("Calling FFEA from Python script")
-        ffea_proc = subprocess.run(["ffea", ffea_script_name + ".ffea"], capture_output=True, text=True)
+        ffea_proc = subprocess.run(
+            ["ffea", ffea_script_name + ".ffea"], capture_output=True, text=True
+        )
 
-        print("====FFEA STDOUT===")
-        print(ffea_proc.stdout)
-        print("====FFEA STDERR===")
-        print(ffea_proc.stderr)
+        with open("outputs/" + ffea_script_name + "_stdout.txt", "w") as f:
+            f.write(ffea_proc.stdout)
 
+        with open("outputs/" + ffea_script_name + "_stderr.txt", "w") as f:
+            f.write(ffea_proc.stderr)
 
         if ffea_proc.returncode != 0:
-            sys.exit("Error calling FFEA")
+            sys.exit(f"Error calling FFEA ({ffea_proc.returncode:d})")
 
         # load both rod trajectories
-        print("Analysing output of FFEA simulation\n")
+        print(f"Analysing output of FFEA simulation: {ffea_script_name:s}\n")
         rod0 = ffea_rod.ffea_rod(filename=f"outputs/{regime_name:s}1.rodtraj")
         rod1 = ffea_rod.ffea_rod(filename=f"outputs/{regime_name:s}2.rodtraj")
 
@@ -179,70 +183,67 @@ def main():
         # force occurs halfway along element
         print("# === INTRA-ELEMENT FORCES EQUAL? === #")
         if np.linalg.norm(force_02 - force_03) < err_lim:
-            print("Rod 0, nodes 2 and 3: force magnitudes are equal (PASS)")
+            print(" Rod 0, nodes 2 and 3: force magnitudes are equal (PASS)")
             intra_element = True
         else:
-            print("Rod 0, nodes 2 and 3: force magnitudes are NOT equal (FAIL)")
+            print(" Rod 0, nodes 2 and 3: force magnitudes are NOT equal (FAIL)")
             intra_element = False
 
-        print("node 2: ", force_02)
-        print("node 3: ", force_03)
-        print("delta: ", np.linalg.norm(force_02 - force_03))
+            print(" node 2: ", force_02)
+            print(" node 3: ", force_03)
+            print(" delta: ", np.linalg.norm(force_02 - force_03))
         print("")
 
         if np.linalg.norm(force_12 - force_13) < err_lim:
-            print("Rod 1, nodes 2 and 3: force magnitudes are equal (PASS)")
+            print(" Rod 1, nodes 2 and 3: force magnitudes are equal (PASS)")
             intra_element = True
         else:
-            print("Rod 1, nodes 2 and 3: force magnitudes are NOT equal (FAIL)")
+            print(" Rod 1, nodes 2 and 3: force magnitudes are NOT equal (FAIL)")
             intra_element = False
 
-        print("node 2: ", force_12)
-        print("node 3: ", force_13)
-        print("delta: ", np.linalg.norm(force_12 - force_13))
+            print(" node 2: ", force_12)
+            print(" node 3: ", force_13)
+            print(" delta: ", np.linalg.norm(force_12 - force_13))
         print("")
 
         print("# === INTER-ELEMENT FORCES EQUAL AND OPPOSITE? === #")
-        # force_02 + force_03 = -(force_12 + force_13)
+        # force_02 + force_03 = -(force_12 + force_13) sum to zero
         if np.linalg.norm(force_02 + force_03 + force_12 + force_13) < err_lim:
-            print("Inter-element forces are symmetric (PASS)")
+            print(" Inter-element forces are symmetric (PASS)")
             inter_element = True
         else:
-            print("Inter-element forces are NOT symmetric (FAIL)")
+            print(" Inter-element forces are NOT symmetric (FAIL)")
             inter_element = False
 
-        print("rod 0, node 2: ", force_02)
-        print("rod 0, node 3: ", force_03)
-        print("rod 1, node 2: ", force_12)
-        print("rod 1, node 3: ", force_13)
-        print("delta: ", np.linalg.norm(force_02 + force_03 + force_12 + force_13))
+            print(" rod 0, node 2: ", force_02)
+            print(" rod 0, node 3: ", force_03)
+            print(" rod 1, node 2: ", force_12)
+            print(" rod 1, node 3: ", force_13)
+            print(" delta: ", np.linalg.norm(force_02 + force_03 + force_12 + force_13))
         print("")
 
         print("# === FORCE ONLY ON CENTRAL ELEMENTS? === #")
         force0_outer = np.delete(force0, [6, 7, 8, 9, 10, 11])
         force1_outer = np.delete(force1, [6, 7, 8, 9, 10, 11])
         if np.any(force0_outer != 0):
-            print("Rod 0, force is on NON-central elements (FAIL)")
-            print("offending nodes: ", list(np.where(force0_outer != 0)[0] // 3))
+            print(" Rod 0, force is on NON-central elements (FAIL)")
+            print(" offending nodes: ", list(np.where(force0_outer != 0)[0] // 3))
             central_element = False
+            print(" Rod 0 forces:")
+            print(force0)
         else:
-            print("Rod 0, force is on central element only (PASS)")
+            print(" Rod 0, force is on central element only (PASS)")
             central_element = True
-
-        print("Rod 0 forces:")
-        print(force0)
-        print("")
 
         if np.any(force1_outer != 0):
-            print("Rod 1, force is on NON-central elements (FAIL)")
-            print("offending nodes: ", list(np.where(force1_outer != 0)[0] // 3))
+            print(" Rod 1, force is on NON-central elements (FAIL)")
+            print(" offending nodes: ", list(np.where(force1_outer != 0)[0] // 3))
             central_element = False
+            print(" Rod 1 forces:")
+            print(force1)
         else:
-            print("Rod 1, force is on central element only (PASS)")
+            print(" Rod 1, force is on central element only (PASS)")
             central_element = True
-
-        print("Rod 1 forces:")
-        print(force1)
         print("")
 
         if regime_name == "steric":
@@ -262,51 +263,57 @@ def main():
         print(nbrs1)
         print("")
 
-        print("# === FORCES MATCH EXPECTED VALUES? === #")
         # rods are separated in x only
         radius_sum = radius0 + radius1
-        try:
-            ss_dist = (
-                abs(rod0.current_r[1, 0, 0] - rod1.current_r[1, 0, 0]) - radius_sum
-            )
-        except:
-            ss_dist = centreline_dist[regime_name] - radius_sum
+
+        ss_dist = centreline_dist[regime_name] - radius_sum
 
         # expected energy and force are computed from one of three functions
         expect_energy, expect_force = get_energy_force(
             r=ss_dist,
-            k=steric_constant(steric_energy_max, r_max=radius_sum),
+            k_steric=steric_constant(steric_energy_max, r_max=radius_sum),
             r_eq=params["r_min"],
-            eps=params["eps"],
+            eps=params["eps_kT"] * params["ffea_energy"],
             steric_func=steric,
             int_func=lj_interp,
             lj_func=lj_6_12,
         )
 
-        print(f"Surf-surf distance in x:    {ss_dist:.3e} m")
+        print("# === EXPECTED FORCE MAGNITUDES ON NODES? === #")
+        print(f" Expected surf-surf distance:    {ss_dist:.3e} m")
+        print(f" Expected energy:                {expect_energy:.3e} J")
+        print(f" Expected element force:         {expect_force:.3e} N")
+        print(f" Expected node force:            {expect_force/2:.3e} N\n")
 
-        print("Expected values:")
-        print(f"  Expected energy:          {expect_energy:.3e} J")
-        print(f"  Expected element force:   {expect_force:.3e} N")
-        print(f"  Expected node force:      {expect_force/2:.3e} N\n")
+        print(" node forces:")
+        print("     02", force_02[0])
+        print("     03", force_03[0])
+        print("     12", force_12[0])
+        print("     13", force_13[0])
 
-        print("Node force deltas:")
-        print("02", force_02[0] - expect_force / 2)
-        print("03", force_03[0] - expect_force / 2)
-        print("12", force_12[0] - expect_force / 2)
-        print("13", force_13[0] - expect_force / 2)
-
+        # signs are just ignored here, focus on magnitude
         if (
-            (force_02[0] - expect_force / 2 < err_lim)
-            and (force_03[0] - expect_force / 2)
-            and (force_12[0] - expect_force / 2)
-            and (force_13[0] - expect_force / 2)
+            (abs(force_02[0]) - abs(expect_force) / 2 < err_lim)
+            and (abs(force_03[0]) - abs(expect_force) / 2 < err_lim)
+            and (abs(force_12[0]) - abs(expect_force) / 2 < err_lim)
+            and (abs(force_13[0]) - abs(expect_force) / 2 < err_lim)
+            and (force_02[0] != 0)
+            and (force_03[0] != 0)
+            and (force_12[0] != 0)
+            and (force_13[0] != 0)
         ):
             match_boe = True
-            print("Node forces match expected values (PASS)")
+            print(" Node forces match expected values (PASS)")
         else:
-            print("Node forces do not match expected values (FAIL)")
+            print(" Node forces do not match expected values (FAIL)")
             match_boe = False
+
+            # print(" deltas:")
+            # print("     02", force_02[0] - expect_force / 2)
+            # print("     03", force_03[0] - expect_force / 2)
+            # print("     12", force_12[0] - expect_force / 2)
+            # print("     13", force_13[0] - expect_force / 2)
+        print("")
 
         print("# === ENERGY MINIMUM? === #")
         # after enough time, the elements should have become separated by r_min, the distance at which the LJ potential is at a minimum
@@ -316,17 +323,19 @@ def main():
         mid0 = rod0.current_r[-1, 2, :] + 0.5 * p0[-1, 2]
         mid1 = rod1.current_r[-1, 2, :] + 0.5 * p1[-1, 2]
 
-        ss_dist = abs(mid0 - mid1) - radius_sum
+        ss_dist = np.linalg.norm(mid0 - mid1) - radius_sum
         print("Centroid rod 0:            ", mid0)
         print("Centroid rod 1:            ", mid1)
         print(f"Surface-surface distance: {ss_dist:.3e}")
+        print(f"r_min:                    {params['r_min']:.3e}")
         print(f"delta:                    {ss_dist - params['r_min']:.3e}")
-        if ss_dist - params["r_min"] < err_lim:
+        if abs(ss_dist - params["r_min"]) < err_lim:
             print("Rod elements are separated by r_min (PASS)")
             energy_minimum = True
         else:
             print("Rod elements are not separated by r_min (FAIL)")
             energy_minimum = False
+        print("")
 
         if (
             intra_element
@@ -336,13 +345,18 @@ def main():
             and energy_minimum
         ):
             pass_count += 1
+            passes[ffea_script_name] = True
         else:
             print("intra-element forces equal:              ", intra_element)
             print("inter-element forces equal and opposite: ", inter_element)
             print("forces only on central elements:         ", central_element)
             print("forces match expected values:            ", match_boe)
+            print("potential energy minimum reached:        ", energy_minimum)
+            passes[ffea_script_name] = False
+        print("")
 
     print(f"Pass count: {pass_count:d}")
+    pprint.pprint(passes)
     if pass_count == len(ffea_scripts):
         return 0
     return 1
