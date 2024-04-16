@@ -396,8 +396,8 @@ namespace rod
         if (this->calc_steric == 1)
             do_steric();
 
-        //if (this->calc_vdw == 1)
-            // do_vdw();
+        if (this->calc_vdw == 1)
+            do_vdw();
 
         // Dynamics
         for (int node_no = 0; node_no < end_node; node_no++)
