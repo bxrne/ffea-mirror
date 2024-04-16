@@ -78,10 +78,10 @@ namespace rod
     void rod_abort(std::string message);
 
     // These are just generic vector functions that will be replaced by mat_vec_fns at some point
-    void print_array(std::string array_name, float array[], int length);
-    void print_array(std::string array_name, int array[], int length);
-    void print_array(std::string array_name, float array[], int start, int end);
-    void print_array(std::string array_name, double array[], int length);
+    void print_array(std::string array_name, const float array[], int length);
+    void print_array(std::string array_name, const int array[], int length);
+    void print_array(std::string array_name, const float array[], int start, int end);
+    void print_array(std::string array_name, const double array[], int length);
     void write_array(FILE *file_ptr, float *array_ptr, int array_len, float unit_scale_factor, bool new_line);
     void write_array(FILE *file_ptr, int *array_ptr, int array_len, bool new_line);
     void write_vector(FILE* file_ptr, const std::vector<float> &vec, float unit_scale_factor, bool new_line);

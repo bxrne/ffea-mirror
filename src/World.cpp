@@ -2234,7 +2234,7 @@ int World::run()
         // Apply springs directly to nodes
         apply_springs();
 
-        // Rod neighbours
+        // Rod steric neighbours
         if (params.calc_steric_rod == 1)
         {
             for (int i = 0; i < params.num_rods; i++)
@@ -2246,13 +2246,34 @@ int World::run()
             }
             if (rod::dbg_print)
             {
-                std::cout << "Generated rod neighbour lists" << std::endl;
+                std::cout << "Generated rod steric neighbour lists" << std::endl;
             }
         }
         else if (rod::dbg_print)
         {
             std::cout << "Rod-rod steric interactions disabled." << std::endl;
         }
+
+        // Rod VDW neighbours
+        if (params.calc_vdw_rod == 1)
+        {
+            for (int i = 0; i < params.num_rods; i++)
+            {
+                for (int j = i + 1; j < params.num_rods; j++)
+                {
+                    update_rod_vdw_nbr_lists(rod_array[i], rod_array[j], &rod_lj_matrix);
+                }
+            }
+            if (rod::dbg_print)
+            {
+                std::cout << "Generated rod vdw neighbour lists" << std::endl;
+            }
+        }
+        else if (rod::dbg_print)
+        {
+            std::cout << "Rod-rod vdw interactions disabled." << std::endl;
+        }
+
 
         // Do rods
         for (int i = 0; i < params.num_rods; i++)
@@ -4501,9 +4522,9 @@ void World::update_rod_vdw_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b, SSINT_mat
     if (rod::dbg_print)
         std::cout << "Updating vdw neighbour lists of rods " << rod_a->rod_no << " and " << rod_b->rod_no << std::endl;
 
-    for (auto const& site_a : rod_a->vdw_sites)
+    for (auto &site_a : rod_a->vdw_sites)
     {
-        for (auto const& site_b : rod_b->vdw_sites)
+        for (auto &site_b : rod_b->vdw_sites)
         {
             int elem_a = site_a.elem_id;
             int elem_b = site_b.elem_id;
@@ -4513,6 +4534,9 @@ void World::update_rod_vdw_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b, SSINT_mat
             rod_b->get_p(elem_b, p_b, false);
 
             map<string, scalar> pmap = lj_matrix->get_SSINT_params(site_a.vdw_type, site_b.vdw_type);
+
+            site_a.update_position(rod_a->current_r);
+            site_b.update_position(rod_b->current_r);
 
             rod::set_vdw_nbrs(
                 site_a,

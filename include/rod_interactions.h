@@ -77,6 +77,8 @@ namespace rod
             float c_a[3],
             float c_b[3],
             float shift[3],
+            float r_a[3],
+            float r_b[3],
             float eps,
             float sig);
 
@@ -210,7 +212,7 @@ namespace rod
 
         VDWSite(const int rodid, const int siteid, const int vdwtype, const float lrod,  const float *r_rod,
             const float contour_length, const int num_nodes);
-        void print_info();
+        void print_info() const;
         void get_parent_element(
             const float* p_rod,
             const float contour_length,

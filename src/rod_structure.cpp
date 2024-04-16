@@ -590,7 +590,7 @@ namespace rod
 
         if (this->calc_steric == 1)
             this->reset_nbr_list(this->steric_nbrs);
-        if (this->calc_steric == 1)
+        if (this->calc_vdw == 1)
             this->reset_nbr_list(this->vdw_nbrs);
 
         return *this;
@@ -1572,7 +1572,7 @@ namespace rod
         this->num_vdw_nbrs[elem_id] = num_nbrs_on_elem;
 
         if (rod::dbg_print)
-            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs_on_elem << " vdw neighbours";
+            std::cout << "Rod " << this->rod_no << ", elem " << elem_id << " has " << num_nbrs_on_elem << " vdw neighbours\n";
 
         for (int nbr_id; nbr_id < num_nbrs_on_elem; nbr_id++)
         {

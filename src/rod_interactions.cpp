@@ -65,7 +65,7 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
 // VDW interactions
 InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     int elem_id_b, float radius_a, float radius_b, float c_a[3], float c_b[3],
-    float shift[3], float eps, float sig)
+    float shift[3], float r_a[3], float r_b[3], float eps, float sig)
 {
     rod_id_self = rod_id_a;
     rod_id_nbr = rod_id_b;
@@ -77,14 +77,13 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     vec3d(n){contact_nbr[n] = c_b[n];}
     vec3d(n){c_ab[n] = c_b[n] - c_a[n];}
     vec3d(n){img_shift[n] = shift[n];}
+    vec3d(n){r_self[n] = r_a[n];}
+    vec3d(n){r_nbr[n] = r_b[n];}
     epsilon = eps;
     sigma = sig;
     r_min = std::pow(2, 1/6) * sigma;
     r_min_inv = 1 / r_min;
 
-
-    vec3d(n){r_self[n] = 0;}
-    vec3d(n){r_nbr[n] = 0;}
 }
 
 bool InteractionData::elements_intersect()
@@ -523,13 +522,6 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
     l1 = rod::absolute(displacement);
     l2 = element_length - l1;
 
-    if (l1 > element_length)
-    {
-        std::cout << "distance: " << l1 << "\n";
-        std::cout << "element length: " << element_length << "\n";
-        throw std::invalid_argument("Distance along rod element, |c - r|, cannot be greater than the element length, |p|.");
-    }
-
     vec3d(n) { force[n] = element_force[n] * (element_length - l1) / element_length; }
     vec3d(n) { force[n + 3] = element_force[n] * (element_length - l2) / element_length; }
 
@@ -548,6 +540,14 @@ std::vector<float> node_force_interpolation(float contact[3], float node_start[3
         print_vector("  force start node", std::vector<float>(force.begin(), std::next(force.begin(), 3)) );
         print_vector("  force end node", std::vector<float>(std::next(force.begin(), 3), force.end()) );
         std::cout << "\n";
+    }
+
+    if (l1 > element_length)
+    {
+        std::string err = "Distance along rod element (" + std::to_string(l1) +
+            ") cannot be greater than the element length (" +
+            std::to_string(element_length) + ")\n";
+        throw std::invalid_argument(err);
     }
 
     return force;
@@ -605,7 +605,7 @@ VDWSite::VDWSite(const int rodid, const int siteid, const int vdwtype, const flo
     this->update_position(r_rod);
 }
 
-void VDWSite::print_info()
+void VDWSite::print_info() const
 {
     std::printf("VDWSite info:\n");
     std::printf("\trod_id:   %d\n", this->rod_id);
@@ -674,7 +674,7 @@ void VDWSite::get_parent_element(const float* r_rod, const float contour_length,
 }
 
 // ! - currently broken
-void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
+void set_vdw_nbrs(const VDWSite site_a, const VDWSite site_b, float p_a[3], float p_b[3],
     float r_a[3], float r_b[3], float radius_a, float radius_b,
     std::vector<InteractionData>& nbr_a, std::vector<InteractionData>& nbr_b,
     bool periodic, std::vector<float> box_dim, float vdw_cutoff,
@@ -688,7 +688,6 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
     float mag = 0;
     float radius_sum = radius_a + radius_b;
 
-    // ! - get VDW site position
     // centreline distance is just point-to-point distance of sites, nothing fancy
     vec3d(n){c_a[n] = site_a.pos[n];}
     vec3d(n){c_b[n] = site_b.pos[n];}
@@ -726,6 +725,8 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
             c_a,
             c_b,
             shift,
+            r_a,
+            r_b,
             epsilon,
             sigma);
         nbr_a.push_back(vdwDataA);
@@ -740,6 +741,8 @@ void set_vdw_nbrs(VDWSite site_a, VDWSite site_b, float p_a[3], float p_b[3],
             c_b,
             c_a,
             shift,
+            r_b,
+            r_a,
             epsilon,
             sigma);
         nbr_b.push_back(vdwDataB);

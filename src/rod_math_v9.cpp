@@ -102,7 +102,7 @@ namespace rod
     }
 
     // Print the contents of an array to the stdout.
-    void print_array(std::string array_name, float array[], int length)
+    void print_array(std::string array_name, const float array[], int length)
     {
         std::cout << array_name << " : [";
         for (int i = 0; i < length; i++)
@@ -119,7 +119,7 @@ namespace rod
         std::cout << "]\n";
     }
 
-    void print_array(std::string array_name, int array[], int length)
+    void print_array(std::string array_name, const int array[], int length)
     {
         std::cout << array_name << " : [";
         for (int i = 0; i < length; i++)
@@ -137,7 +137,7 @@ namespace rod
     }
 
     // Print array slice from start to end (inclusive).
-    void print_array(std::string array_name, float array[], int start, int end)
+    void print_array(std::string array_name, const float array[], int start, int end)
     {
         if (start >= end)
             throw std::invalid_argument("Invalid index range to print_array.");
@@ -157,7 +157,7 @@ namespace rod
         std::cout << "]\n";
     }
 
-    void print_array(std::string array_name, double array[], int length)
+    void print_array(std::string array_name, const double array[], int length)
     {
         std::cout << array_name << " : [";
         for (int i = 0; i < length; i++)
