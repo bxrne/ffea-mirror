@@ -81,7 +81,7 @@ InteractionData::InteractionData(int rod_id_a, int rod_id_b, int elem_id_a,
     vec3d(n){r_nbr[n] = r_b[n];}
     epsilon = eps;
     sigma = sig;
-    r_min = std::pow(2, 1/6) * sigma;
+    r_min = std::pow(2, 1./6) * sigma;
     r_min_inv = 1 / r_min;
 
 }
@@ -575,7 +575,7 @@ float vdw_force_6_12(float r_inv, float eps, float sig)
     float sr3 = sr * sr * sr;
     float sr6 = sr3 * sr3;
     float sr12 = sr6 * sr6;
-    return 24 * eps * r_inv * (2 * sr12 - sr6);
+    return -24 * eps * r_inv * (2 * sr12 - sr6);
 }
 
 // r_min_inv = 1 / (2^1/6 * sigma)

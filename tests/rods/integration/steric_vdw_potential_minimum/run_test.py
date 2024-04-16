@@ -1,7 +1,12 @@
 # Test the calculation of the van der Waals forces
 # Criteria for pass:
-#   Inter-element forces are equal and opposite
-#   After some time, elements settle into the LJ 6_12 potential well
+#   Inter-element forces are equal and opposite (first frame)
+#   Forces are equal on both nodes of a given element (first frame)
+#   Forces match expected values (first frame)
+#   After some time, elements settle into infection points:
+#       Steric:  rods touching (zero surface-surface distance, or sigma)
+#       Interp:  potential well (r_min)
+#       LJ 6_12: potential well (r_min)
 import os
 import shutil
 import sys
@@ -52,7 +57,7 @@ def lj_interp(r, r_eq, eps):
     """
     r_2 = np.power(r / r_eq, 2)
     r_3 = np.power(r / r_eq, 3)
-    return (eps * (2 * r_3 - 3 * r_2), -(6 * eps / r_eq) * (r / r_eq - r_2))
+    return (eps * (2 * r_3 - 3 * r_2), (6 * eps / r_eq) * (r_2 - r / r_eq))
 
 
 def steric(r, k):
@@ -126,7 +131,8 @@ def main():
 
     steric_energy_max = get_max_steric_energy() * energy_dim
 
-    err_lim = 1e-13
+    # single float precision
+    err_lim = 1e-10
     print(f"Error threshold: {err_lim:e}\n")
 
     pass_count = 0
@@ -164,9 +170,11 @@ def main():
         if regime_name == "steric":
             force0 = rod0.steric_force[fi, :, :]
             force1 = rod1.steric_force[fi, :, :]
+            inflection_dist = 0
         elif regime_name == "interp" or regime_name == "lj":
             force0 = rod0.vdw_force[fi, :, :]
             force1 = rod1.vdw_force[fi, :, :]
+            inflection_dist = params["r_min"]
         else:
             raise Exception(f"Invalid regime name: {regime_name:s}.")
 
@@ -192,7 +200,6 @@ def main():
             print(" node 2: ", force_02)
             print(" node 3: ", force_03)
             print(" delta: ", np.linalg.norm(force_02 - force_03))
-        print("")
 
         if np.linalg.norm(force_12 - force_13) < err_lim:
             print(" Rod 1, nodes 2 and 3: force magnitudes are equal (PASS)")
@@ -265,12 +272,11 @@ def main():
 
         # rods are separated in x only
         radius_sum = radius0 + radius1
-
-        ss_dist = centreline_dist[regime_name] - radius_sum
+        expect_dist = centreline_dist[regime_name] - radius_sum
 
         # expected energy and force are computed from one of three functions
         expect_energy, expect_force = get_energy_force(
-            r=ss_dist,
+            r=expect_dist,
             k_steric=steric_constant(steric_energy_max, r_max=radius_sum),
             r_eq=params["r_min"],
             eps=params["eps_kT"] * params["ffea_energy"],
@@ -279,8 +285,8 @@ def main():
             lj_func=lj_6_12,
         )
 
-        print("# === EXPECTED FORCE MAGNITUDES ON NODES? === #")
-        print(f" Expected surf-surf distance:    {ss_dist:.3e} m")
+        print("# === EXPECTED FORCE ON NODES? === #")
+        print(f" Expected surf-surf distance:    {expect_dist:.3e} m")
         print(f" Expected energy:                {expect_energy:.3e} J")
         print(f" Expected element force:         {expect_force:.3e} N")
         print(f" Expected node force:            {expect_force/2:.3e} N\n")
@@ -291,12 +297,16 @@ def main():
         print("     12", force_12[0])
         print("     13", force_13[0])
 
-        # signs are just ignored here, focus on magnitude
         if (
-            (abs(force_02[0]) - abs(expect_force) / 2 < err_lim)
+            #sign
+            (abs(force_02[0] - expect_force) / 2 < err_lim)
+            and (abs(force_03[0] - expect_force) / 2 < err_lim)
+            # magnitude
+            and (abs(force_02[0]) - abs(expect_force) / 2 < err_lim)
             and (abs(force_03[0]) - abs(expect_force) / 2 < err_lim)
             and (abs(force_12[0]) - abs(expect_force) / 2 < err_lim)
             and (abs(force_13[0]) - abs(expect_force) / 2 < err_lim)
+            # non-zero
             and (force_02[0] != 0)
             and (force_03[0] != 0)
             and (force_12[0] != 0)
@@ -308,11 +318,6 @@ def main():
             print(" Node forces do not match expected values (FAIL)")
             match_boe = False
 
-            # print(" deltas:")
-            # print("     02", force_02[0] - expect_force / 2)
-            # print("     03", force_03[0] - expect_force / 2)
-            # print("     12", force_12[0] - expect_force / 2)
-            # print("     13", force_13[0] - expect_force / 2)
         print("")
 
         print("# === ENERGY MINIMUM? === #")
@@ -324,12 +329,14 @@ def main():
         mid1 = rod1.current_r[-1, 2, :] + 0.5 * p1[-1, 2]
 
         ss_dist = np.linalg.norm(mid0 - mid1) - radius_sum
+        delta = ss_dist - inflection_dist
+
         print("Centroid rod 0:            ", mid0)
         print("Centroid rod 1:            ", mid1)
-        print(f"Surface-surface distance: {ss_dist:.3e}")
-        print(f"r_min:                    {params['r_min']:.3e}")
-        print(f"delta:                    {ss_dist - params['r_min']:.3e}")
-        if abs(ss_dist - params["r_min"]) < err_lim:
+        print(f"Surface-surface distance:  {ss_dist:.3e}")
+        print(f"inflection point:          {inflection_dist:.3e}")
+        print(f"delta:                     {delta:.3e}")
+        if abs(delta) < err_lim:
             print("Rod elements are separated by r_min (PASS)")
             energy_minimum = True
         else:
