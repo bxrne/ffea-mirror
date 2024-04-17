@@ -4476,8 +4476,8 @@ void World::update_rod_steric_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b)
     float p_a[3] = {0};
     float p_b[3] = {0};
 
-    rod_a->check_neighbour_list_dimensions();
-    rod_b->check_neighbour_list_dimensions();
+    rod_a->check_nbr_list_dim(rod_a->steric_nbrs);
+    rod_b->check_nbr_list_dim(rod_b->steric_nbrs);
 
     if (rod::dbg_print)
         std::cout << "Updating neighbour lists of rods " << rod_a->rod_no << " and " << rod_b->rod_no << std::endl;
@@ -4522,21 +4522,26 @@ void World::update_rod_vdw_nbr_lists(rod::Rod *rod_a, rod::Rod *rod_b, SSINT_mat
     if (rod::dbg_print)
         std::cout << "Updating vdw neighbour lists of rods " << rod_a->rod_no << " and " << rod_b->rod_no << std::endl;
 
+    rod_a->check_nbr_list_dim(rod_a->vdw_nbrs);
+    rod_b->check_nbr_list_dim(rod_b->vdw_nbrs);
+
     for (auto &site_a : rod_a->vdw_sites)
     {
+
         for (auto &site_b : rod_b->vdw_sites)
         {
             int elem_a = site_a.elem_id;
             int elem_b = site_b.elem_id;
+
+            site_a.update_position(rod_a->current_r);
+            site_b.update_position(rod_b->current_r);
+
             rod_a->get_r(elem_a, r_a, false);
             rod_b->get_r(elem_b, r_b, false);
             rod_a->get_p(elem_a, p_a, false);
             rod_b->get_p(elem_b, p_b, false);
 
             map<string, scalar> pmap = lj_matrix->get_SSINT_params(site_a.vdw_type, site_b.vdw_type);
-
-            site_a.update_position(rod_a->current_r);
-            site_b.update_position(rod_b->current_r);
 
             rod::set_vdw_nbrs(
                 site_a,

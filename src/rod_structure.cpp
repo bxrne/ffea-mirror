@@ -1379,10 +1379,10 @@ namespace rod
         return this->num_nodes;
     }
 
-    Rod Rod::check_neighbour_list_dimensions()
+    Rod Rod::check_nbr_list_dim(std::vector<std::vector<InteractionData>> &nbr_list)
     {
 
-        int num_rows = steric_nbrs.size();
+        int num_rows = nbr_list.size();
         int num_cols = 0;
         std::string msg;
 

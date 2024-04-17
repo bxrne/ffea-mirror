@@ -1758,7 +1758,7 @@ int ffea_test::rod_neighbour_list_construction()
             }
             num_neighbours += rod_array[i]->get_num_nbrs(j, rod_array[i]->steric_nbrs);
         }
-        rod_array[i]->check_neighbour_list_dimensions();
+        rod_array[i]->check_nbr_list_dim(rod_array[i]->steric_nbrs);
     }
 
     // avoid double counting (between two interacting rods, both will have
@@ -1795,7 +1795,7 @@ int ffea_test::rod_steric_lj_potential()
 
     FILE* file_ptr1;
     file_ptr1 = std::fopen("log.csv", "w");
-    
+
     std::fprintf(file_ptr1, "r,u\n");
 
     for (int step_no = 0; step_no < num_steps; step_no++)
@@ -1829,13 +1829,13 @@ int ffea_test::rod_steric_lj_potential()
     file_ptr2 = std::fopen("const.csv", "w");
 
     std::fprintf(file_ptr2, "R,r_min,sigma,eps,k,r0,rN,kT\n");
-    std::fprintf(file_ptr2, "%e,%e,%e,%e,%e,%e,%e,%e\n", 
-        radius * mesoDimensions::length, 
-        r_min * mesoDimensions::length, 
+    std::fprintf(file_ptr2, "%e,%e,%e,%e,%e,%e,%e,%e\n",
+        radius * mesoDimensions::length,
+        r_min * mesoDimensions::length,
         sigma * mesoDimensions::length,
-        eps * mesoDimensions::Energy, 
-        steric_constant * (mesoDimensions::Energy / (mesoDimensions::length * mesoDimensions::length)), 
-        -r_max * mesoDimensions::length, 
+        eps * mesoDimensions::Energy,
+        steric_constant * (mesoDimensions::Energy / (mesoDimensions::length * mesoDimensions::length)),
+        -r_max * mesoDimensions::length,
         r_cutoff * mesoDimensions::length,
         mesoDimensions::Energy
     );
@@ -2008,7 +2008,7 @@ int ffea_test::rod_vdw_site_placement()
         // rod::print_vector("vdw_site_pos", current_rod->vdw_site_pos);
 
         std::cout << "num_vdw_sites : " << current_rod->num_vdw_sites << "\n";
-        
+
         std::ifstream in_file;
         std::string row;
         std::string coord;
@@ -2050,7 +2050,7 @@ int ffea_test::rod_vdw_site_placement()
                 std::cout << "Fail. Difference too large.\n";
                 return 1;
             }
-                
+
         }
 
         in_file.close();

@@ -668,9 +668,9 @@ void VDWSite::get_parent_element(const float* r_rod, const float contour_length,
         }
     }
 
-    // otherwise, set to the end of the rod
-    this->elem_id = num_nodes - 1;
-    this->L_elem = 0;
+    // otherwise, set to final element
+    this->elem_id = num_nodes - 2;
+    this->L_elem = 1;
 }
 
 
