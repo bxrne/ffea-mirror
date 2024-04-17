@@ -630,6 +630,7 @@ void VDWSite::update_position(const float* r_rod)
     }
     rod::get_p_i(r1, r2, p);
     vec3d(n) { this->pos[n] = r1[n] + p[n] * this->L_elem; }
+
 }
 
 

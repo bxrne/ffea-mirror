@@ -269,6 +269,38 @@ namespace rod
         std::cout << ")\n";
     }
 
+    void print_vector(std::string vector_name, const std::vector<float> &vec, int start_ind, int end_ind)
+    {
+        auto start_iter = vec.begin() + start_ind;
+        auto end_iter = vec.begin() + end_ind + 1;
+
+        std::cout << vector_name << " : (";
+        for (auto iter = start_iter; iter != end_iter; ++iter)
+        {
+            if (std::distance(iter, end_iter) > 1)
+                std::cout << *iter << ", ";
+            else
+                std::cout << *iter;
+        }
+        std::cout << ")\n";
+    }
+
+    void print_vector(std::string vector_name, const std::vector<int> &vec, int start_ind, int end_ind)
+    {
+        auto start_iter = vec.begin() + start_ind;
+        auto end_iter = vec.begin() + end_ind + 1;
+
+        std::cout << vector_name << " : (";
+        for (auto iter = start_iter; iter != end_iter; ++iter)
+        {
+            if (std::distance(iter, end_iter) > 1)
+                std::cout << *iter << ", ";
+            else
+                std::cout << *iter;
+        }
+        std::cout << ")\n";
+    }
+
     /**
  Return a section of a float vector between start_index and end_index (inclusive)
  TODO: generalise to all vector types

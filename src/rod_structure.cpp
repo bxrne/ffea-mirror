@@ -582,10 +582,10 @@ namespace rod
                 if (this->num_vdw_sites != this->vdw_sites.size())
                     throw std::logic_error("'num_vdw_sites' is not equal to the number of VDW site structs");
 
-                for (int site_index; site_index < this->vdw_sites.size(); ++site_index)
+                for (int site_index = 0; site_index < this->vdw_sites.size(); ++site_index)
                 {
+                    // ! given that this happens in the nbr list update, it may not be required here
                     this->vdw_sites.at(site_index).update_position(this->current_r);
-                    // this->vdw_sites.at(site_index).print_info();
                     vec3d(n) { vdw_site_pos.at((site_index * 3) + n) = this->vdw_sites.at(site_index).pos[n]; }
                 }
             }

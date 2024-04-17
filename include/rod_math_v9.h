@@ -88,6 +88,8 @@ namespace rod
     void print_vector(std::string vector_name, const std::vector<float> &vec);
     void print_vector(std::string vector_name, const std::vector<int> &vec);
     void print_vector(std::string vector_name, std::vector<float>::iterator start, std::vector<float>::iterator end);
+    void print_vector(std::string vector_name, const std::vector<float> &vec, int start_ind, int end_ind);
+    void print_vector(std::string vector_name, const std::vector<int> &vec, int start_ind, int end_ind);
     std::vector<float> slice_vector(std::vector<float> vec, int start_index, int end_index);
     void normalize(float in[3], OUT float out[3]);
     void normalize(std::vector<float> in, OUT std::vector<float> out);
