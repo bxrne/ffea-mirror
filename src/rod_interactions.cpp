@@ -134,11 +134,11 @@ void finite_length_correction(float c[3], float r[3], float p[3])
         vec3d(n) { c[n] = r[n] + p[n]; }
     }
 
-    if (rod::dbg_print)
-    {
-        std::cout << "finite_length_correction():\n";
-        printf("  p.(c - r) : %.3e\n", dot);
-    }
+    // if (rod::dbg_print)
+    // {
+    //     std::cout << "finite_length_correction():\n";
+    //     printf("  p.(c - r) : %.3e\n", dot);
+    // }
 }
 
 // stupid implementation to get around a linker error
@@ -159,11 +159,11 @@ void finite_length_correction(float c[3], float r[3], float p[3], OUT float c_ou
         vec3d(n) { c_out[n] = r[n] + p[n]; }
     }
 
-    if (rod::dbg_print)
-    {
-        std::cout << "finite_length_correction():\n";
-        printf("  p.(c - r) : %.3e\n", dot);
-    }
+    // if (rod::dbg_print)
+    // {
+    //     std::cout << "finite_length_correction():\n";
+    //     printf("  p.(c - r) : %.3e\n", dot);
+    // }
 }
 
 
@@ -205,17 +205,17 @@ void nearest_node_correction(float c_a[3], float c_b[3],
     else if (index_min != 0)
         throw std::out_of_range("Invalid min index in rod::nearest_node_connection()");
 
-    if (rod::dbg_print)
-    {
-        std::cout << "nearest_node_correction():\n";
-        print_array("  r_a1", r_a, 3);
-        print_array("  r_a2", r_a2, 3);
-        printf("  |c_ab| :       %.3f\n", dist[0]);
-        printf("  |c_b - r_a1| : %.3f\n", dist[1]);
-        printf("  |c_b - r_a2| : %.3f\n", dist[2]);
-        print_array("  c_a (corrected)", c_a, 3);
-        std::cout << "\n";
-    }
+    // if (rod::dbg_print)
+    // {
+    //     std::cout << "nearest_node_correction():\n";
+    //     print_array("  r_a1", r_a, 3);
+    //     print_array("  r_a2", r_a2, 3);
+    //     printf("  |c_ab| :       %.3f\n", dist[0]);
+    //     printf("  |c_b - r_a1| : %.3f\n", dist[1]);
+    //     printf("  |c_b - r_a2| : %.3f\n", dist[2]);
+    //     print_array("  c_a (corrected)", c_a, 3);
+    //     std::cout << "\n";
+    // }
 }
 
 /** @brief Compute the two points, c_a and c_b, that form the centreline
@@ -268,25 +268,25 @@ void element_minimum_displacement(float p_a[3], float p_b[3], float r_a[3],
         vec3d(n) { c_b[n] = r_b[n] + 0.5 * p_b[n]; }
     }
 
-    if (rod::dbg_print)
-    {
-        std::cout << "minimum distance between rod elements:\n";
-        print_array("  p_a", p_a, 3);
-        print_array("  p_b", p_b, 3);
-        print_array("  l_a", l_a, 3);
-        print_array("  l_b", l_b, 3);
-        print_array("  l_a x l_b", l_a_cross_l_b, 3);
-        std::cout << "  |l_a x l_b|: " << rod::absolute(l_a_cross_l_b) << "\n";
-        print_array("  n_b", n_a, 3);
-        print_array("  n_b", n_b, 3);
-        print_array("  r_a", r_a, 3);
-        print_array("  r_b", r_b, 3);
-        print_array("  r_ab", r_ab, 3);
-        print_array("  r_ba", r_ba, 3);
-        print_array("  c_a (initial)", c_a, 3);
-        print_array("  c_b (initial)", c_b, 3);
-        std::cout << "\n";
-    }
+    // if (rod::dbg_print)
+    // {
+    //     std::cout << "minimum distance between rod elements:\n";
+    //     print_array("  p_a", p_a, 3);
+    //     print_array("  p_b", p_b, 3);
+    //     print_array("  l_a", l_a, 3);
+    //     print_array("  l_b", l_b, 3);
+    //     print_array("  l_a x l_b", l_a_cross_l_b, 3);
+    //     std::cout << "  |l_a x l_b|: " << rod::absolute(l_a_cross_l_b) << "\n";
+    //     print_array("  n_b", n_a, 3);
+    //     print_array("  n_b", n_b, 3);
+    //     print_array("  r_a", r_a, 3);
+    //     print_array("  r_b", r_b, 3);
+    //     print_array("  r_ab", r_ab, 3);
+    //     print_array("  r_ba", r_ba, 3);
+    //     print_array("  c_a (initial)", c_a, 3);
+    //     print_array("  c_b (initial)", c_b, 3);
+    //     std::cout << "\n";
+    // }
 
     // enforce finite length of rod element
     finite_length_correction(c_a, r_a, p_a);
@@ -482,20 +482,20 @@ std::vector<float> element_steric_energy(float delta, float force_constant,
     {
         float c_ab[3] = { 0 };
         vec3d(n) { c_ab[n] = c_b[n] - c_a[n]; }
-        std::cout << "element steric energy:\n";
-        std::cout << "  delta : " << delta << "\n";
-        std::cout << "  force_constant : " << force_constant << "\n";
-        std::cout << "  radius_sum : " << radius_sum << "\n";
-        print_array("  c_a", c_a, 3);
-        print_array("  c_b", c_b, 3);
-        std::cout << "  |c_ab| : " << rod::absolute(c_ab) << "\n";
-        printf("  perturbed distance +ve : %.3e\n", dist[0]);
-        printf("  perturbed distance -ve : %.3e\n", dist[1]);
-        printf("  distance : %.3e\n", dist[2]);
-        printf("  perturbed energy +ve : %.3e\n", energy[0]);
-        printf("  perturbed energy -ve : %.3e\n", energy[1]);
-        printf("  energy : %.3e\n", energy[2]);
-        std::cout << "\n";
+        // std::cout << "element steric energy:\n";
+        // std::cout << "  delta : " << delta << "\n";
+        // std::cout << "  force_constant : " << force_constant << "\n";
+        // std::cout << "  radius_sum : " << radius_sum << "\n";
+        // print_array("  c_a", c_a, 3);
+        // print_array("  c_b", c_b, 3);
+        // std::cout << "  |c_ab| : " << rod::absolute(c_ab) << "\n";
+        // printf("  perturbed distance +ve : %.3e\n", dist[0]);
+        // printf("  perturbed distance -ve : %.3e\n", dist[1]);
+        // printf("  distance : %.3e\n", dist[2]);
+        // printf("  perturbed energy +ve : %.3e\n", energy[0]);
+        // printf("  perturbed energy -ve : %.3e\n", energy[1]);
+        // printf("  energy : %.3e\n", energy[2]);
+        // std::cout << "\n";
 
         if (rod::absolute(c_ab) > radius_sum)
         {
