@@ -246,7 +246,7 @@ if(GIT_FOUND)
          ERROR_VARIABLE PACKAGE_BRANCH_ERROR)
 
     if(NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
-          target_compile_definitions(ffea_lib PUBLIC USE_CMAKECONF)
+         target_compile_definitions(ffea_lib PUBLIC USE_CMAKECONF)
          set(VERSION_CMAKECONF "TRUE")
          string(STRIP ${PACKAGE_BRANCH} PACKAGE_BRANCH)
     endif(NOT "${PACKAGE_COMMIT}" STREQUAL "${PACKAGE_DATE}")
@@ -274,20 +274,20 @@ if(USE_OPENMP)
             endif()
         endif()
     else()
-        message(FATAL_ERROR "OpenMP C++ Support was not found!")
+        message(FATAL_ERROR "MPI C++ Support was not found!")
     endif()
 endif()
 if(OPENMP_FOUND)
     target_compile_definitions(ffea_lib PUBLIC USE_OPENMP)
     target_link_libraries(ffea_lib PUBLIC OpenMP::OpenMP_CXX)
-endif(OPENMP_FOUND)
+endif()
 
 
 # Parallel futures
 # Note, this should now be widely supported can it be made mandatory?
 if(USE_FUTURE)
     target_compile_definitions(ffea_lib FFEA_PARALLEL_FUTURE)
-endif(USE_FUTURE)
+endif()
 
 
 # Math
