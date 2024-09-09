@@ -66,11 +66,11 @@ PreComp_solver::PreComp_solver() {
   msgc = 0;
   n_beads = 0;
   num_blobs = 0;
-  U = NULL;
-  F = NULL; 
-  isPairActive = NULL;
-  b_types = NULL;
-  fieldenergy = NULL;
+  U = nullptr;
+  F = nullptr; 
+  isPairActive = nullptr;
+  b_types = nullptr;
+  fieldenergy = nullptr;
 } 
 
 /** @brief destructor: deallocates pointers. */
@@ -83,7 +83,7 @@ PreComp_solver::~PreComp_solver() {
     delete[] b_elems; 
   }
   delete[] fieldenergy;
-  fieldenergy = NULL;
+  fieldenergy = nullptr;
   num_blobs = 0;
 }
 
@@ -169,7 +169,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
 #endif 
     num_blobs = params->num_blobs;
     fieldenergy = new(std::nothrow) scalar[num_threads*num_blobs*num_blobs];
-    if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for fieldenergy in PreCompSolver\n"); 
+    if (!fieldenergy) FFEA_ERROR_MESSG("Failed to allocate memory for fieldenergy in PreCompSolver\n");
 
    stringstream ssfile; 
    ifstream fin;
@@ -255,7 +255,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    U = new(std::nothrow) scalar[n_values * nint];    
    F = new(std::nothrow) scalar[n_values * nint];    
    isPairActive = new(std::nothrow) bool[ntypes * ntypes]; 
-   if (U == NULL || F == NULL || isPairActive == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for arrays in PreComp_solver::init\n"); 
+   if (!U || !F || !isPairActive) FFEA_ERROR_MESSG("Failed to allocate memory for arrays in PreComp_solver::init\n"); 
       
    // and load potentials and forces:
    if (read_tabulated_values(*pc_params, "pot", U, pc_params->E_to_J / mesoDimensions::Energy)) return FFEA_ERROR;
@@ -303,7 +303,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    b_pos = new(std::nothrow) scalar[n_beads*3];
    // and allocate the bead types: 
    b_types = new(std::nothrow) int[n_beads]; 
-   if (b_elems == NULL || b_rel_pos == NULL || b_pos == NULL || b_types == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for array beads in PreComp_solver::init\n"); 
+   if (!b_elems || !b_rel_pos || !b_pos || !b_types) FFEA_ERROR_MESSG("Failed to allocate memory for array beads in PreComp_solver::init\n"); 
    
 
    /*------------ FOURTHLY --------*/
@@ -464,7 +464,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    b_forces = new(std::nothrow) scalar[3*n_beads]; 
    map_e_to_b = new(std::nothrow) int[2*num_diff_elems]; 
    b_unq_elems = new(std::nothrow) TELPtr[num_diff_elems];
-   if (b_forces == NULL || b_unq_elems == NULL || map_e_to_b == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for supplementary array beads in PreComp_solver::init\n"); 
+   if (!b_forces || !b_unq_elems || !map_e_to_b) FFEA_ERROR_MESSG("Failed to allocate memory for supplementary array beads in PreComp_solver::init\n"); 
    m = 0; 
    int cnt = 0;
    for (int i=0; i < params->num_blobs; i ++) {
@@ -499,7 +499,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    //   it may better to just store the indices, 
    //   so that b_elems can be removed some day (and used only for debugging purposes). 
    b_daddyblob = new(std::nothrow) int[n_beads]; 
-   if (b_daddyblob == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for daddy beads array in PreComp_solver::init\n");
+   if (!b_daddyblob) FFEA_ERROR_MESSG("Failed to allocate memory for daddy beads array in PreComp_solver::init\n");
    for (int i=0; i<n_beads; i++) {
       b_daddyblob[i] = b_elems[i]->daddy_blob->blob_index;
    } 
@@ -549,9 +549,9 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    // 5.2 - store indices in there:
    for (int i=0; i<n_beads; i++) {
 #ifdef FFEA_PARALLEL_FUTURE
-     lookup_error = pcLookUp.add_to_pool_dual(NULL);
+     lookup_error = pcLookUp.add_to_pool_dual(nullptr);
 #else
-     lookup_error = pcLookUp.add_to_pool(NULL);
+     lookup_error = pcLookUp.add_to_pool(nullptr);
 #endif
      if (lookup_error == FFEA_ERROR) {
         FFEA_error_text();
@@ -574,7 +574,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
       stypes = pc_params->types; 
       b_blob_ndx = new(std::nothrow) int[n_beads];
       b_elems_ndx = new(std::nothrow) int[n_beads];
-      if (b_blob_ndx == NULL || b_elems_ndx == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for beads details to write trajectory in PreComp_solver::init\n"); 
+      if (!b_blob_ndx || !b_elems_ndx) FFEA_ERROR_MESSG("Failed to allocate memory for beads details to write trajectory in PreComp_solver::init\n"); 
       for (int i=0; i<n_beads; i++){ 
         b_elems_ndx[i] = b_elems[i]->index;
         b_blob_ndx[i] = b_elems[i]->daddy_blob->blob_index;
@@ -587,7 +587,7 @@ int PreComp_solver::init(PreComp_params *pc_params, SimulationParams *params, Bl
    return FFEA_OK; 
 }
 
-int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL*/){
+int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=nullptr*/){
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp, dxik;
@@ -608,8 +608,8 @@ int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL
 
 
     // 2 - Compute all the i-j forces:
-    LinkedListNode<int> *b_i = NULL; 
-    LinkedListNode<int> *b_j = NULL; 
+    LinkedListNode<int> *b_i = nullptr; 
+    LinkedListNode<int> *b_j = nullptr; 
     int b_index_i, b_index_j; 
     int daddy_i, daddy_j;
 #ifdef USE_OPENMP
@@ -633,7 +633,7 @@ int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL
                                         b_i->y + adjacent_cells[c][1],
                                         b_i->z + adjacent_cells[c][2]);
   
-        while (b_j != NULL) {
+        while (b_j != nullptr) {
            b_index_j = b_j->index;
            if (b_index_j == b_index_i) {
              b_j = b_j->next; 
@@ -646,7 +646,7 @@ int PreComp_solver::solve_using_neighbours_non_critical(scalar *blob_corr/*=NULL
            }
 
            daddy_j = b_daddyblob[b_index_j];
-           if (blob_corr == NULL) {
+           if (!blob_corr) {
              dx.x = (b_pos[3*b_index_j  ] - b_pos[3*b_index_i  ]);
              dx.y = (b_pos[3*b_index_j+1] - b_pos[3*b_index_i+1]);
              dx.z = (b_pos[3*b_index_j+2] - b_pos[3*b_index_i+2]);
@@ -726,8 +726,8 @@ int PreComp_solver::solve_using_neighbours(){
 
 
     // 2 - Compute all the i-j forces:
-    LinkedListNode<int> *b_i = NULL; 
-    LinkedListNode<int> *b_j = NULL; 
+    LinkedListNode<int> *b_i = nullptr; 
+    LinkedListNode<int> *b_j = nullptr; 
     int b_index_i, b_index_j; 
 #ifdef USE_OPENMP
 #pragma omp parallel default(none) private(type_i,phi_i,phi_j,e_i,e_j,dx,d,dtemp,f_ij,b_i,b_j,b_index_i,b_index_j,dxik,dxjk)
@@ -753,7 +753,7 @@ int PreComp_solver::solve_using_neighbours(){
                                         b_i->y + adjacent_cells[c][1],
                                         b_i->z + adjacent_cells[c][2]);
   
-        while (b_j != NULL) {
+        while (b_j != nullptr) {
            b_index_j = b_j->index;
            if (b_index_j <= b_index_i) {
              b_j = b_j->next; 
@@ -817,7 +817,7 @@ int PreComp_solver::solve_using_neighbours(){
     return FFEA_OK;
 }
 
-int PreComp_solver::solve(scalar *blob_corr/*=NULL*/) {
+int PreComp_solver::solve(scalar *blob_corr/*=nullptr*/) {
 
     scalar d, f_ij; //, f_ijk_i, f_ijk_j; 
     vector3 dx, dtemp;
@@ -855,7 +855,7 @@ int PreComp_solver::solve(scalar *blob_corr/*=NULL*/) {
         if (!isPairActive[type_i*ntypes+b_types[j]]) continue; 
 
         daddy_j = b_daddyblob[j];
-        if (blob_corr == NULL) {
+        if (!blob_corr) {
             dx[0] = (b_pos[3*j  ] - b_pos[3*i]);
             dx[1] = (b_pos[3*j+1] - b_pos[3*i+1]);
             dx[2] = (b_pos[3*j+2] - b_pos[3*i+2]);

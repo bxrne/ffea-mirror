@@ -96,14 +96,14 @@ public:
 
     /**
      * Blob constructor:
-     * Initialises all variables and pointers to 0 (or NULL). Does not perform any memory allocation. Actual Blob initialisation
+     * Initialises all variables and pointers to 0 (or nullptr). Does not perform any memory allocation. Actual Blob initialisation
      * is carried out by the init() method.
      */
     Blob();
 
     /**
      * Blob destructor:
-     * Closes all open files, deallocates memory held by arrays, solvers etc. and sets everything to zero (NULL)
+     * Closes all open files, deallocates memory held by arrays, solvers etc. and sets everything to zero (nullptr)
      */
     ~Blob();
 
@@ -220,8 +220,8 @@ public:
      */
     void pre_print(); 
     void write_pre_print_to_file(FILE *trajectory_out); 
-    int toBePrinted_conf[2]; 
-    int toBePrinted_state[2]; 
+    int toBePrinted_conf[2]{}; 
+    int toBePrinted_state[2]{}; 
 
     /**
      * Reads the node positions from the given trajectory file stream.
@@ -469,7 +469,7 @@ public:
     scalar get_kinetic_energy();
     scalar get_strain_energy();
 
-    int pbc_count[3];
+    int pbc_count[3]{};
 
 private:
 
@@ -517,7 +517,7 @@ private:
     scalar mass;
 
     /** Total ssint energy between blobs */
-    scalar ssint_bb_energy;
+    scalar ssint_bb_energy{};
 
     /** Array of nodes */
     mesh_node *node;
@@ -538,17 +538,17 @@ private:
     set<int> bsite_pinned_nodes_list;
 
     /** Array with bead positions xyzxyzxyz.... [precomp]
-      *   will be NULL after info is loaded into PreComp_solver */
-    scalar *bead_position;
+      *   will be nullptr after info is loaded into PreComp_solver */
+    scalar *bead_position{};
 
     /** 2D vector with the set of nodes where every bead should be assigned to.
       *   It will be removed after PreComp_solver is initialised [precomp] */
     vector <vector<int>> bead_assignment;
 
     /** Array with bead types [precomp]
-      *   will be NULL after info is loaded into PreComp_solver */
+      *   will be nullptr after info is loaded into PreComp_solver */
 
-    int *bead_type;
+    int *bead_type{};
 
     /** Array with the nodes having linear ctforces assigned */
     int *ctf_l_nodes;
@@ -584,20 +584,20 @@ private:
 
 
     /** Scale of the input coordinates to m: */
-    scalar scale;
+    scalar scale{};
 
     /** Compression stuff: */
-    scalar calc_compress, compress; 
+    scalar calc_compress{}, compress{}; 
 
     /** A pointer to a class containing simulation parameters, such as the time step, dt */
-    SimulationParams *params;
-    PreComp_params *pc_params;
+    SimulationParams *params{};
+    PreComp_params *pc_params{};
 
     /** A pointer to the same binding matrix configured in World */ 
-    BindingSite_matrix *binding_matrix;
+    BindingSite_matrix *binding_matrix{};
 
     /** pointer to the ssint forcefield parameters (for some energy calcs) */
-    SSINT_matrix *ssint_matrix;
+    SSINT_matrix *ssint_matrix{};
 
     /** A pointer to whatever Solver is being used for this Blob (eg SparseSubstitutionSolver
      * or ConjugateGradientSolver). The Solver solves the equation Mx = f where M is the
@@ -628,7 +628,7 @@ private:
 
     //@{
     /** Energies */
-    scalar kineticenergy, strainenergy;
+    scalar kineticenergy{}, strainenergy{};
     //@}
 
     /** Momenta */
@@ -637,7 +637,7 @@ private:
     //@{
     /** Geometries */
     vector3 CoM, CoG, CoM_0, CoG_0;
-    scalar rmsd;
+    scalar rmsd{};
     //@}
 
     CG_solver *poisson_solver;
@@ -651,12 +651,12 @@ private:
 
     int *num_contributing_faces;
 
-    connectivity_entry *element_connectivity_table;
+    connectivity_entry *element_connectivity_table{};
 
     /*
      *
      */
-    SparseMatrixFixedPattern *M;
+    SparseMatrixFixedPattern *M{};
 
 
     /*

@@ -73,18 +73,18 @@ const VdW_solver::tri_gauss_point VdW_solver::gauss_points[] = {
 
 VdW_solver::VdW_solver() {
     total_num_surface_faces = 0;
-    surface_face_lookup = NULL;
+    surface_face_lookup = nullptr;
     box_size.x = 0;
     box_size.y = 0;
     box_size.z = 0;
     num_blobs = 0;
-    fieldenergy = NULL;
+    fieldenergy = nullptr;
     ssint_type = SSINT_TYPE_UNDEFINED;
 }
 
 VdW_solver::~VdW_solver() {
     total_num_surface_faces = 0;
-    surface_face_lookup = NULL;
+    surface_face_lookup = nullptr;
     box_size.x = 0;
     box_size.y = 0;
     box_size.z = 0;
@@ -92,7 +92,7 @@ VdW_solver::~VdW_solver() {
         delete[] fieldenergy[i];
     }
     delete[] fieldenergy;
-    fieldenergy = NULL;
+    fieldenergy = nullptr;
     num_blobs = 0;
     ssint_type = SSINT_TYPE_UNDEFINED;
 }
@@ -123,10 +123,10 @@ int VdW_solver::init(NearestNeighbourLinkedListCube *surface_face_lookup, vector
     this->calc_kinetics = calc_kinetics;
     this->working_w_static_blobs = working_w_static_blobs;
     fieldenergy = new scalar*[num_blobs];
-    if (fieldenergy == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy in VdW_solver::init\n");
+    if (!fieldenergy) FFEA_ERROR_MESSG("Failed to allocate fieldenergy in VdW_solver::init\n");
     for(int i = 0; i < num_blobs; ++i) {
         fieldenergy[i] = new scalar[num_blobs];
-        if (fieldenergy[i] == NULL) FFEA_ERROR_MESSG("Failed to allocate fieldenergy[%d] in VdW_solver::init\n", i);
+        if (!fieldenergy[i]) FFEA_ERROR_MESSG("Failed to allocate fieldenergy[%d] in VdW_solver::init\n", i);
     }
     return FFEA_OK;
 }
@@ -143,8 +143,8 @@ void VdW_solver::reset_fieldenergy() {
 /** Solve VdW */
 int VdW_solver::solve(scalar *blob_corr) {
 
-    LinkedListNode<Face> *l_i = NULL;
-    LinkedListNode<Face> *l_j = NULL;
+    LinkedListNode<Face> *l_i = nullptr;
+    LinkedListNode<Face> *l_j = nullptr;
     Face *f_i, *f_j;
     int c;
     total_num_surface_faces = surface_face_lookup->get_pool_size();
@@ -175,7 +175,7 @@ int VdW_solver::solve(scalar *blob_corr) {
                       l_i->x + adjacent_cell_lookup_table[c][0],
                       l_i->y + adjacent_cell_lookup_table[c][1],
                       l_i->z + adjacent_cell_lookup_table[c][2]);
-            while (l_j != NULL) {
+            while (l_j != nullptr) {
                 if (consider_interaction(f_i, l_index_i, motion_state_i, l_j, blob_corr)) {
                     do_interaction(f_i, l_j->obj, blob_corr);
                 }
@@ -192,13 +192,13 @@ int VdW_solver::solve(scalar *blob_corr) {
 int VdW_solver::solve_sticky_wall(scalar h) {
     int Nx = 0, Ny = 0, Nz = 0;
     surface_face_lookup->get_dim(&Nx, &Ny, &Nz);
-    LinkedListNode<Face> *l_j = NULL;
-    Face *f_j = NULL;
+    LinkedListNode<Face> *l_j = nullptr;
+    Face *f_j = nullptr;
     for (int y = 0; y < Ny; y += Ny - 1) {
         for (int z = 0; z < Nz; z++) {
             for (int x = 0; x < Nx; x++) {
                 l_j = surface_face_lookup->get_top_of_stack(x, y, z);
-                while (l_j != NULL) {
+                while (l_j != nullptr) {
                     f_j = l_j->obj;
                     f_j->set_ssint_xz_interaction_flag(true);
                     do_sticky_xz_interaction(f_j, (y == 0), h * Ny);
@@ -223,7 +223,7 @@ void VdW_solver::do_lj_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
 
     // Convert all area coordinate gauss points to cartesian
-    if (blob_corr == NULL) {
+    if (!blob_corr) {
         for (int i = 0; i < num_tri_gauss_quad_points; i++) {
             f1->barycentric_calc_point(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &p[i]);
             f2->barycentric_calc_point(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &q[i]);
@@ -314,7 +314,7 @@ bool VdW_solver::consider_interaction(Face *f_i, int l_index_i, int motion_state
             // 2.1 - Check that faces are in front of each other
             //     - Robin suspected this was leading to unstabilities for the LJ case.
             vector3 sep;
-            if (blob_corr == NULL) {
+            if (!blob_corr) {
                 sep.assign ( f_j->centroid.x - f_i->centroid.x, f_j->centroid.y - f_i->centroid.y, f_j->centroid.z - f_i->centroid.z );
             } else {
                 sep.assign ( f_j->centroid.x - f_i->centroid.x-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3],f_j->centroid.y - f_i->centroid.y-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3+1],f_j->centroid.z - f_i->centroid.z-blob_corr[f_i->daddy_blob->blob_index*(num_blobs)*3 + f_j->daddy_blob->blob_index*3+2] );
@@ -417,7 +417,7 @@ bool VdW_solver::do_steric_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     grr3 dVdr;
     grr4 phi1, phi2;
 
-    if (blob_corr == NULL) {
+    if (!blob_corr) {
       if (!f1->getTetraIntersectionVolumeTotalGradientAndShapeFunctions(f2, steric_dr, dVdr, vol, phi1, phi2)) return false;
     } else {
       if (!f1->getTetraIntersectionVolumeTotalGradientAndShapeFunctions(f2, steric_dr, dVdr, vol, phi1, phi2,blob_corr,f1_daddy_blob_index, f2_daddy_blob_index)) return false;
@@ -503,7 +503,7 @@ void VdW_solver::do_gensoft_interaction(Face *f1, Face *f2, scalar *blob_corr) {
     vector3 force_pair_matrix[num_tri_gauss_quad_points][num_tri_gauss_quad_points];
 
     // Convert all area coordinate gauss points to cartesian
-    if (blob_corr == NULL) {
+    if (!blob_corr) {
         for (int i = 0; i < num_tri_gauss_quad_points; i++) {
             f1->barycentric_calc_point(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &p[i]);
             f2->barycentric_calc_point(gauss_points[i].eta[0], gauss_points[i].eta[1], gauss_points[i].eta[2], &q[i]);

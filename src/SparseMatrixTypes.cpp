@@ -25,20 +25,20 @@
 
 sparse_entry_sources::sparse_entry_sources() {
     num_sources = 0;
-    sources = NULL;
+    sources = nullptr;
 }
 
 sparse_entry_sources::~sparse_entry_sources() {
     num_sources = 0;
     delete[] sources;
-    sources = NULL;
+    sources = nullptr;
 }
 
 int sparse_entry_sources::init(int num_sources) {
     this->num_sources = num_sources;
     sources = new scalar*[num_sources];
 
-    if (sources == NULL) {
+    if (!sources) {
         FFEA_ERROR_MESSG("Could not allocate memory (for sources array)\n")
     }
 

@@ -24,50 +24,50 @@
 #include "Face.h"
 
 Face::Face() {
-    n[0] = NULL;
-    n[1] = NULL;
-    n[2] = NULL;
-    n[3] = NULL;
-    e = NULL;
+    n[0] = nullptr;
+    n[1] = nullptr;
+    n[2] = nullptr;
+    n[3] = nullptr;
+    e = nullptr;
     ssint_interaction_type = -1;
     area_0 = 0;
     zero_force();
     num_blobs = 0;
     ssint_xz_interaction_flag = false;
-    // vdw_bb_interaction_flag = NULL; // DEPRECATED
+    // vdw_bb_interaction_flag = nullptr; // DEPRECATED
     kinetically_active = false;
-    // vdw_bb_force = NULL; // DEPRECATED
-    // vdw_bb_energy = NULL; // DEPRECATED
-    // vdw_xz_force = NULL;
+    // vdw_bb_force = nullptr; // DEPRECATED
+    // vdw_bb_energy = nullptr; // DEPRECATED
+    // vdw_xz_force = nullptr;
     // vdw_xz_energy = 0.0; // DEPRECATED
-    daddy_blob = NULL;
+    daddy_blob = nullptr;
     dealloc_n3 = false;
 }
 
 Face::~Face() {
-    n[0] = NULL;
-    n[1] = NULL;
-    n[2] = NULL;
+    n[0] = nullptr;
+    n[1] = nullptr;
+    n[2] = nullptr;
     if (dealloc_n3) delete n[3];
     dealloc_n3 = false;
-    n[3] = NULL;
-    e = NULL;
+    n[3] = nullptr;
+    e = nullptr;
     ssint_interaction_type = -1;
     area_0 = 0;
     zero_force();
     num_blobs = 0;
     ssint_xz_interaction_flag = false;
     // delete[] vdw_bb_interaction_flag; // DEPRECATED
-    // vdw_bb_interaction_flag = NULL; // DEPRECATED
+    // vdw_bb_interaction_flag = nullptr; // DEPRECATED
     kinetically_active = false;
     // delete[] vdw_bb_force; // DEPRECATED
-    // vdw_bb_force = NULL; // DEPRECATED
+    // vdw_bb_force = nullptr; // DEPRECATED
     // delete[] vdw_bb_energy; // DEPRECATED
-    // vdw_bb_energy = NULL; // DEPRECATED
+    // vdw_bb_energy = nullptr; // DEPRECATED
     // delete[] vdw_xz_force; // DEPRECATED
-    // vdw_xz_force = NULL; // DEPRECATED
+    // vdw_xz_force = nullptr; // DEPRECATED
     // vdw_xz_energy = 0.0; // DEPRECATED
-    daddy_blob = NULL;
+    daddy_blob = nullptr;
 }
 
 int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, SecondOrderFunctions::stu centroid_stu, Blob *daddy_blob, SimulationParams *params) {
@@ -91,8 +91,8 @@ int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1,
     // vdw_bb_energy = new(std::nothrow) scalar[num_blobs]; // DEPRECATED
     // vdw_bb_interaction_flag = new bool[num_blobs]; // DEPRECATED
     // vdw_xz_force = new(std::nothrow) vector3; // DEPRECATED
-    // if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
-    // if (vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n");
+    // if (!vdw_bb_force || !vdw_bb_energy || !vdw_bb_interaction_flag || !vdw_xz_force) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
+    // if (!vdw_xz_force) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n");
 
     /* for(int i = 0; i < num_blobs; ++i) {
     // vector3_set_zero(vdw_bb_force[i]); // DEPRECATED
@@ -111,7 +111,7 @@ int Face::init(int index, tetra_element_linear *e, mesh_node *n0, mesh_node *n1,
 int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node *opposite, Blob *daddy_blob, SimulationParams *params) {
 
     this->index = index;
-    this->e = NULL;
+    this->e = nullptr;
     n[0] = n0;
     n[1] = n1;
     n[2] = n2;
@@ -129,7 +129,7 @@ int Face::init(int index, mesh_node *n0, mesh_node *n1, mesh_node *n2, mesh_node
     // vdw_bb_energy = new(std::nothrow) scalar[num_blobs]; // DEPRECATED
     // vdw_bb_interaction_flag = new bool[num_blobs]; // DEPRECATED
     // vdw_xz_force = new(std::nothrow) vector3; // DEPRECATED
-    // if (vdw_bb_force == NULL || vdw_bb_energy == NULL || vdw_bb_interaction_flag == NULL || vdw_xz_force == NULL) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
+    // if (!vdw_bb_force || !vdw_bb_energy || !vdw_bb_interaction_flag || !vdw_xz_force) FFEA_ERROR_MESSG("Failed to store vectors in Face::init\n"); // DEPRECATED
 
     /* for(int i = 0; i < num_blobs; ++i) {
         // vector3_set_zero(vdw_bb_force[i]); // DEPRECATED
@@ -152,14 +152,14 @@ void Face::set_ssint_interaction_type(int ssint_interaction_type) {
 
 int Face::build_opposite_node() {
 
-    // If opposite == NULL and VdW_type == steric, we can define a node specifically for this face, to make an 'element'
+    // If opposite == nullptr and VdW_type == steric, we can define a node specifically for this face, to make an 'element'
     // It will contain position data (maybe add some error checks in future)
     //   and same index as node 0, n[0]. It will be harmless, because this index
     //   is meant to add forces, but this is a static blob.
 
-    if(n[3] == NULL) {
+    if(!n[3]) {
         n[3] = new(std::nothrow) mesh_node();
-        if (n[3] == NULL) FFEA_ERROR_MESSG("Couldn't find memory for an opposite node\n");
+        if (!n[3]) FFEA_ERROR_MESSG("Couldn't find memory for an opposite node\n");
         dealloc_n3 = true;
         n[3]->index = n[0]->index;
 

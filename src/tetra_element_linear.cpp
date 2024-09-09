@@ -35,7 +35,7 @@ tetra_element_linear::tetra_element_linear() {
     E = 0;
     dielectric = 0;
     for (int i = 0; i < NUM_NODES_QUADRATIC_TET; i++) {
-        n[i] = NULL;
+        n[i] = nullptr;
     }
 
     //			node_phi[0] = 0; node_phi[1] = 0; node_phi[2] = 0; node_phi[3] = 0;
@@ -47,7 +47,7 @@ tetra_element_linear::tetra_element_linear() {
     mat12_set_zero(viscosity_matrix);
     zero_force();
     last_det = 0;
-    daddy_blob = NULL;
+    daddy_blob = nullptr;
 }
 
 /*

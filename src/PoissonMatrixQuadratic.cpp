@@ -41,7 +41,7 @@ scalar * PoissonMatrixQuadratic::get_K_alpha_mem_loc(int i, int j) {
     int c = (i * (i + 1)) / 2 + j;
 
     if (c < 0 || c > 54) {
-        return NULL;
+        return nullptr;
     }
 
     // Return a pointer to this memory location

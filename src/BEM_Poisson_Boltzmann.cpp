@@ -40,21 +40,21 @@
 
 BEM_Poisson_Boltzmann::BEM_Poisson_Boltzmann() {
     num_faces = 0;
-    lookup = NULL;
+    lookup = nullptr;
     kappa = 0;
-    mat_C = NULL;
-    mat_D = NULL;
+    mat_C = nullptr;
+    mat_D = nullptr;
 }
 
 BEM_Poisson_Boltzmann::~BEM_Poisson_Boltzmann() {
     num_faces = 0;
-    lookup = NULL;
+    lookup = nullptr;
     kappa = 0;
 
     delete mat_C;
     delete mat_D;
-    mat_C = NULL;
-    mat_D = NULL;
+    mat_C = nullptr;
+    mat_D = nullptr;
 }
 
 int BEM_Poisson_Boltzmann::init(NearestNeighbourLinkedListCube *lookup) {
@@ -67,13 +67,13 @@ int BEM_Poisson_Boltzmann::init(NearestNeighbourLinkedListCube *lookup) {
 
     /* Create and initialise our sparse matrices */
     mat_C = new(std::nothrow) SparseMatrixUnknownPattern();
-    if (mat_C == NULL) FFEA_ERROR_MESSG("Could not allocate C matrix\n");
+    if (!mat_C) FFEA_ERROR_MESSG("Could not allocate C matrix\n");
     if (mat_C->init(num_faces, 100) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Could not allocate memory for C matrix\n")
     }
 
     mat_D = new(std::nothrow) SparseMatrixUnknownPattern();
-    if (mat_D == NULL) FFEA_ERROR_MESSG("Could not allocate D matrix\n");
+    if (!mat_D) FFEA_ERROR_MESSG("Could not allocate D matrix\n");
     if (mat_D->init(num_faces, 100) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Could not allocate memory for D matrix\n")
     }
@@ -148,7 +148,7 @@ void BEM_Poisson_Boltzmann::perform_integrals_for_lookup_cell_self(LinkedListNod
 
     // Get the top of the stack in the cell in which face f lies
     LinkedListNode<Face> *l_j = lookup->get_top_of_stack(l_i->x, l_i->y, l_i->z);
-    while (l_j != NULL) {
+    while (l_j != nullptr) {
         if (l_j->index != l_i->index) {
             gauss_quadrature_4_point(gqp,
                     &(l_j->obj->centroid),
@@ -167,7 +167,7 @@ void BEM_Poisson_Boltzmann::perform_integrals_for_lookup_cell_relative(LinkedLis
     scalar mat_C_contribution, mat_D_contribution;
 
     LinkedListNode<Face> *l_j = lookup->get_top_of_stack(l_i->x + dx, l_i->y + dy, l_i->z + dz);
-    while (l_j != NULL) {
+    while (l_j != nullptr) {
         gauss_quadrature_4_point(gqp,
                 &(l_j->obj->centroid),
                 &mat_D_contribution,

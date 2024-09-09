@@ -33,7 +33,7 @@
  */
 mesh_node::mesh_node() {
     num_element_contributors = 0;
-    force_contributions = NULL;
+    force_contributions = nullptr;
     pos.x = 0;
     pos.y = 0;
     pos.z = 0;

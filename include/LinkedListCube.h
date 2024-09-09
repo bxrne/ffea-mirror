@@ -71,8 +71,8 @@ public:
     LinkedListNode<T> * get_from_pool(int i);
 
     /**
-     * Completely clears entire grid of all linked lists by setting all pointers to NULL in root,
-     * and all 'next' pointers to NULL in the pool of LinkedListNodes.
+     * Completely clears entire grid of all linked lists by setting all pointers to nullptr in root,
+     * and all 'next' pointers to nullptr in the pool of LinkedListNodes.
      */
     void clear();
     void clear_layer(int l);

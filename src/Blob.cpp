@@ -44,75 +44,75 @@ Blob::Blob() {
     num_interior_nodes = 0;
     num_surface_elements = 0;
     num_interior_elements = 0;
-    ctf_l_nodes = NULL;
-    ctf_r_nodes = NULL;
-    ctf_sl_faces = NULL;
-    ctf_slsurf_ndx = NULL;
-    ctf_sl_faces = NULL;
-    ctf_sl_surfsize = NULL;
-    ctf_l_forces = NULL;
-    ctf_r_forces = NULL;
-    ctf_r_axis = NULL;
-    ctf_r_type = NULL;
-    ctf_sl_forces = NULL;
+    ctf_l_nodes = nullptr;
+    ctf_r_nodes = nullptr;
+    ctf_sl_faces = nullptr;
+    ctf_slsurf_ndx = nullptr;
+    ctf_sl_faces = nullptr;
+    ctf_sl_surfsize = nullptr;
+    ctf_l_forces = nullptr;
+    ctf_r_forces = nullptr;
+    ctf_r_axis = nullptr;
+    ctf_r_type = nullptr;
+    ctf_sl_forces = nullptr;
     mass = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
-    node = NULL;
-    node_position = NULL;
-    elem = NULL;
-    surface = NULL;
-    binding_site = NULL;
-    solver = NULL;
+    node = nullptr;
+    node_position = nullptr;
+    elem = nullptr;
+    surface = nullptr;
+    binding_site = nullptr;
+    solver = nullptr;
     linear_solver = 0;
     mass_in_blob = false;
     ssint_on_blob = false;
     springs_on_blob = false;
     beads_on_blob = false;
-    force = NULL;
-    rng = NULL;
-    poisson_solver = NULL;
-    phi_Omega = NULL;
-    phi_Gamma = NULL;
-    q = NULL;
-    nodal_q = NULL;
-    poisson_rhs = NULL;
+    force = nullptr;
+    rng = nullptr;
+    poisson_solver = nullptr;
+    phi_Omega = nullptr;
+    phi_Gamma = nullptr;
+    q = nullptr;
+    nodal_q = nullptr;
+    poisson_rhs = nullptr;
     num_pinned_nodes = 0;
-    pinned_nodes_list = NULL;
+    pinned_nodes_list = nullptr;
     bsite_pinned_nodes_list.clear();
 
-    num_contributing_faces = NULL;
+    num_contributing_faces = nullptr;
 
-    pbc_count[0]= 0;
-    pbc_count[1]= 0;
-    pbc_count[2]= 0;
+    pbc_count[0] = 0;
+    pbc_count[1] = 0;
+    pbc_count[2] = 0;
 
-    toBePrinted_nodes = NULL;
+    toBePrinted_nodes = nullptr;
 
-    poisson_surface_matrix = NULL;
-    poisson_interior_matrix = NULL;
+    poisson_surface_matrix = nullptr;
+    poisson_interior_matrix = nullptr;
 }
 
 Blob::~Blob() {
     /* Release the node, element and surface arrays */
     delete[] node;
-    node = NULL;
+    node = nullptr;
     delete[] node_position;
-    node_position = NULL;
+    node_position = nullptr;
     delete[] elem;
-    elem = NULL;
+    elem = nullptr;
     delete[] surface;
-    surface = NULL;
+    surface = nullptr;
 
     delete[] binding_site;
-    binding_site = NULL;
+    binding_site = nullptr;
 
     /* Release the force vector */
     delete[] force;
-    force = NULL;
+    force = nullptr;
 
     /* Release the Solver */
     delete solver;
-    solver = NULL;
+    solver = nullptr;
     linear_solver = 0;
     mass_in_blob = false;
     ssint_on_blob = false;
@@ -121,27 +121,27 @@ Blob::~Blob() {
 
     /* Release the Poisson Solver */
     delete poisson_solver;
-    poisson_solver = NULL;
+    poisson_solver = nullptr;
     delete[] phi_Omega;
-    phi_Omega = NULL;
+    phi_Omega = nullptr;
     delete[] phi_Gamma;
-    phi_Gamma = NULL;
+    phi_Gamma = nullptr;
     delete[] q;
-    q = NULL;
+    q = nullptr;
     delete[] nodal_q;
-    nodal_q = NULL;
+    nodal_q = nullptr;
     delete[] poisson_rhs;
-    poisson_rhs = NULL;
+    poisson_rhs = nullptr;
     delete[] pinned_nodes_list;
-    pinned_nodes_list = NULL;
+    pinned_nodes_list = nullptr;
 
     /* delete precomp stuff */
     if (num_beads > 0) {
         num_beads = 0;
         delete[] bead_position;
-        bead_position = NULL;
+        bead_position = nullptr;
         delete[] bead_type;
-        bead_type = NULL;
+        bead_type = nullptr;
     }
 
     /* delete ctforces stuff */
@@ -149,34 +149,34 @@ Blob::~Blob() {
     if (num_l_ctf > 0) {
         num_l_ctf = 0;
         delete[] ctf_l_nodes;
-        ctf_l_nodes = NULL;
+        ctf_l_nodes = nullptr;
         delete[] ctf_l_forces;
-        ctf_l_forces = NULL;
+        ctf_l_forces = nullptr;
     }
     // then rotational:
     if (num_r_ctf > 0) {
         num_r_ctf = 0;
         delete[] ctf_r_nodes;
-        ctf_r_nodes = NULL;
+        ctf_r_nodes = nullptr;
         delete[] ctf_r_forces;
-        ctf_r_forces = NULL;
+        ctf_r_forces = nullptr;
         delete[] ctf_r_axis;
-        ctf_r_axis = NULL;
+        ctf_r_axis = nullptr;
         delete[] ctf_r_type;
-        ctf_r_type = NULL;
+        ctf_r_type = nullptr;
     }
     // and then linear onto surfaces:
     if (num_sltotal_ctf > 0) {
         num_sltotal_ctf = 0;
         num_slsets_ctf = 0;
         delete[] ctf_slsurf_ndx;
-        ctf_slsurf_ndx = NULL;
+        ctf_slsurf_ndx = nullptr;
         delete[] ctf_sl_faces;
-        ctf_sl_faces = NULL;
+        ctf_sl_faces = nullptr;
         delete[] ctf_sl_surfsize;
-        ctf_sl_surfsize = NULL;
+        ctf_sl_surfsize = nullptr;
         delete[] ctf_sl_forces;
-        ctf_sl_forces = NULL;
+        ctf_sl_forces = nullptr;
     }
 
     /* Set relevant data to zero */
@@ -194,20 +194,20 @@ Blob::~Blob() {
     num_interior_nodes = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
     mass = 0;
-    rng = NULL;
+    rng = nullptr;
     num_pinned_nodes = 0;
     bsite_pinned_nodes_list.clear();
 
     delete[] toBePrinted_nodes;
-    toBePrinted_nodes = NULL;
+    toBePrinted_nodes = nullptr;
 
     delete[] num_contributing_faces;
-    num_contributing_faces = NULL;
+    num_contributing_faces = nullptr;
 
     delete poisson_surface_matrix;
     delete poisson_interior_matrix;
-    poisson_surface_matrix = NULL;
-    poisson_interior_matrix = NULL;
+    poisson_surface_matrix = nullptr;
+    poisson_interior_matrix = nullptr;
 }
 
 
@@ -328,7 +328,7 @@ int Blob::init(){
         }
     } else {
         num_pinned_nodes = 0;
-        pinned_nodes_list = NULL;
+        pinned_nodes_list = nullptr;
     }
 
     // Linearise all the elements
@@ -371,7 +371,7 @@ int Blob::init(){
 		} else {
 		    FFEA_ERROR_MESSG("Error in Blob initialisation: linear_solver=%d is not a valid solver choice\n", linear_solver);
 		}
-		if (solver == NULL) FFEA_ERROR_MESSG("No solver to work with\n");
+		if (!solver) FFEA_ERROR_MESSG("No solver to work with\n");
 	}
 
         // Initialise the Solver (whatever it may be)
@@ -384,7 +384,7 @@ int Blob::init(){
 
     // Allocate the force vector array for the whole Blob
     force = new(std::nothrow) vector3[num_nodes];
-    if (force == NULL) FFEA_ERROR_MESSG("Could not store the force vector array\n");
+    if (!force) FFEA_ERROR_MESSG("Could not store the force vector array\n");
     for (int i = 0; i < num_nodes; i++) {
         force[i].x = 0;
         force[i].y = 0;
@@ -394,7 +394,7 @@ int Blob::init(){
     // Calculate how many faces each surface node is a part of
     num_contributing_faces = new(std::nothrow) int[num_surface_nodes];
 
-    if (num_contributing_faces == NULL) FFEA_ERROR_MESSG("Failed to allocate num_contributing_faces\n");
+    if (!num_contributing_faces) FFEA_ERROR_MESSG("Failed to allocate num_contributing_faces\n");
     for (int i = 0; i < num_surface_nodes; i++) {
         num_contributing_faces[i] = 0;
     }
@@ -472,7 +472,7 @@ int Blob::init(){
         // Create the vector containing all values of the potential at each interior node
         phi_Omega = new(std::nothrow) scalar[num_interior_nodes];
 
-        if (phi_Omega == NULL) {
+        if (!phi_Omega) {
             FFEA_ERROR_MESSG("Could not allocate memory (for phi_Omega array).\n");
         }
 
@@ -483,7 +483,7 @@ int Blob::init(){
         // Create the vector containing all values of the potential on each surface node
         phi_Gamma = new(std::nothrow) scalar[num_surface_nodes];
 
-        if (phi_Gamma == NULL) {
+        if (!phi_Gamma) {
             FFEA_ERROR_MESSG("Could not allocate memory (for phi_Gamma array).\n");
         }
 
@@ -496,7 +496,7 @@ int Blob::init(){
                         // Create the vector containing the smoothed out charge distribution across the elements
                         q = new scalar[num_nodes];
 
-                        if(q == NULL) {
+                        if(!q) {
                                 FFEA_error_text();
                                 printf("Could not allocate memory (for q array).\n");
                                 return FFEA_ERROR;
@@ -509,7 +509,7 @@ int Blob::init(){
                         // Create the vector containing all charges on each node of the Blob
                         nodal_q = new scalar[num_nodes];
 
-                        if(nodal_q == NULL) {
+                        if(!nodal_q) {
                                 FFEA_error_text();
                                 printf("Could not allocate memory (for nodal_q array).\n");
                                 return FFEA_ERROR;
@@ -537,7 +537,7 @@ int Blob::init(){
         // Create the vector containing the charge distribution across the elements
         q = new(std::nothrow) scalar[num_nodes];
 
-        if (q == NULL) {
+        if (!q) {
             FFEA_ERROR_MESSG("Could not allocate memory (for q array).\n");
         }
 
@@ -564,7 +564,7 @@ int Blob::init(){
         // Create the Right Hand Side vector for the Poisson solver
         poisson_rhs = new(std::nothrow) scalar[num_interior_nodes];
 
-        if (poisson_rhs == NULL) {
+        if (!poisson_rhs) {
             FFEA_ERROR_MESSG("Could not allocate memory (for poisson_rhs array).\n");
         }
 
@@ -939,7 +939,7 @@ void Blob::move(scalar dx, scalar dy, scalar dz) {
         node[i].pos.z += dz;
     }
     for(int i = 0; i < get_num_faces(); ++i) {
-        if(get_motion_state() != FFEA_BLOB_IS_DYNAMIC && surface[i].n[3] != NULL) {
+        if(get_motion_state() != FFEA_BLOB_IS_DYNAMIC && surface[i].n[3] != nullptr) {
             surface[i].n[3]->pos.x += dx;
             surface[i].n[3]->pos.y += dy;
             surface[i].n[3]->pos.z += dz;
@@ -1104,7 +1104,7 @@ void Blob::compress_blob(scalar compress) {
 
 int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
 
-    FILE *out = NULL;
+    FILE *out = nullptr;
     char new_node_filename[] = "VIEWERNODE_";
     int i;
 
@@ -1113,7 +1113,7 @@ int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
 
 
     //open the new node file
-    if ((out = fopen(new_node_filename, "w")) == NULL) {
+    if (!(out = fopen(new_node_filename, "w"))) {
         FFEA_FILE_ERROR_MESSG(new_node_filename);
     }
     printf("\t\tWriting to viewer nodes file: %s\n", new_node_filename);
@@ -1267,12 +1267,12 @@ void Blob::pre_print() {
 
 int Blob::read_nodes_from_file(FILE *trajectory_out) {
     char state_str[20];
-    char *result = NULL;
+    char *result = nullptr;
 
     // If blob is static, don't read any nodes. Simply read the word "STATIC"
     if (blob_state == FFEA_BLOB_IS_STATIC) {
         result = fgets(state_str, 20, trajectory_out);
-        if (result == NULL) {
+        if (!result) {
             FFEA_ERROR_MESSG("Problem when reading 'STATIC' (expected) line in trajectory file\n")
         }
         if (strcmp(state_str, "STATIC\n") != 0) {
@@ -1281,7 +1281,7 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
         return FFEA_OK;
     } else {
         result = fgets(state_str, 20, trajectory_out);
-        if (result == NULL) {
+        if (!result) {
             FFEA_ERROR_MESSG("Problem when reading state line in trajectory file\n")
         }
     }
@@ -1541,7 +1541,7 @@ void Blob::write_measurements_to_file(FILE *fout) {
 
 void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
     int n;
-    if (stress_out != NULL) {
+    if (stress_out != nullptr) {
         fprintf(stress_out, "blob\t%d\n", blob_number);
         for (n = 0; n < num_elements; n++) {
             fprintf(stress_out, "%e\n", elem[n].internal_stress_mag);
@@ -1618,7 +1618,7 @@ Face * Blob::get_face(int i) {
     if (surface[i].is_ssint_active() == true) {
         return &surface[i];
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -2358,20 +2358,20 @@ void Blob::get_min_max(vector3 *blob_min, vector3 *blob_max) {
 /*
  */
 int Blob::load_nodes(const char *node_filename, scalar scale) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     int i;
     double x, y, z;
     const int max_line_size = 50;
     char line[max_line_size];
 
     // open the node file
-    if ((in = fopen(node_filename, "r")) == NULL) {
+    if (!(in = fopen(node_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(node_filename)
     }
     printf("\t\tReading in nodes file: %s\n", node_filename);
 
     // first line should be the file type "ffea node file"
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of node file\n")
     }
@@ -2405,13 +2405,13 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
     node = new(std::nothrow) mesh_node[num_nodes];
     node_position = new(std::nothrow) vector3*[num_nodes];
 
-    if (node == NULL || node_position == NULL) {
+    if (!node || !node_position) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for nodes array.\n")
     }
 
     // Check for "surface nodes:" line
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error when looking for 'surface nodes:' line\n")
     }
@@ -2425,7 +2425,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
 
         if (i == num_surface_nodes) {
             // Check for "interior nodes:" line
-            if (fgets(line, max_line_size, in) == NULL) {
+            if (!fgets(line, max_line_size, in)) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error when looking for 'interior nodes:' line\n")
             }
@@ -2460,19 +2460,19 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
 /*
  */
 int Blob::load_topology(const char *topology_filename) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     int i, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10;
     const int max_line_size = 50;
     char line[max_line_size];
 
     // Now open the topology file
-    if ((in = fopen(topology_filename, "r")) == NULL) {
+    if (!(in = fopen(topology_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(topology_filename)
     }
     printf("\t\tReading in topology file: %s\n", topology_filename);
 
     // first line should be the file type "ffea topology file"
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of topology file\n")
     }
@@ -2504,13 +2504,13 @@ int Blob::load_topology(const char *topology_filename) {
 
     // Allocate the memory for all these elements
     elem = new(std::nothrow) tetra_element_linear[num_elements];
-    if (elem == NULL) {
+    if (!elem) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for element array.\n")
     }
 
     // Check for "surface elements:" line
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error when looking for 'surface elements:' line\n")
     }
@@ -2523,7 +2523,7 @@ int Blob::load_topology(const char *topology_filename) {
     for (i = 0; i < num_elements; i++) {
         if (i == num_surface_elements) {
             // Check for "interior elements:" line
-            if (fgets(line, max_line_size, in) == NULL) {
+            if (!fgets(line, max_line_size, in)) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error when looking for 'interior elements:' line\n")
             }
@@ -2587,18 +2587,18 @@ int Blob::load_topology(const char *topology_filename) {
 /*
  */
 int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     int i, n1, n2, n3, element;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(surface_filename, "r")) == NULL) {
+    if (!(in = fopen(surface_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(surface_filename)
     }
     printf("\t\tReading in surface file: %s\n", surface_filename);
 
     // first line should be the file type "ffea surface file"
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of surface file\n")
     }
@@ -2616,10 +2616,10 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
 
     // Allocate the memory for all these faces
     surface = new(std::nothrow) Face[num_surface_faces];
-    if (surface == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
+    if (!surface) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
 
     // Check for "faces:" line
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error when looking for 'faces:' line\n")
     }
@@ -2686,18 +2686,18 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
 /*
  */
 int Blob::load_surface_no_topology(const char *surface_filename, SimulationParams *params) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     int i, n1, n2, n3, element;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(surface_filename, "r")) == NULL) {
+    if (!(in = fopen(surface_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(surface_filename)
     }
     printf("\t\tReading in surface file: %s\n", surface_filename);
 
     // first line should be the file type "ffea surface file"
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of surface file\n")
     }
@@ -2715,10 +2715,10 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
 
     // Allocate the memory for all these faces
     surface = new(std::nothrow) Face[num_surface_faces];
-    if (surface == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
+    if (!surface) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
 
     // Check for "faces:" line
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error when looking for 'faces:' line\n")
     }
@@ -2742,7 +2742,7 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds node index\n", i);
             }
 
-            surface[i].init(i, &node[n1], &node[n2], &node[n3], NULL, this, params);
+            surface[i].init(i, &node[n1], &node[n2], &node[n3], nullptr, this, params);
 
             if (surface[i].area_0 < smallest_A) {
                 smallest_A = surface[i].area_0;
@@ -2764,18 +2764,18 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
 /*
  */
 int Blob::load_material_params(const char *material_params_filename) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     int num_material_elements;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(material_params_filename, "r")) == NULL) {
+    if (!(in = fopen(material_params_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(material_params_filename)
     }
     printf("\t\tReading in material parameters file: %s\n", material_params_filename);
 
     // first line should be the file type "ffea material params file"
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of material params file\n")
     }
@@ -2823,18 +2823,18 @@ int Blob::load_material_params(const char *material_params_filename) {
 /*
  */
 int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     int num_stokes_nodes;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(stokes_filename, "r")) == NULL) {
+    if (!(in = fopen(stokes_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(stokes_filename)
     }
     printf("\t\tReading in material parameters file: %s\n", stokes_filename);
 
     // first line should be the file type "ffea stokes radii file"
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of stokes radii file\n")
     }
@@ -2999,7 +2999,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     // 2 - store the data efficiently:
     // 2.1 - positions:
     bead_position = new(std::nothrow) scalar[positions.size()];
-    if (bead_position == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for bead positions\n")
+    if (!bead_position) FFEA_ERROR_MESSG("Failed to allocate memory for bead positions\n")
         for (unsigned int i=0; i<positions.size(); i++) {
             bead_position[i] = positions[i];
         }
@@ -3007,7 +3007,7 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     // 2.2 - bead types are integers starting from zero:
     vector<string>::iterator it;
     bead_type = new(std::nothrow) int[stypes.size()];
-    if (bead_type == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for bead types\n")
+    if (!bead_type) FFEA_ERROR_MESSG("Failed to allocate memory for bead types\n")
         int index;
     for (unsigned int i=0; i<stypes.size(); i++) {
         it = std::find(pc_params->types.begin(), pc_params->types.end(), stypes[i]);
@@ -3155,7 +3155,7 @@ int Blob::load_ctforces(string ctforces_fname) {
     // 2.3 - And finally store the stuff properly:
     ctf_l_nodes = new(std::nothrow) int[num_l_ctf];       // allocate nodes
     ctf_l_forces = new(std::nothrow) scalar[3*num_l_ctf]; // allocate forces
-    if (ctf_l_nodes == NULL || ctf_l_forces == NULL) FFEA_ERROR_MESSG("Failed to allocate ctf_l relevant arrays\n");
+    if (!ctf_l_nodes || !ctf_l_forces) FFEA_ERROR_MESSG("Failed to allocate ctf_l relevant arrays\n");
     arr3 ctf_d; // direction of the force
     int cnt = 0;
     for (int i=0; i<my_lines.size(); i++) {
@@ -3237,7 +3237,7 @@ int Blob::load_ctforces(string ctforces_fname) {
     ctf_r_forces = new(std::nothrow) scalar[num_r_ctf]; // allocate forces
     ctf_r_axis = new(std::nothrow) scalar[6*num_r_ctf]; // allocate axis
     ctf_r_type = new(std::nothrow) char[2*num_r_ctf]; // allocate type of rotational force
-    if (ctf_r_nodes == NULL || ctf_r_forces == NULL || ctf_r_axis == NULL || ctf_r_type == NULL) FFEA_ERROR_MESSG("Failed to allocate ctf_r relevant arrays\n");
+    if (!ctf_r_nodes || !ctf_r_forces || !ctf_r_axis || !ctf_r_type) FFEA_ERROR_MESSG("Failed to allocate ctf_r relevant arrays\n");
     const scalar mdfm1 = 1./mesoDimensions::force;
     const scalar mdlm1 = 1./mesoDimensions::length;
     cnt = 0; // reinitialise cnt
@@ -3345,7 +3345,7 @@ int Blob::load_ctforces(string ctforces_fname) {
     num_slsets_ctf = my_lines.size();
     ctf_sl_surfsize = new(std::nothrow) int[num_slsets_ctf];
     ctf_sl_forces = new(std::nothrow) scalar[3*num_slsets_ctf]; // allocate forces
-    if (ctf_sl_faces == NULL || ctf_sl_surfsize == NULL || ctf_sl_forces == NULL) FFEA_ERROR_MESSG("Failed to allocate ctf_sl relevant arrays\n");
+    if (!ctf_sl_faces || !ctf_sl_surfsize || !ctf_sl_forces) FFEA_ERROR_MESSG("Failed to allocate ctf_sl relevant arrays\n");
     ctf_d; // direction of the force
     cnt = 0;
     for (int i=0; i<my_lines.size(); i++) {
@@ -3408,9 +3408,9 @@ int Blob::forget_beads() {
 
     num_beads = 0;
     delete[] bead_position;
-    bead_position = NULL;
+    bead_position = nullptr;
     delete[] bead_type;
-    bead_type = NULL;
+    bead_type = nullptr;
     return FFEA_OK;
 
 }
@@ -3437,17 +3437,17 @@ void Blob::print_bead_positions() {
 /*
  */
 int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, string ssint_method) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(ssint_filename, "r")) == NULL) {
+    if (!(in = fopen(ssint_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(ssint_filename)
     }
     printf("\t\tReading in VDW file: %s\n", ssint_filename);
 
     // first line should be the file type "ffea vdw file" (.vdw) or "ffea ssint file" (.ssint)
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of VDW file\n")
     }
@@ -3469,7 +3469,7 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     }
 
     // Check for "ssint params:" line
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error when looking for 'vdw params:' line\n")
     }
@@ -3567,7 +3567,7 @@ int Blob::load_binding_sites() {
 
     // Create binding sites
     binding_site = new(std::nothrow) BindingSite[num_binding_sites];
-    if (binding_site == NULL) FFEA_ERROR_MESSG("Failed to allocate array of binding sites\n");
+    if (!binding_site) FFEA_ERROR_MESSG("Failed to allocate array of binding sites\n");
 
     // Check for "binding sites:" line
     fin.getline(buf, MAX_BUF_SIZE);
@@ -3634,18 +3634,18 @@ int Blob::load_binding_sites() {
 /*
  */
 int Blob::load_pinned_nodes(const char *pin_filename) {
-    FILE *in = NULL;
+    FILE *in = nullptr;
     int i, pn_index;
     const int max_line_size = 50;
     char line[max_line_size];
 
-    if ((in = fopen(pin_filename, "r")) == NULL) {
+    if (!(in = fopen(pin_filename, "r"))) {
         FFEA_FILE_ERROR_MESSG(pin_filename)
     }
     printf("\t\tReading in pinned nodes file: %s\n", pin_filename);
 
     // first line should be the file type "ffea pinned nodes file"
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of pin file\n")
     }
@@ -3663,10 +3663,10 @@ int Blob::load_pinned_nodes(const char *pin_filename) {
 
     // Allocate the memory for the list of pinned node indices
     pinned_nodes_list = new int[num_pinned_nodes];
-    if (pinned_nodes_list == NULL) FFEA_ERROR_MESSG("Failed to allocate pinned_nodes_list\n");
+    if (pinned_nodes_list == nullptr) FFEA_ERROR_MESSG("Failed to allocate pinned_nodes_list\n");
 
     // Check for "pinned nodes:" line
-    if (fgets(line, max_line_size, in) == NULL) {
+    if (!fgets(line, max_line_size, in)) {
         fclose(in);
         FFEA_ERROR_MESSG("Error when looking for 'pinned nodes:' line\n")
     }
@@ -3918,7 +3918,7 @@ void Blob::euler_integrate() {
  */
 int Blob::calculate_node_element_connectivity() {
     int i, j;
-    int *node_counter = NULL;
+    int *node_counter = nullptr;
 
     // initialise num_element_contributors to zero
     for (i = 0; i < num_nodes; i++)
@@ -3932,14 +3932,14 @@ int Blob::calculate_node_element_connectivity() {
     // allocate the contributions array for each node to the length given by num_element_contributors
     for (i = 0; i < num_nodes; i++) {
         node[i].force_contributions = new(std::nothrow) vector3 *[node[i].num_element_contributors];
-        if (node[i].force_contributions == NULL) {
+        if (node[i].force_contributions == nullptr) {
             FFEA_ERROR_MESSG("Failed to allocate memory for 'force_contributions' array (on node %d)\n", i);
         }
     }
 
     // create an array of counters keeping track of how full each contributions array is on each node
     node_counter = new(std::nothrow) int[num_nodes];
-    if (node_counter == NULL) {
+    if (!node_counter) {
         FFEA_ERROR_MESSG("Failed to allocate node_counter array.\n");
     }
 
@@ -3986,7 +3986,7 @@ int Blob::create_pinned_nodes(set<int> list) {
     delete[] pinned_nodes_list;
 
     pinned_nodes_list = new(std::nothrow) int[list.size()];
-    if (pinned_nodes_list == NULL) FFEA_ERROR_MESSG("Could not allocate memory for pinned_nodes_list\n");
+    if (!pinned_nodes_list) FFEA_ERROR_MESSG("Could not allocate memory for pinned_nodes_list\n");
     i = 0;
     for(it = list.begin(); it != list.end(); ++it) {
         pinned_nodes_list[i++] = *it;
@@ -4042,7 +4042,7 @@ int Blob::build_mass_matrix() {
     sparsity_pattern_mass_matrix.init(num_nodes);
 
     MassMatrixQuadratic *M_alpha = new(std::nothrow) MassMatrixQuadratic[num_elements];
-    if (M_alpha == NULL) FFEA_ERROR_MESSG("Failed to allocate memory for the mass matrix\n");
+    if (!M_alpha) FFEA_ERROR_MESSG("Failed to allocate memory for the mass matrix\n");
 
     scalar *mem_loc;
     int ni_index, nj_index;

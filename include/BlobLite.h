@@ -36,7 +36,7 @@ using std::endl;
 class BlobLite {
 public:  
   /** BlobLite constructor:
-   * Initialises all variables and pointers to 0 (or NULL). 
+   * Initialises all variables and pointers to 0 (or nullptr). 
    * Does not perform any memory allocation. */
   BlobLite();  
   /** BlobLite destructor:

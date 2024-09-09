@@ -26,13 +26,13 @@
 /**/
 MassLumpedSolver::MassLumpedSolver() {
     num_rows = 0;
-    inv_M = NULL;
+    inv_M = nullptr;
 }
 
 /* */
 MassLumpedSolver::~MassLumpedSolver() {
     delete[] inv_M;
-    inv_M = NULL;
+    inv_M = nullptr;
     num_rows = 0;
 }
 
@@ -45,7 +45,7 @@ int MassLumpedSolver::init(int num_nodes, int num_elements, mesh_node *node, tet
     this->num_rows = num_nodes;
     inv_M = new scalar[num_rows];
 
-    if (inv_M == NULL) {
+    if (!inv_M) {
         FFEA_ERROR_MESSG("could not allocate inv_M\n");
     }
 

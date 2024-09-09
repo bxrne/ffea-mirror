@@ -28,15 +28,15 @@ BiCGSTAB_solver::BiCGSTAB_solver() {
     tol = 0;
     max_num_iterations = 0;
 
-    inv_M = NULL;
-    r = NULL;
-    r_hat = NULL;
-    p = NULL;
-    p_hat = NULL;
-    q = NULL;
-    s = NULL;
-    s_hat = NULL;
-    t = NULL;
+    inv_M = nullptr;
+    r = nullptr;
+    r_hat = nullptr;
+    p = nullptr;
+    p_hat = nullptr;
+    q = nullptr;
+    s = nullptr;
+    s_hat = nullptr;
+    t = nullptr;
 }
 
 BiCGSTAB_solver::~BiCGSTAB_solver() {
@@ -50,15 +50,15 @@ BiCGSTAB_solver::~BiCGSTAB_solver() {
     delete[] s_hat;
     delete[] t;
 
-    inv_M = NULL;
-    r = NULL;
-    r_hat = NULL;
-    p = NULL;
-    p_hat = NULL;
-    q = NULL;
-    s = NULL;
-    s_hat = NULL;
-    t = NULL;
+    inv_M = nullptr;
+    r = nullptr;
+    r_hat = nullptr;
+    p = nullptr;
+    p_hat = nullptr;
+    q = nullptr;
+    s = nullptr;
+    s_hat = nullptr;
+    t = nullptr;
 
     N = 0;
     tol = 0;
@@ -82,15 +82,7 @@ int BiCGSTAB_solver::init(int N, scalar tol, int max_num_iterations) {
     t = new(std::nothrow) scalar[N];
 
     // Check that memory has been allocated
-    if (inv_M == NULL ||
-            r == NULL ||
-            r_hat == NULL ||
-            p == NULL ||
-            p_hat == NULL ||
-            q == NULL ||
-            s == NULL ||
-            s_hat == NULL ||
-            t == NULL) {
+    if (!inv_M || !r || !r_hat || !p || !p_hat || !q || !s || !s_hat || !t) {
         FFEA_ERROR_MESSG("While initialising BiCGSTAB_solver, could not allocate memory for vectors.\n");
     }
 

@@ -28,8 +28,8 @@ KineticState::KineticState() {
 	base = -1;
 	target = -1;
 	bound = false;
-	base_site = NULL;
-	target_site = NULL;
+	base_site = nullptr;
+	target_site = nullptr;
 }
 
 KineticState::~KineticState() {
@@ -37,8 +37,8 @@ KineticState::~KineticState() {
 	base = -1;
 	target = -1;
 	bound = false;
-	base_site = NULL;
-	target_site = NULL;
+	base_site = nullptr;
+	target_site = nullptr;
 }
 
 int KineticState::init() {

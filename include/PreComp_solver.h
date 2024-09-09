@@ -51,9 +51,9 @@ public:
   PreComp_solver();
   ~PreComp_solver();
   int init(PreComp_params *pc_params, SimulationParams *params, Blob **blob_array);
-  int solve(scalar *blob_corr=NULL); ///< calculate the forces using a straightforward double loop.
+  int solve(scalar *blob_corr=nullptr); ///< calculate the forces using a straightforward double loop.
   int solve_using_neighbours();  ///< calculate the forces using linkedlists.
-  int solve_using_neighbours_non_critical(scalar *blob_corr=NULL);  ///< using linkedlists, calculate twice the forces to avoid any critical regions.
+  int solve_using_neighbours_non_critical(scalar *blob_corr=nullptr);  ///< using linkedlists, calculate twice the forces to avoid any critical regions.
   void reset_fieldenergy(); 
   scalar get_U(scalar x, int typei, int typej);
   scalar get_F(scalar x, int typei, int typej);

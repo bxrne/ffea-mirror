@@ -27,11 +27,11 @@ CG_solver::CG_solver() {
     N = 0;
     tol = 0;
     max_num_iterations = 0;
-    inv_M = NULL;
-    d = NULL;
-    r = NULL;
-    q = NULL;
-    s = NULL;
+    inv_M = nullptr;
+    d = nullptr;
+    r = nullptr;
+    q = nullptr;
+    s = nullptr;
 }
 
 CG_solver::~CG_solver() {
@@ -44,11 +44,11 @@ CG_solver::~CG_solver() {
     N = 0;
     tol = 0;
     max_num_iterations = 0;
-    inv_M = NULL;
-    d = NULL;
-    r = NULL;
-    q = NULL;
-    s = NULL;
+    inv_M = nullptr;
+    d = nullptr;
+    r = nullptr;
+    q = nullptr;
+    s = nullptr;
 }
 
 int CG_solver::init(int N, scalar tol, int max_num_iterations) {
@@ -64,11 +64,7 @@ int CG_solver::init(int N, scalar tol, int max_num_iterations) {
     s = new(std::nothrow) scalar[N];
 
     // Check that memory has been allocated
-    if (inv_M == NULL ||
-            d == NULL ||
-            r == NULL ||
-            q == NULL ||
-            s == NULL) {
+    if (!inv_M || !d || !r || !q || !s) {
         FFEA_ERROR_MESSG("While initialising CG_solver, could not allocate memory for vectors.\n");
     }
 

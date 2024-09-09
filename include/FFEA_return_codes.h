@@ -36,7 +36,7 @@
 #define FFEA_ERROR	-1
 #define FFEA_CAUTION 	1
 
-#define FFEA_FILE_ERROR_MESSG(F) {FFEA_error_text(); printf("Error opening file: %s\n", F); perror(NULL); return FFEA_ERROR;}
+#define FFEA_FILE_ERROR_MESSG(F) {FFEA_error_text(); printf("Error opening file: %s\n", F); perror(nullptr); return FFEA_ERROR;}
 #define FFEA_ERROR_MESSG(...) {FFEA_error_text(); printf(__VA_ARGS__); return FFEA_ERROR;}
 #define FFEA_CAUTION_MESSG(...) {FFEA_caution_text(); printf(__VA_ARGS__);}
 

@@ -1682,7 +1682,7 @@ int ffea_test::rod_neighbour_list_construction()
 {
     int num_rods = 4;
     std::string filename;
-    rod::Rod **rod_array = NULL;
+    rod::Rod **rod_array = nullptr;
 
     float r1[3] = {0, 0, 0};
     float r2[3] = {0, 0, 0};
@@ -1973,7 +1973,7 @@ int ffea_test::rod_vdw_site_placement()
 {
     std::string rod_file;
     std::string rodvdw_file;
-    rod::Rod **rod_array = NULL;
+    rod::Rod **rod_array = nullptr;
     int num_rods = 2;
 
     World *world;

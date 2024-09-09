@@ -29,7 +29,7 @@ void GenSoftSSINT_solver::do_interaction(Face *f1, Face *f2, scalar *blob_corr){
 
     bool gensoft = true;
     bool intersection = false; 
-    if (blob_corr == NULL) {
+    if (!blob_corr) {
        intersection = f1->checkTetraIntersection(f2);
     } else {
        intersection = f1->checkTetraIntersection(f2,

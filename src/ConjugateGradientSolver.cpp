@@ -27,14 +27,14 @@ ConjugateGradientSolver::ConjugateGradientSolver() {
     num_rows = 0;
     epsilon2 = 0;
     i_max = 0;
-    key = NULL;
-    entry = NULL;
-    preconditioner = NULL;
-    d = NULL;
-    r = NULL;
-    q = NULL;
-    s = NULL;
-    f = NULL;
+    key = nullptr;
+    entry = nullptr;
+    preconditioner = nullptr;
+    d = nullptr;
+    r = nullptr;
+    q = nullptr;
+    s = nullptr;
+    f = nullptr;
 }
 
 ConjugateGradientSolver::~ConjugateGradientSolver() {
@@ -46,14 +46,14 @@ ConjugateGradientSolver::~ConjugateGradientSolver() {
     delete[] q;
     delete[] s;
     delete[] f;
-    key = NULL;
-    entry = NULL;
-    preconditioner = NULL;
-    d = NULL;
-    r = NULL;
-    q = NULL;
-    s = NULL;
-    f = NULL;
+    key = nullptr;
+    entry = nullptr;
+    preconditioner = nullptr;
+    d = nullptr;
+    r = nullptr;
+    q = nullptr;
+    s = nullptr;
+    f = nullptr;
     num_rows = 0;
     epsilon2 = 0;
     i_max = 0;
@@ -70,7 +70,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
 
     printf("\t\tAttempting to allocate %d scalars for mass_LU...\n", num_rows * num_rows);
     scalar *mass_LU = new(std::nothrow) scalar[num_rows * num_rows];
-    if (mass_LU == NULL) {
+    if (!mass_LU) {
         FFEA_ERROR_MESSG("Could not allocate mass_LU\n");
     }
     printf("\t\t...success.\n");
@@ -133,7 +133,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     }
     // Allocate memory for and initialise 'key' array
     key = new(std::nothrow) int[num_rows + 1];
-    if (key == NULL) FFEA_ERROR_MESSG("Failed to allocate 'key' in ConjugateGradientSolver\n"); 
+    if (!key) FFEA_ERROR_MESSG("Failed to allocate 'key' in ConjugateGradientSolver\n"); 
 
     for (i = 0; i < num_rows; i++) {
         key[i] = 0;
@@ -161,7 +161,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     // Allocate memory for the 'entry' array
     printf("\t\tNum non zero entries = %d.\n\t\tAllocating space...\n", total_non_zeros);
     entry = new(std::nothrow) sparse_entry[total_non_zeros];
-    if (entry == NULL) FFEA_ERROR_MESSG("Failed to allocate 'entry' in ConjugateGradientSolver\n"); 
+    if (!entry) FFEA_ERROR_MESSG("Failed to allocate 'entry' in ConjugateGradientSolver\n"); 
     printf("\t\t...done.\n");
 
     // Fill the 'entry' array
@@ -186,7 +186,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     cout << "Mass Solver Sums: " << mesoDimensions::mass*sum1 << " " << mesoDimensions::mass*sum2 << " " << mesoDimensions::mass*sum3 << endl;
     // Create the jacobi preconditioner matrix (diagonal)
     preconditioner = new(std::nothrow) scalar[num_rows];
-    if (preconditioner == NULL) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in ConjugateGradientSolver\n"); 
+    if (!preconditioner) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in ConjugateGradientSolver\n"); 
     for (i = 0; i < num_rows; i++)
         preconditioner[i] = 1.0 / mass_LU[i * num_rows + i];
 
@@ -196,7 +196,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, mesh_node *no
     q = new(std::nothrow) vector3[num_rows];
     s = new(std::nothrow) vector3[num_rows];
     f = new(std::nothrow) vector3[num_rows];
-    if (d == NULL || r == NULL || q == NULL || s == NULL || f == NULL) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for ConjugateGradientSolver\n"); 
+    if (!d || !r || !q || !s || !f) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for ConjugateGradientSolver\n"); 
 
     delete[] mass_LU;
 

@@ -28,13 +28,13 @@ NoMassCGSolver::NoMassCGSolver() {
     num_nodes = 0;
     epsilon2 = 0;
     i_max = 0;
-    preconditioner = NULL;
-    r = NULL;
-    p = NULL;
-    z = NULL;
-    q = NULL;
-    f = NULL;
-    V = NULL;
+    preconditioner = nullptr;
+    r = nullptr;
+    p = nullptr;
+    z = nullptr;
+    q = nullptr;
+    f = nullptr;
+    V = nullptr;
 }
 
 /* */
@@ -45,18 +45,18 @@ NoMassCGSolver::~NoMassCGSolver() {
     delete[] q;
     delete[] f;
     delete[] preconditioner;
-    r = NULL;
-    p = NULL;
-    z = NULL;
-    q = NULL;
-    f = NULL;
-    preconditioner = NULL;
+    r = nullptr;
+    p = nullptr;
+    z = nullptr;
+    q = nullptr;
+    f = nullptr;
+    preconditioner = nullptr;
     num_rows = 0;
     num_nodes = 0;
     epsilon2 = 0;
     i_max = 0;
     delete V;
-    V = NULL;
+    V = nullptr;
 }
 
 /* */
@@ -147,7 +147,7 @@ int NoMassCGSolver::init(int num_nodes, int num_elements, mesh_node *node, tetra
     // create a preconditioner for solving in less iterations
     // Create the jacobi preconditioner matrix (diagonal)
     preconditioner = new(std::nothrow) scalar[num_rows];
-    if (preconditioner == NULL) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in NoMassCGSolver\n");
+    if (!preconditioner) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in NoMassCGSolver\n");
 
 
     // create the work vectors necessary for use by the conjugate gradient solver in 'solve'
@@ -156,7 +156,7 @@ int NoMassCGSolver::init(int num_nodes, int num_elements, mesh_node *node, tetra
     z = new(std::nothrow) vector3[num_nodes];
     q = new(std::nothrow) vector3[num_nodes];
     f = new(std::nothrow) vector3[num_nodes];
-    if (r == NULL || p == NULL || z == NULL || q == NULL || f == NULL) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for NoMassCGSolver\n"); 
+    if (!r || !p || !z || !q || !f ) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for NoMassCGSolver\n"); 
 
     return FFEA_OK;
 }

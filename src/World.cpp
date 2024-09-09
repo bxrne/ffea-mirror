@@ -32,41 +32,41 @@ World::World()
 {
 
     // Initialise everything to zero
-    blob_array = NULL;
-    rod_array = NULL;
-    spring_array = NULL;
-    kinetic_map = NULL;
-    kinetic_return_map = NULL;
-    kinetic_state = NULL;
-    kinetic_rate = NULL;
-    kinetic_base_rate = NULL;
+    blob_array = nullptr;
+    rod_array = nullptr;
+    spring_array = nullptr;
+    kinetic_map = nullptr;
+    kinetic_return_map = nullptr;
+    kinetic_state = nullptr;
+    kinetic_rate = nullptr;
+    kinetic_base_rate = nullptr;
     num_springs = 0;
     mass_in_system = false;
     num_threads = 1;
-    rng = NULL;
-    phi_Gamma = NULL;
+    rng = nullptr;
+    phi_Gamma = nullptr;
     total_num_surface_faces = 0;
     box_dim.x = 0;
     box_dim.y = 0;
     box_dim.z = 0;
     step_initial = 0;
-    trajectory_out = NULL;
-    measurement_out = NULL;
-    detailed_meas_out = NULL;
+    trajectory_out = nullptr;
+    measurement_out = nullptr;
+    detailed_meas_out = nullptr;
     writeDetailed = true;
-    kinetics_out = NULL;
-    checkpoint_out = NULL;
-    vdw_solver = NULL;
-    Seeds = NULL;
+    kinetics_out = nullptr;
+    checkpoint_out = nullptr;
+    vdw_solver = nullptr;
+    Seeds = nullptr;
     num_seeds = 0;
-    blob_corr = NULL;
+    blob_corr = nullptr;
 
-    ffeareader = NULL;
-    systemreader = NULL;
+    ffeareader = nullptr;
+    systemreader = nullptr;
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
-    springfieldenergy = NULL;
+    springfieldenergy = nullptr;
     ssintenergy = 0.0;
     preCompenergy = 0.0;
 
@@ -79,7 +79,7 @@ World::World()
 World::~World()
 {
     delete[] rng;
-    rng = NULL;
+    rng = nullptr;
     num_threads = 0;
 
     for (int i = 0; i < params.num_blobs; ++i)
@@ -87,33 +87,33 @@ World::~World()
         delete[] blob_array[i];
     }
     delete[] blob_array;
-    blob_array = NULL;
+    blob_array = nullptr;
     delete[] active_blob_array;
-    active_blob_array = NULL;
+    active_blob_array = nullptr;
     delete[] rod_array;
-    rod_array = NULL;
+    rod_array = nullptr;
 
     delete[] spring_array;
-    spring_array = NULL;
+    spring_array = nullptr;
     num_springs = 0;
 
     mass_in_system = false;
 
     delete[] kinetic_map;
-    kinetic_map = NULL;
+    kinetic_map = nullptr;
 
     delete[] kinetic_return_map;
-    kinetic_return_map = NULL;
+    kinetic_return_map = nullptr;
 
     delete[] kinetic_state;
-    kinetic_state = NULL;
+    kinetic_state = nullptr;
     delete[] kinetic_rate;
-    kinetic_rate = NULL;
+    kinetic_rate = nullptr;
     delete[] kinetic_base_rate;
-    kinetic_base_rate = NULL;
+    kinetic_base_rate = nullptr;
 
     delete[] phi_Gamma;
-    phi_Gamma = NULL;
+    phi_Gamma = nullptr;
 
     delete[] blob_corr;
 
@@ -122,7 +122,7 @@ World::~World()
         delete[] Seeds[i];
     }
     delete[] Seeds;
-    Seeds = NULL;
+    Seeds = nullptr;
     num_seeds = 0;
 
     total_num_surface_faces = 0;
@@ -132,19 +132,19 @@ World::~World()
     box_dim.z = 0;
     step_initial = 0;
 
-    if (trajectory_out != NULL)
+    if (trajectory_out)
     {
         fclose(trajectory_out);
     }
-    if (trajectory_out != NULL)
+    if (trajectory_out)
     {
         fclose(measurement_out);
     }
-    if (trajectory_out != NULL)
+    if (trajectory_out)
     {
         fclose(checkpoint_out);
     }
-    if ((writeDetailed) && (detailed_meas_out != NULL))
+    if ((writeDetailed) && (detailed_meas_out))
     {
         fclose(detailed_meas_out);
     }
@@ -153,25 +153,25 @@ World::~World()
     {
         fclose(kinetics_out);
     }
-    trajectory_out = NULL;
-    measurement_out = NULL;
-    checkpoint_out = NULL;
-    detailed_meas_out = NULL;
-    kinetics_out = NULL;
+    trajectory_out = nullptr;
+    measurement_out = nullptr;
+    checkpoint_out = nullptr;
+    detailed_meas_out = nullptr;
+    kinetics_out = nullptr;
 
     delete vdw_solver;
-    vdw_solver = NULL;
+    vdw_solver = nullptr;
 
     delete ffeareader;
     delete systemreader;
-    ffeareader = NULL;
-    systemreader = NULL;
+    ffeareader = nullptr;
+    systemreader = nullptr;
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
 
     delete[] springfieldenergy;
-    springfieldenergy = NULL;
+    springfieldenergy = nullptr;
 
     ssintenergy = 0.0;
     preCompenergy = 0.0;
@@ -275,8 +275,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
             if (params.num_conformations[i] == 1)
             {
-                kinetic_map[i] = NULL;
-                kinetic_return_map[i] = NULL;
+                kinetic_map[i] = nullptr;
+                kinetic_return_map[i] = nullptr;
             }
             else
             {
@@ -598,7 +598,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
     if (mode == 0)
     {
         // In any case, open the output checkpoint file for writing
-        if ((checkpoint_out = fopen(params.ocheckpoint_fname.c_str(), "wb")) == NULL)
+        if (!(checkpoint_out = fopen(params.ocheckpoint_fname.c_str(), "wb")))
         {
             FFEA_FILE_ERROR_MESSG(params.ocheckpoint_fname.c_str());
         }
@@ -611,7 +611,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         {
 
             // Open the trajectory output file for writing
-            if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "wb")) == NULL)
+            if (!(trajectory_out = fopen(params.trajectory_out_fname.c_str(), "wb")))
             {
                 FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
             }
@@ -640,7 +640,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             fprintf(trajectory_out, "*\n");
 
             // Open the measurement output file for writing
-            if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "wb")) == NULL)
+            if (!(measurement_out = fopen(params.measurement_out_fname.c_str(), "wb")))
             {
                 FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
             }
@@ -727,7 +727,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             // Open the beads_out file:
             if (params.trajbeads_fname_set == 1)
             {
-                if ((trajbeads_out = fopen(params.trajectory_beads_fname.c_str(), "wb")) == NULL)
+                if (!(trajbeads_out = fopen(params.trajectory_beads_fname.c_str(), "wb")))
                 {
                     FFEA_FILE_ERROR_MESSG(params.trajectory_beads_fname.c_str())
                 }
@@ -736,7 +736,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             // Open the kinetics output file for writing (if neccessary) and write initial stuff
             if (params.kinetics_out_fname_set == 1)
             {
-                if ((kinetics_out = fopen(params.kinetics_out_fname.c_str(), "wb")) == NULL)
+                if (!(kinetics_out = fopen(params.kinetics_out_fname.c_str(), "wb")))
                 {
                     FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname.c_str())
                 }
@@ -766,7 +766,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             char c;
 
             printf("Restarting from trajectory file %s\n", params.trajectory_out_fname.c_str());
-            if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "rb")) == NULL)
+            if (!(trajectory_out = fopen(params.trajectory_out_fname.c_str(), "rb")))
             {
                 FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
             }
@@ -792,7 +792,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             {
                 if (fseek(trajectory_out, -2, SEEK_CUR) != 0)
                 {
-                    //perror(NULL);
+                    //perror(nullptr);
                     //FFEA_ERROR_MESSG("It is likely we have reached the begininng of the file whilst trying to delete frames. You can't delete %d frames.\n", frames_to_delete)
                     printf("Found beginning of file. Searching forwards for next asterisk...");
                     singleframe = true;
@@ -901,7 +901,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
             // Global
 
-            if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "rb")) == NULL)
+            if (!(measurement_out = fopen(params.measurement_out_fname.c_str(), "rb")))
             {
                 FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
             }
@@ -950,7 +950,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             if (writeDetailed)
             {
 
-                if ((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "rb")) == NULL)
+                if (!(detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "rb")))
                 {
                     FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
                 }
@@ -993,11 +993,11 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
 
             // Open trajectory and measurment files for appending
             printf("Opening trajectory and measurement files for appending.\n");
-            if ((trajectory_out = fopen(params.trajectory_out_fname.c_str(), "ab")) == NULL)
+            if (!(trajectory_out = fopen(params.trajectory_out_fname.c_str(), "ab")))
             {
                 FFEA_FILE_ERROR_MESSG(params.trajectory_out_fname.c_str())
             }
-            if ((measurement_out = fopen(params.measurement_out_fname.c_str(), "ab")) == NULL)
+            if (!(measurement_out = fopen(params.measurement_out_fname.c_str(), "ab")) )
             {
                 FFEA_FILE_ERROR_MESSG(params.measurement_out_fname.c_str())
             }
@@ -1005,7 +1005,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             // And the detailed meas file, maybe
             if (writeDetailed)
             {
-                if ((detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "ab")) == NULL)
+                if (!(detailed_meas_out = fopen(params.detailed_meas_out_fname.c_str(), "ab")))
                 {
                     FFEA_FILE_ERROR_MESSG(params.detailed_meas_out_fname.c_str())
                 }
@@ -1014,7 +1014,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
             // And kinetic file
             if (params.kinetics_out_fname_set == 1)
             {
-                if ((kinetics_out = fopen(params.kinetics_out_fname.c_str(), "ab")) == NULL)
+                if (!(kinetics_out = fopen(params.kinetics_out_fname.c_str(), "ab")))
                 {
                     FFEA_FILE_ERROR_MESSG(params.kinetics_out_fname.c_str())
                 }
@@ -1061,7 +1061,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         else if (params.ssint_type == "gensoft")
             vdw_solver = new (std::nothrow) GenSoftSSINT_solver();
 
-        if (vdw_solver == NULL)
+        if (!vdw_solver)
             FFEA_ERROR_MESSG("World::init failed to initialise the ssint_solver.\n");
 
         vdw_solver->init(&lookup, &box_dim, &ssint_matrix, params.steric_factor, params.num_blobs, params.inc_self_ssint, params.ssint_type, params.steric_dr, params.calc_kinetics, there_are_static_blobs);
@@ -1109,7 +1109,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
                 for (k = 0; k < blob_array[i][j].get_num_faces(); k++)
                 {
                     Face *b_face = blob_array[i][j].get_face(k);
-                    if (b_face != NULL)
+                    if (b_face != nullptr)
                     {
 #ifdef FFEA_PARALLEL_FUTURE
                         lookup_error = lookup.add_to_pool_dual(b_face);
@@ -2324,7 +2324,7 @@ int World::run()
         {
             // pc_solver.solve(blob_corr); // keep that one as reference implementation.
             // pc_solver.solve_using_neighbours();
-            pc_solver.solve_using_neighbours_non_critical(blob_corr); // blob_corr == NULL if force_pbc = 0
+            pc_solver.solve_using_neighbours_non_critical(blob_corr); // blob_corr == nullptr if force_pbc = 0
         }
 
 #ifdef BENCHMARK
@@ -2346,7 +2346,7 @@ int World::run()
         // Calculate the VdW forces:
         if (params.calc_ssint == 1 || params.calc_steric == 1)
         {
-            vdw_solver->solve(blob_corr); // blob_corr == NULL if force_pbc = 0.
+            vdw_solver->solve(blob_corr); // blob_corr == nullptr if force_pbc = 0.
         }
         if (params.sticky_wall_xz == 1)
             vdw_solver->solve_sticky_wall(params.ssint_cutoff);
@@ -4096,19 +4096,19 @@ int World::load_springs(const char *fname)
 {
 
     int i, crap;
-    FILE *in = NULL;
+    FILE *in = nullptr;
     const int max_line_size = 50;
     char line[max_line_size];
 
     // open the spring file
-    if ((in = fopen(fname, "rb")) == NULL)
+    if (!(in = fopen(fname, "rb")))
     {
         FFEA_FILE_ERROR_MESSG(fname)
     }
     printf("\tReading in springs file: %s\n", fname);
 
     // first line should be the file type "ffea springs file"
-    if (fgets(line, max_line_size, in) == NULL)
+    if (!fgets(line, max_line_size, in))
     {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading first line of spring file\n")
@@ -5088,7 +5088,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime)
 
     // Detailed Measurement Stuff.
     // Stuff needed on each blob, and in global energy files
-    if (detailed_meas_out != NULL)
+    if (detailed_meas_out != nullptr)
     {
         fprintf(detailed_meas_out, "%-14.6e", step * params.dt * mesoDimensions::time);
     }
@@ -5105,7 +5105,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime)
     // If necessary, write this stuff to a separate file
     for (int i = 0; i < params.num_blobs; i++)
     {
-        if (detailed_meas_out != NULL)
+        if (detailed_meas_out != nullptr)
         {
             active_blob_array[i]->write_measurements_to_file(detailed_meas_out);
         }
@@ -5115,7 +5115,7 @@ void World::print_trajectory_and_measurement_files(int step, scalar wtime)
     make_measurements();
     write_measurements_to_file(measurement_out, step);
 
-    if (detailed_meas_out != NULL)
+    if (detailed_meas_out != nullptr)
     {
         write_detailed_measurements_to_file(detailed_meas_out);
     }
@@ -5312,7 +5312,7 @@ void World::print_trajectory_conformation_changes(FILE *fout, int step, int *fro
     // Check input
     int *to;
     int *from;
-    if (to_index == NULL || from_index == NULL)
+    if (!to_index || !from_index)
     {
         to = new int[params.num_blobs];
         from = new int[params.num_blobs];
@@ -5350,7 +5350,7 @@ void World::print_trajectory_conformation_changes(FILE *fout, int step, int *fro
     fflush(fout);
 
     // Free data
-    if (to_index == NULL || from_index == NULL)
+    if (!to_index || !from_index)
     {
         delete[] to;
         delete[] from;
@@ -5364,7 +5364,7 @@ void World::print_kinetic_files(int step)
         return;
 
     // Print to specific file
-    if (kinetics_out != NULL)
+    if (kinetics_out != nullptr)
     {
         fprintf(kinetics_out, "%d", step);
         for (int i = 0; i < params.num_blobs; ++i)

@@ -35,7 +35,7 @@ SimulationParams::SimulationParams()
     kT = 4.11e-21 / mesoDimensions::Energy;
     max_iterations_cg = 1000;
     epsilon2 = 0.01;
-    rng_seed = time(NULL);
+    rng_seed = time(nullptr);
     calc_ssint = 1;
     inc_self_ssint = 1;
     sticky_wall_xz = 0;
@@ -84,8 +84,8 @@ SimulationParams::SimulationParams()
     num_blobs = 0;
     num_rods = 0;
     num_interfaces = 0;
-    num_conformations = NULL;
-    num_states = NULL;
+    num_conformations = nullptr;
+    num_states = nullptr;
     state_array_size = 0;
     conformation_array_size = 0;
     es_N_x = -1;
@@ -125,9 +125,9 @@ SimulationParams::~SimulationParams()
     num_rods = 0;
     num_interfaces = 0;
     delete[] num_conformations;
-    num_conformations = NULL;
+    num_conformations = nullptr;
     delete[] num_states;
-    num_states = NULL;
+    num_states = nullptr;
     state_array_size = 0;
     conformation_array_size = 0;
     rng_seed = 0;
@@ -330,7 +330,7 @@ int SimulationParams::assign(string lvalue, string rvalue)
         vector<string>::iterator it;
         conformation_array_size = conformation_vector.size();
         num_conformations = new (std::nothrow) int[conformation_array_size];
-        if (num_conformations == NULL)
+        if (!num_conformations)
             FFEA_ERROR_MESSG("Failed to allocate meory for the number of conformations in SimulationParams\n");
         int i = 0;
         for (it = conformation_vector.begin(); it != conformation_vector.end(); ++it)
@@ -353,7 +353,7 @@ int SimulationParams::assign(string lvalue, string rvalue)
         vector<string>::iterator it;
         state_array_size = state_vector.size();
         num_states = new (std::nothrow) int[state_array_size];
-        if (num_states == NULL)
+        if (!num_states)
             FFEA_ERROR_MESSG("Failed to allocate memory for the number of states in SimulationParams\n");
         int i = 0;
         for (it = state_vector.begin(); it != state_vector.end(); ++it)
@@ -416,7 +416,7 @@ int SimulationParams::assign(string lvalue, string rvalue)
     {
         if (rvalue == "time")
         {
-            rng_seed = time(NULL);
+            rng_seed = time(nullptr);
         }
         else
         {
@@ -1133,14 +1133,14 @@ int SimulationParams::validate(int sim_mode)
     }
     else
     {
-        if (num_conformations == NULL)
+        if (!num_conformations)
         {
 
             using_conformations = false;
             // Default num_conformations array
             conformation_array_size = num_blobs;
             num_conformations = new (std::nothrow) int[conformation_array_size];
-            if (num_conformations == NULL)
+            if (!num_conformations)
             {
                 FFEA_ERROR_MESSG("Failed to allocate memory for the number of conformations in SimulationParams\n");
             }

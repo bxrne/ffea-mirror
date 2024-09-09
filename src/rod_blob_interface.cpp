@@ -423,7 +423,7 @@ bool array_contains(float large_arr[4][3], float small_arr[3][3]){
  Utility function to check if a mesh node is null. 
 */
 void mesh_node_null_check(mesh_node* node, std::string location){
-    if (!node) { // NULL check
+    if (!node) { // nullptr check
         printf("null node found\n");
         std::cout << "Null node found at " << location << "\n";
     }

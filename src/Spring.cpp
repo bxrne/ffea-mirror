@@ -34,11 +34,11 @@ Spring::Spring() {
 
 Spring::~Spring() {
     delete[] blob_index;
-    blob_index = NULL;
+    blob_index = nullptr;
     delete[] conformation_index;
-    conformation_index = NULL;
+    conformation_index = nullptr;
     delete[] node_index;
-    node_index = NULL;
+    node_index = nullptr;
     k = 0.0;
     l = 0.0;
     am_i_active = false;
