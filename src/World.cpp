@@ -4299,7 +4299,7 @@ rod::Rod_blob_interface *World::rod_blob_interface_from_block(vector<string> blo
                     scalar rotation_scalar[3];
                     sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
                     systemreader->split_string(sub_tag_out[1], rotation_scalar, ",", 3);
-                    std::copy(rotation_scalar, rotation_scalar + 3, rotation);
+                    std::transform(rotation_scalar, rotation_scalar + 3, rotation, [](scalar in) {return static_cast<float>(in);});
                 }
 
                 if (sub_tag_out[0] == "node_weighting")
@@ -4308,7 +4308,7 @@ rod::Rod_blob_interface *World::rod_blob_interface_from_block(vector<string> blo
                     sub_tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(sub_tag_out[1], "("), ")");
                     systemreader->split_string(sub_tag_out[1], node_weighting_scalar, ",", 3);
                     std::cout << "node weighting = [" << node_weighting_scalar[0] << ", " << node_weighting_scalar[1] << ", " << node_weighting_scalar[2] << "\n";
-                    std::copy(node_weighting_scalar, node_weighting_scalar + 3, node_weighting);
+                    std::transform(node_weighting_scalar, node_weighting_scalar + 3, node_weighting, [](scalar in) {return static_cast<float>(in); });
                 }
             }
             coupling_counter += 1;
@@ -4442,7 +4442,7 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
             tag_out[1] = boost::erase_last_copy(boost::erase_first_copy(tag_out[1], "("), ")");
             systemreader->split_string(tag_out[1], centroid_pos, ",", 3);
             // convert to floats
-            std::copy(centroid_pos, centroid_pos + 3, converted_centroid);
+            std::transform(centroid_pos, centroid_pos + 3, converted_centroid, [](scalar in) {return static_cast<float>(in);});
             // set centroid
             current_rod->translate_rod(current_rod->current_r, converted_centroid);
             current_rod->translate_rod(current_rod->equil_r, converted_centroid);
@@ -4457,7 +4457,7 @@ rod::Rod *World::rod_from_block(vector<string> block, int block_id, FFEA_input_r
             systemreader->split_string(tag_out[1], rotation, ",", 3);
             // convert to floats
             float converted_rotation[3];
-            std::copy(rotation, rotation + 3, converted_rotation);
+            std::transform(rotation, rotation + 3, converted_rotation, [](scalar in) {return static_cast<float>(in);});
             // rotate that bad boy
             current_rod->rotate_rod(converted_rotation);
         }

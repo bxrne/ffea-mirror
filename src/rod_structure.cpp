@@ -829,7 +829,7 @@ namespace rod
                         "L :       " + std::to_string(check[0]) + "\n"
                         "L+(L/3) : " + std::to_string(check[1]) + "\n"
                         "2L :      " + std::to_string(check[2]) + "\n"
-                        "L/3 :     " + std::to_string(check[3]) + "\n";
+                        "L/3 :     " + std::to_string(check[3]) + "\n"
                         "3*num_vdw_sites: " + std::to_string(check[4]) + "\n";
                     throw std::logic_error(msg);
                 }
