@@ -114,10 +114,10 @@ public:
      * substitution) and 1 for iterative (preconditioned gonjugate gradient).
      * Also takes the simulation parameters and the array of RNGs (for multiprocessor runs).
      */
-    int config(const int blob_index, const int conformation_index, string node_filename, 
-             string topology_filename, string surface_filename, string material_params_filename,
-             string stokes_filename, string ssint_filename, string pin_filename, 
-             string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
+    int config(const int blob_index, const int conformation_index, const string& node_filename,
+               const string& topology_filename, const string& surface_filename, const string& material_params_filename,
+               const string& stokes_filename, const string& ssint_filename, const string& pin_filename,
+               const string& binding_filename, const string& beads_filename, scalar scale, scalar calc_compress,
              scalar compress, int linear_solver, int blob_state, const SimulationParams &params,
              const PreComp_params &pc_params, SSINT_matrix *ssint_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]);
@@ -335,7 +335,7 @@ public:
 
     void set_node_positions(const std::vector<arr3*> &node_pos);
 
-    void add_force_to_node(arr3 f, int index);
+    void add_force_to_node(const arr3& f, int index);
 
     // void zero_vdw_bb_measurement_data(); // DEPRECATED
 
@@ -496,7 +496,7 @@ private:
     int num_slsets_ctf; ///< number of surface sets, corresponding to the length of the ctf_sl_forces, num_slsurf_ctf array
 
     /** Number of faces in every surface set: */
-    int *ctf_slsurf_ndx;
+    std::vector<int> ctf_slsurf_ndx;
 
     /** Whether this Blob is DYNAMIC (movable; dynamics simulated) or STATIC (fixed; no simulation of dynamics; Blob is a perfectly solid object fixed in space)*/
     int blob_state;
@@ -539,31 +539,31 @@ private:
     int *bead_type{};
 
     /** Array with the nodes having linear ctforces assigned */
-    int *ctf_l_nodes;
+    std::vector<int> ctf_l_nodes;
     /** Array with the nodes having rotational ctforces assigned */
-    int *ctf_r_nodes;
+    std::vector<int> ctf_r_nodes;
     /** Array with the faces having linear ctforces assigned */
-    int *ctf_sl_faces;
+    std::vector<int> ctf_sl_faces;
     /** array with the number of faces in every surface set. */
-    int *ctf_sl_surfsize;
+    std::vector<int> ctf_sl_surfsize;
 
     /** Array with the linear ctforces: FxFyFzFxFyFz...,
       * being Fx, Fy, Fz the components of the force */
-    scalar *ctf_l_forces;
+    std::vector<scalar> ctf_l_forces;
     /** Array with the magnitude of the rotational ctforces: FFF..., */
-    scalar *ctf_r_forces;
+    std::vector<scalar> ctf_r_forces;
     /** Array with the rotational axis (given with point + unit vector)
       *  for ctforces: XYZxyzXYZxyzFxFyFz...,
       *  or BlobConfNodeBlobConfNode,BlobConfNodeBlobConfNode,...
       *  if using two nodes to define the axis.  */
-    scalar *ctf_r_axis;
+    std::vector<scalar> ctf_r_axis;
     /** Array with the type of rotation force, 2 chars per node:
       *  where the first one can be n or p, depending of the axis defined by nodes or points
       *   and the second one can be f or t, depending on applying ctforce or cttorque.*/
-    char *ctf_r_type;
+    std::vector<char> ctf_r_type;
     /** Array with the linear surface ctforces: FxFyFzFxFyFz...,
       * being Fx, Fy, Fz the components of the force */
-    scalar *ctf_sl_forces;
+    std::vector<scalar> ctf_sl_forces;
 
     /** Strings of all the files that contain input data: */
     string s_node_filename, s_topology_filename, s_surface_filename, 
@@ -700,7 +700,7 @@ private:
     /**
      * Opens and reads the given 'ffea ctforces file', and assigns the constant forces onto nodes for this Blob.
      */
-    int load_ctforces(string ctforces_fname);
+    int load_ctforces(const string& ctforces_fname);
 
 
     /**
