@@ -80,7 +80,7 @@ Blob::Blob() {
     pbc_count[1] = 0;
     pbc_count[2] = 0;
 
-    toBePrinted_nodes = nullptr;
+    toBePrinted_nodes = {};
 
     poisson_surface_matrix = nullptr;
     poisson_interior_matrix = nullptr;
@@ -160,15 +160,12 @@ Blob::~Blob() {
     rng = nullptr;
     bsite_pinned_nodes_list.clear();
 
-    delete[] toBePrinted_nodes;
-    toBePrinted_nodes = nullptr;
+    toBePrinted_nodes.clear();
     
     num_contributing_faces.clear();
-
-    delete poisson_surface_matrix;
-    delete poisson_interior_matrix;
-    poisson_surface_matrix = nullptr;
-    poisson_interior_matrix = nullptr;
+    
+    poisson_surface_matrix.reset();
+    poisson_interior_matrix.reset();
 }
 
 
@@ -222,8 +219,7 @@ int Blob::config(const int blob_index, const int conformation_index, const strin
 
     // Need to know solver type
     this->linear_solver = linear_solver;
-
-
+    
     return FFEA_OK;
 }
 
@@ -515,22 +511,20 @@ int Blob::init(){
     }
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-        toBePrinted_nodes = new scalar[10 * node.size()];
+        toBePrinted_nodes = std::vector<scalar>(10 * node.size());
     } else {
         if (params.calc_es == 0) {
-            toBePrinted_nodes = new scalar[3 * node.size()];
+            toBePrinted_nodes = std::vector<scalar>(3 * node.size());
         } else {
-            toBePrinted_nodes = new scalar[4 * node.size()];
+            toBePrinted_nodes = std::vector<scalar>(4 * node.size());
         }
     }
-
 
     // Return FFEA_OK to indicate "success"
     return FFEA_OK;
 }
 
 int Blob::check_inversion() {
-
 	int n;
 	matrix3 J;
 
@@ -575,8 +569,6 @@ int Blob::update_internal_forces() {
     }
 
     if (params.calc_ctforces) apply_ctforces();
-
-
 
     /* some "work" variables */
     matrix3 J; // Holds the Jacobian calculated for the *current* element being processed
@@ -646,7 +638,6 @@ int Blob::update_internal_forces() {
                 elem[n].calculate_electrostatic_forces();
             }
         }
-
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     }
 #endif
@@ -664,7 +655,6 @@ int Blob::update_internal_forces() {
 }
 
 int Blob::update_positions() {
-
     // Aggregate forces on nodes from all elements (if not static)
     if (get_motion_state() != FFEA_BLOB_IS_DYNAMIC) {
 	return FFEA_OK;
@@ -702,7 +692,6 @@ int Blob::reset_solver() {
 }
 
 void Blob::translate_linear(arr3 *vec) {
-
     // Get a mapping from all node indices to just linear node indices
     int num_linear_nodes = get_num_linear_nodes();
     vector<int> map(num_linear_nodes);
@@ -726,7 +715,6 @@ void Blob::translate_linear(arr3 *vec) {
 
 // Rotate about x axis, then y axis, then z axis
 void Blob::rotate(float xang, float yang, float zang, bool beads) {
-
     scalar r[3][3];
 
     // Convert to radians
@@ -748,7 +736,6 @@ void Blob::rotate(float xang, float yang, float zang, bool beads) {
     rotate(r[0][0], r[0][1], r[0][2],
            r[1][0], r[1][1], r[1][2],
            r[2][0], r[2][1], r[2][2], beads);
-
 }
 
 void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, bool beads) {
@@ -869,7 +856,6 @@ void Blob::get_CoM(arr3 &com) {
     com[1] = 0;
     com[2] = 0;
 
-
     for (int n = 0; n < elem.size(); n++) {
         com[0] += (elem[n].mass * elem[n].n[0]->pos[0] + elem[n].n[1]->pos[0] + elem[n].n[2]->pos[0] + elem[n].n[3]->pos[0]) / 4;
         com[1] += (elem[n].mass * elem[n].n[0]->pos[1] + elem[n].n[1]->pos[1] + elem[n].n[2]->pos[1] + elem[n].n[3]->pos[1]) / 4;
@@ -899,18 +885,15 @@ void Blob::get_centroid(arr3 &com) {
 }
 
 void Blob::calc_and_store_centroid(arr3 &com) {
-
     get_centroid(com);
 
     CoG[0] = com[0];
     CoG[1] = com[1];
     CoG[2] = com[2];
-
 }
 
 // This one returns an array rather than arsing about with pointers
 arr3 Blob::calc_centroid() {
-
     arr3 com;
     com[0] = 0.0;
     com[1] = 0.0;
@@ -1012,8 +995,7 @@ void Blob::compress_blob(scalar compress) {
 }
 
 int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
-
-    FILE *out = nullptr;
+    FILE *out;
     char new_node_filename[] = "VIEWERNODE_";
     int i;
 
@@ -1409,7 +1391,7 @@ void Blob::make_measurements() {
 
     // Remove translation and rotation (maybe make optional in future)
     bool remTrans = false;
-    bool remRot = true;
+    // bool remRot = true;
 
     if(remTrans) {
         for(const auto& node_i : node) {
@@ -1433,7 +1415,6 @@ void Blob::make_measurements() {
 }
 
 void Blob::write_measurements_to_file(FILE *fout) {
-
     // White space for blob index bit
     fprintf(fout, "     ");
     if(there_is_mass()) {
@@ -1487,16 +1468,10 @@ bool Blob::is_using_beads() {
     return !bead_position.empty();
 }
 
-/*
- *
- */
 scalar Blob::get_rmsd() {
     return rmsd;
 }
 
-/*
- *
- */
 int Blob::get_linear_solver() {
     return linear_solver;
 };
@@ -1511,9 +1486,6 @@ void Blob::get_stored_centroid(arr3 &cog){
     arr3Store<scalar,arr3>(CoG, cog);
 }
 
-/*
- *
- */
 Face * Blob::get_face(int i) {
     if (surface[i].is_ssint_active() == true) {
         return &surface[i];
@@ -1526,9 +1498,6 @@ Face * Blob::absolutely_get_face(int i) {
     return &surface[i];
 }
 
-/*
- *
- */
 tetra_element_linear *Blob::get_element(int i) {
     return &elem[i];
 }
@@ -1579,9 +1548,6 @@ scalar Blob::get_ssint_area() {
     }
     return total_ssint_area;
 }
-//		/*
-//		 *
-//		 */
 
 int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
     // matrix3 J, stress;
@@ -1605,7 +1571,6 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 
     // For each element
     for(int elem_index = 0; elem_index < elem.size(); ++elem_index) {
-
         // Calculate dx, how far each node should be moved for a linearisataion, as well as unstrained parameter
         scalar dx = cbrt(elem[elem_index].calc_volume()) / 1000.0;
 
@@ -1680,7 +1645,6 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 
     // For each element
     for(int elem_index = 0; elem_index < elem.size(); ++elem_index) {
-
         // Calculate a local viscosity matrix
         matrix3 J;
         elem[elem_index].calculate_jacobian(J);
@@ -1767,7 +1731,7 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
     for(int elem_index = 0; elem_index < elem.size(); ++elem_index) {
 
         // Build mass matrix
-        elem[elem_index].construct_element_mass_matrix(&M_el);
+        elem[elem_index].construct_element_mass_matrix(M_el);
 
         // Add each component of the local matrix to the global matrix
 
@@ -3786,8 +3750,9 @@ int Blob::calculate_node_element_connectivity() {
 
     // allocate the contributions array for each node to the length given by num_element_contributors
     for (int i = 0; i < node.size(); ++i) {
-        node[i].force_contributions = new(std::nothrow) arr3 *[node[i].num_element_contributors];
-        if (!node[i].force_contributions) {
+        try {
+            node[i].force_contributions = std::vector<arr3*>(node[i].num_element_contributors, nullptr);
+        } catch (std::bad_alloc &) {
             FFEA_ERROR_MESSG("Failed to allocate memory for 'force_contributions' array (on node %d)\n", i);
         }
     }
@@ -3873,15 +3838,18 @@ int Blob::build_mass_matrix() {
     SparsityPattern sparsity_pattern_mass_matrix;
     sparsity_pattern_mass_matrix.init(node.size());
 
-    MassMatrixQuadratic *M_alpha = new(std::nothrow) MassMatrixQuadratic[elem.size()];
-    if (!M_alpha) FFEA_ERROR_MESSG("Failed to allocate memory for the mass matrix\n");
+
+    std::vector<MassMatrixQuadratic> M_alpha;
+    try {
+        M_alpha = std::vector<MassMatrixQuadratic>(elem.size());
+    } catch(std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate memory for the mass matrix\n");
+    }
 
     scalar *mem_loc;
     int ni_index, nj_index;
     for (int el = 0; el < elem.size(); el++) {
-
-        elem[el].construct_element_mass_matrix(&M_alpha[el]);
-
+        elem[el].construct_element_mass_matrix(M_alpha[el]);
         for (int ni = 0; ni < 10; ni++) {
             for (int nj = 0; nj < 10; nj++) {
 

@@ -59,7 +59,7 @@ public:
 private:
 
     /** Pointer to the viscosity matrix that will be created */
-    SparseMatrixFixedPattern *V;
+    std::shared_ptr<SparseMatrixFixedPattern> V;
 
     /** Error tolerance threshold (squared) to determine when solution has converged */
     scalar epsilon2;

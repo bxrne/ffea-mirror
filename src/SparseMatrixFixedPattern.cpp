@@ -28,26 +28,23 @@
 SparseMatrixFixedPattern::SparseMatrixFixedPattern() {
     num_rows = 0;
     num_nonzero_elements = 0;
-    entry = nullptr;
-    key = nullptr;
-    source_list = nullptr;
+    entry = {};
+    key = {};
+    source_list = {};
     diagonal = nullptr;
 }
 
 SparseMatrixFixedPattern::~SparseMatrixFixedPattern() {
-    delete[] entry;
-    delete[] key;
-    delete[] source_list;
     delete[] diagonal;
-    entry = nullptr;
-    key = nullptr;
-    source_list = nullptr;
+    entry.clear();
+    key.clear();
+    source_list.clear();
     diagonal = nullptr;
     num_rows = 0;
     num_nonzero_elements = 0;
 }
 
-int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, sparse_entry *entry, int *key, sparse_entry_sources *source_list) {
+int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, std::vector<sparse_entry> entry, std::vector<int> key, std::vector<sparse_entry_sources> source_list) {
     this->num_rows = num_rows;
     this->num_nonzero_elements = num_nonzero_elements;
     this->entry = entry;
@@ -70,12 +67,15 @@ int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, spars
 }
 
 // Initialise matrix without a source list (doesn't need rebuilding)
-int SparseMatrixFixedPattern::init(int num_rows, int num_entries, scalar *entries, int *key, int *col_indices) {
+int SparseMatrixFixedPattern::init(int num_rows, int num_entries, const std::vector<scalar> &entries, std::vector<int> key, const std::vector<int> &col_indices) {
     this->num_rows = num_rows;
     this->num_nonzero_elements = num_entries;
     this->key = key;
-    this->entry = new(std::nothrow) sparse_entry[num_entries];
-    if (!this->entry) FFEA_ERROR_MESSG("Failed to allocate 'entry' in SparseMAtrixFixedPattern::init\n");
+    try {
+        this->entry = std::vector<sparse_entry>(num_entries);
+    } catch(std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate 'entry' in SparseMAtrixFixedPattern::init\n");
+    }
     for(int i = 0; i < num_entries; ++i) {
         entry[i].column_index = col_indices[i];
         entry[i].val = entries[i];
@@ -95,7 +95,7 @@ void SparseMatrixFixedPattern::build() {
 }
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result' */
-void SparseMatrixFixedPattern::apply(const std::vector<scalar> &in, std::vector<scalar> &result) {
+void SparseMatrixFixedPattern::apply(const std::vector<scalar> &in, std::vector<scalar> &result) const {
     for (int i = 0; i < num_rows; i++) {
         result[i] = 0;
         for (int j = key[i]; j < key[i + 1]; j++) {
@@ -106,7 +106,7 @@ void SparseMatrixFixedPattern::apply(const std::vector<scalar> &in, std::vector<
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Designed for use in NoMassCGSolver */
-/*void SparseMatrixFixedPattern::apply(const std::vector<arr3> &in, std::vector<arr3> &result) {
+/*void SparseMatrixFixedPattern::apply(const std::vector<arr3> &in, std::vector<arr3> &result) const {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) shared(result, in)
 #endif
@@ -146,7 +146,7 @@ void SparseMatrixFixedPattern::apply(const std::vector<scalar> &in, std::vector<
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Designed for use in NoMassCGSolver */
-void SparseMatrixFixedPattern::apply(const std::vector<arr3> &in, std::vector<arr3> &result) {
+void SparseMatrixFixedPattern::apply(const std::vector<arr3> &in, std::vector<arr3> &result) const {
     // To get rid of conditionals, define an array 'num_rows' long, and copy into result at end
     vector<scalar> work_in(num_rows);
     vector<scalar> work_result(num_rows);
@@ -190,7 +190,7 @@ void SparseMatrixFixedPattern::apply(const std::vector<arr3> &in, std::vector<ar
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Each element applies to whole vector */
 /* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
-void SparseMatrixFixedPattern::block_apply(const std::vector<arr3> &in, std::vector<arr3> &result) {
+void SparseMatrixFixedPattern::block_apply(const std::vector<arr3> &in, std::vector<arr3> &result) const {
     for(int i = 0; i < num_rows; ++i) {
         result[i][0] = 0;
         result[i][1] = 0;
@@ -206,7 +206,7 @@ void SparseMatrixFixedPattern::block_apply(const std::vector<arr3> &in, std::vec
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Each element applies to whole vector */
 /* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
-void SparseMatrixFixedPattern::block_apply(const std::vector<arr3*> &in, std::vector<arr3*> &result) {
+void SparseMatrixFixedPattern::block_apply(const std::vector<arr3*> &in, std::vector<arr3*> &result) const {
     int i, j;
     for(i = 0; i < num_rows; ++i) {
         (*result[i])[0] = 0;
@@ -222,7 +222,7 @@ void SparseMatrixFixedPattern::block_apply(const std::vector<arr3*> &in, std::ve
 
 /* Applies this matrix to the given vector 'in', also writing the result to 'in'. 'in' is made of 'arr3's */
 /* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
-void SparseMatrixFixedPattern::block_apply(std::vector<arr3*> &in) {
+void SparseMatrixFixedPattern::block_apply(std::vector<arr3*> &in) const {
     int i, j;
     vector<arr3> result(num_rows);
 
@@ -243,7 +243,7 @@ void SparseMatrixFixedPattern::block_apply(std::vector<arr3*> &in) {
     }
 }
 
-SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPattern *in) {
+std::shared_ptr<SparseMatrixFixedPattern> SparseMatrixFixedPattern::apply(std::shared_ptr<SparseMatrixFixedPattern> &in) const {
     // Build big matrix first, sparse it up later
     int num_rows_A = num_rows;
     int num_rows_B = in->get_num_rows();
@@ -254,8 +254,8 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
     std::vector<std::vector<scalar>> result_dense(num_rows_result, std::vector<scalar>(num_columns_result, 0.0));
 
     // Get in matrix pointers for quick access
-    sparse_entry *in_entry = in->get_entries();
-    int *in_key = in->get_key();
+    const std::vector<sparse_entry> &in_entry = in->get_entries();
+    const std::vector<int> &in_key = in->get_key();
 
     // Make big result matrix of doom
     for(int i = 0; i < num_rows_A; ++i) {
@@ -280,9 +280,9 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
         }
     }
 
-    scalar *entries_result = new scalar[num_entries_result];
-    int *key_result = new int[num_rows_result + 1];
-    int *col_indices_result = new int[num_entries_result];
+    std::vector<scalar>entries_result = std::vector<scalar>(num_entries_result);
+    std::vector<int> key_result = std::vector<int>(num_rows_result + 1);
+    std::vector<int>col_indices_result = std::vector<int>(num_entries_result);
 
     int l = 0;
     key_result[0] = 0;
@@ -297,13 +297,12 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
         key_result[i + 1] = l;
     }
 
-    SparseMatrixFixedPattern *result_sparse = new SparseMatrixFixedPattern();
-    result_sparse->init(num_rows_result, num_entries_result, entries_result, key_result, col_indices_result);
-    
+    std::shared_ptr<SparseMatrixFixedPattern> result_sparse = std::make_shared<SparseMatrixFixedPattern>();
+    result_sparse->init(num_rows_result, num_entries_result, entries_result, key_result, col_indices_result);    
     return result_sparse;
 }
 
-void SparseMatrixFixedPattern::calc_inverse_diagonal(std::vector<scalar> &inv_D) {
+void SparseMatrixFixedPattern::calc_inverse_diagonal(std::vector<scalar> &inv_D) const {
 //#ifdef FFEA_PARALLEL_WITHIN_BLOB
 //#pragma omp parallel for default(none)  shared(inv_D)
 //#endif
@@ -312,13 +311,13 @@ void SparseMatrixFixedPattern::calc_inverse_diagonal(std::vector<scalar> &inv_D)
     }
 }
 
-void SparseMatrixFixedPattern::print() {
+void SparseMatrixFixedPattern::print() const {
     for (int i = 0; i < num_nonzero_elements; i++) {
         printf("[%d %e]\n", entry[i].column_index, entry[i].val);
     }
 }
 
-void SparseMatrixFixedPattern::print_dense() {
+void SparseMatrixFixedPattern::print_dense() const {
     for (int i = 0; i < num_rows; ++i) {
         int l = 0;
         for (int j = 0; j < num_rows; ++j) {
@@ -334,7 +333,7 @@ void SparseMatrixFixedPattern::print_dense() {
 }
 
 /* Prints dense matrix out to file for analysis. I suggest only letting this function run once (step = 1?) */
-void SparseMatrixFixedPattern::print_dense_to_file(std::vector<arr3> &a) {
+void SparseMatrixFixedPattern::print_dense_to_file(std::vector<arr3> &a) const {
     FILE *fout, *fout2;
     fout = fopen("dense_matrix.csv", "w");
     fout2 = fopen("force.csv", "w");
@@ -357,7 +356,7 @@ void SparseMatrixFixedPattern::print_dense_to_file(std::vector<arr3> &a) {
     fclose(fout2);
 }
 
-void SparseMatrixFixedPattern::print_row_column() {
+void SparseMatrixFixedPattern::print_row_column() const {
     FILE *fout;
     fout = fopen("row_column.csv", "w");
     for (int i = 0; i < num_rows; ++i) {
@@ -368,7 +367,7 @@ void SparseMatrixFixedPattern::print_row_column() {
     fclose(fout);
 }
 
-void SparseMatrixFixedPattern::check_symmetry() {
+void SparseMatrixFixedPattern::check_symmetry() const {
     int row;
     for (int i = 0; i < num_rows / 3; i++) {
         for (int j = key[i]; j < key[i + 1]; j++) {
@@ -383,7 +382,7 @@ void SparseMatrixFixedPattern::check_symmetry() {
     }
 }
 
-void SparseMatrixFixedPattern::am_i_diagonally_dominant() {
+void SparseMatrixFixedPattern::am_i_diagonally_dominant() const {
     int i, j;
     scalar sum;
     FILE *fout;
@@ -401,23 +400,23 @@ void SparseMatrixFixedPattern::am_i_diagonally_dominant() {
     fclose(fout);
 }
 
-sparse_entry * SparseMatrixFixedPattern::get_entries() {
+std::vector<sparse_entry> &SparseMatrixFixedPattern::get_entries() {
     return entry;
 }
 
-int * SparseMatrixFixedPattern::get_key() {
+std::vector<int> &SparseMatrixFixedPattern::get_key() {
     return key;
 }
 
-int SparseMatrixFixedPattern::get_num_nonzero_elements() {
+int SparseMatrixFixedPattern::get_num_nonzero_elements() const {
     return num_nonzero_elements;
 }
 
-int SparseMatrixFixedPattern::get_num_rows() {
+int SparseMatrixFixedPattern::get_num_rows() const {
     return num_rows;
 }
 
-int SparseMatrixFixedPattern::get_num_columns() {
+int SparseMatrixFixedPattern::get_num_columns() const {
     int i, num_columns = 0;
     for(i = 0; i < num_nonzero_elements; ++i) {
         if(entry[i].column_index > num_columns) {

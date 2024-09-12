@@ -153,8 +153,8 @@ private:
     rod::Rod_blob_interface **rod_blob_interface_array;
 
     /** @brief Maps for kinetic switching of conformations */
-    SparseMatrixFixedPattern ***kinetic_map;
-    SparseMatrixFixedPattern ****kinetic_return_map;
+    std::vector<std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>> kinetic_map;
+    std::vector<std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>> kinetic_return_map;
 
     //@{
     /** @brief Kinetic State and Rate objects */

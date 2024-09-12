@@ -198,8 +198,8 @@ public:
     /** @brief Calc the diffusion matrix for this element */
     void calculate_K_alpha();
 
-    void construct_element_mass_matrix(MassMatrixQuadratic *M_alpha);
-    void construct_element_mass_matrix(MassMatrixLinear *M_alpha);
+    void construct_element_mass_matrix(MassMatrixQuadratic &M_alpha);
+    void construct_element_mass_matrix(MassMatrixLinear &M_alpha);
 
     void add_K_alpha(scalar *K, int num_nodes);
 

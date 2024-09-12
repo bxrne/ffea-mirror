@@ -623,8 +623,8 @@ private:
     //@}
 
     std::unique_ptr<CG_solver> poisson_solver;
-    SparseMatrixFixedPattern *poisson_surface_matrix;
-    SparseMatrixFixedPattern *poisson_interior_matrix;
+    std::shared_ptr<SparseMatrixFixedPattern> poisson_surface_matrix;
+    std::shared_ptr<SparseMatrixFixedPattern> poisson_interior_matrix;
     std::vector<scalar> phi_Omega;
     std::vector<scalar> phi_Gamma;
     std::vector<scalar> q;
@@ -639,13 +639,13 @@ private:
      * Mass Matrix
      * @see build_mass_matrix()
      */
-    SparseMatrixFixedPattern *M{};
+    std::shared_ptr<SparseMatrixFixedPattern> M;
 
     std::vector<BindingSite> binding_site;
     
     /*
      */
-    scalar *toBePrinted_nodes; 
+    std::vector<scalar> toBePrinted_nodes; 
 
     /**
      * Opens and reads the given 'ffea node file', extracting all the nodes for this Blob.

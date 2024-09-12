@@ -55,7 +55,7 @@ public:
     bool check_for_contribution(int i, int j);
 
     /** Factory function for making empty fixed sparsity pattern matrices from this sparsity pattern */
-    SparseMatrixFixedPattern * create_sparse_matrix();
+    std::shared_ptr<SparseMatrixFixedPattern> create_sparse_matrix();
 
     void print();
 

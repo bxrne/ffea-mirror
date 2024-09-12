@@ -49,8 +49,7 @@ NoMassCGSolver::~NoMassCGSolver() {
     num_nodes = 0;
     epsilon2 = 0;
     i_max = 0;
-    delete V;
-    V = nullptr;
+    V.reset();
 }
 
 /* */

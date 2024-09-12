@@ -38,9 +38,9 @@ public:
 
     int init(int N, scalar tol, int max_num_iterations);
 
-    int solve(SparseMatrixFixedPattern *A, std::vector<scalar> &x, const std::vector<scalar> &b);
+    int solve(std::shared_ptr<SparseMatrixFixedPattern> &A, std::vector<scalar> &x, const std::vector<scalar> &b);
 
-    int solve(SparseMatrixFixedPattern *A, std::vector<scalar> &x, const std::vector<scalar> &b, int num_iterations);
+    int solve(std::shared_ptr<SparseMatrixFixedPattern> &A, std::vector<scalar> &x, const std::vector<scalar> &b, int num_iterations);
 
 private:
 
@@ -57,7 +57,7 @@ private:
     std::vector<scalar> q; ///< Vector needed for use by conjugate gradient solver
     std::vector<scalar> s; ///< Vector needed for use by conjugate gradient solver
 
-    scalar conjugate_gradient_residual(SparseMatrixFixedPattern *A, const std::vector<scalar> &x, const std::vector<scalar> &b);
+    scalar conjugate_gradient_residual(std::shared_ptr<SparseMatrixFixedPattern> &, const std::vector<scalar> &x, const std::vector<scalar> &b);
 
     scalar residual2();
 

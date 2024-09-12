@@ -63,14 +63,14 @@ void tetra_element_linear::calculate_K_alpha() {
     K_alpha.build(n, dielectric);
 }
 
-void tetra_element_linear::construct_element_mass_matrix(MassMatrixQuadratic *M_alpha) {
+void tetra_element_linear::construct_element_mass_matrix(MassMatrixQuadratic &M_alpha) {
     // Build the element mass matrix corresponding to this element
-    M_alpha->build(n);
+    M_alpha.build(n);
 }
 
-void tetra_element_linear::construct_element_mass_matrix(MassMatrixLinear *M_alpha) {
+void tetra_element_linear::construct_element_mass_matrix(MassMatrixLinear &M_alpha) {
     // Build the element mass matrix corresponding to this element
-    M_alpha->build(rho, vol_0);
+    M_alpha.build(rho, vol_0);
 }
 
 void tetra_element_linear::add_K_alpha(scalar *K, int num_nodes) {
