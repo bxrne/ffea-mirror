@@ -24,13 +24,15 @@
 #ifndef SPARSEMATRIXFIXEDPATTERN_H_INCLUDED
 #define SPARSEMATRIXFIXEDPATTERN_H_INCLUDED
 
+#include <iostream>
+#include <stdlib.h>
+#include <vector>
+#include <memory>
+
 #include "FFEA_return_codes.h"
 #include "mat_vec_types.h"
 #include "mat_vec_fns.h"
 #include "SparseMatrixTypes.h"
-#include <iostream>
-#include <stdlib.h>
-#include <vector>
 
 using namespace std;
 

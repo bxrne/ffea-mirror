@@ -26,6 +26,7 @@
 
 #include <list>
 #include <vector>
+#include <memory>
 
 #include "mat_vec_types.h"
 #include "FFEA_return_codes.h"
