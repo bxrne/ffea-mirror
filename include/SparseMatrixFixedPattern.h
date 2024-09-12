@@ -30,6 +30,7 @@
 #include "SparseMatrixTypes.h"
 #include <iostream>
 #include <stdlib.h>
+#include <vector>
 
 using namespace std;
 
@@ -52,13 +53,13 @@ public:
     void apply(arr3 *in, arr3 *result);
 
     /** Applies each matrix element to vector i.e. each arr3 acts as a scalar */
-    void block_apply(arr3 *in, arr3 *result);
+    void block_apply(const std::vector<arr3> &in, std::vector<arr3> &result);
     
     /** Applies this matrix to the give vector 'in', writing the result to 'result'. 'in' is made of '*arr3's */
-    void block_apply(arr3 **in, arr3 **result);
+    void block_apply(const std::vector<arr3*> &in, std::vector<arr3*> &result);
 
     /** Applies matrix to vector in and leaves result in in */
-    void block_apply(arr3 **in);
+    void block_apply(vector<arr3*> &in);
 
      /** Applies this matrix to the given sparse matrix 'in', and returns a new sparse matrix */
     SparseMatrixFixedPattern * apply(SparseMatrixFixedPattern *in);

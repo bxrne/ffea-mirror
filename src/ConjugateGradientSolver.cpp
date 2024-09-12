@@ -59,12 +59,12 @@ ConjugateGradientSolver::~ConjugateGradientSolver() {
     i_max = 0;
 }
 
-int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
-    int n, i, j, ni, nj;
+int ConjugateGradientSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+    int n, ni, nj;
 
     // Store the number of rows, error threshold (stopping criterion for solver) and max
     // number of iterations, on this Solver (these quantities will be used a lot)
-    this->num_rows = num_nodes;
+    this->num_rows = node.size();
     this->epsilon2 = params->epsilon2;
     this->i_max = params->max_iterations_cg;
 
@@ -76,7 +76,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
     printf("\t\t...success.\n");
 
     printf("\t\tZeroing...\n");
-    for (i = 0; i < num_rows * num_rows; i++) {
+    for (int i = 0; i < num_rows * num_rows; i++) {
         mass_LU[i] = 0;
     }
     printf("\t\t...done\n");
@@ -85,11 +85,11 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
     // if it is, then only a 1 on the diagonal corresponding to that node should
     // be placed (no off diagonal), effectively taking this node out of the equation
     // and therefore meaning the force on it should always be zero.
-    std::vector<int> is_pinned(num_nodes);
-    for (i = 0; i < num_nodes; i++) {
+    std::vector<int> is_pinned(node.size());
+    for (int i = 0; i < node.size(); i++) {
         is_pinned[i] = 0;
     }
-    for (i = 0; i < num_pinned_nodes; i++) {
+    for (int i = 0; i < num_pinned_nodes; i++) {
         is_pinned[pinned_nodes_list[i]] = 1;
     }
 
@@ -98,8 +98,8 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
     printf("\t\tBuilding the mass matrix...\n");
     for (n = 0; n < num_elements; n++) {
         // add mass matrix for this element
-        for (i = 0; i < 10; i++) {
-            for (j = 0; j < 10; j++) {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
                 if (i < 4 && j < 4) {
                     ni = elem[n].n[i]->index;
                     nj = elem[n].n[j]->index;
@@ -135,13 +135,13 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
     key = new(std::nothrow) int[num_rows + 1];
     if (!key) FFEA_ERROR_MESSG("Failed to allocate 'key' in ConjugateGradientSolver\n"); 
 
-    for (i = 0; i < num_rows; i++) {
+    for (int i = 0; i < num_rows; i++) {
         key[i] = 0;
     }
 
     // Get the number of non-zero entries in each row
-    for (i = 0; i < num_rows; i++) {
-        for (j = 0; j < num_rows; j++) {
+    for (int i = 0; i < num_rows; i++) {
+        for (int j = 0; j < num_rows; j++) {
             if (mass_LU[i * num_rows + j] != 0) {
                 key[i]++;
             }
@@ -151,7 +151,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
     // Sum up all the non-zero totals of each row to get the total number of non-zero entries
     // in the whole matrix, constructing the 'key' in the process
     int total_non_zeros = 0, last;
-    for (i = 0; i < num_rows; i++) {
+    for (int i = 0; i < num_rows; i++) {
         last = key[i];
         key[i] = total_non_zeros;
         total_non_zeros += last;
@@ -167,8 +167,8 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
     // Fill the 'entry' array
     int entry_index = 0;
     scalar val;
-    for (i = 0; i < num_rows; i++) {
-        for (j = 0; j < num_rows; j++) {
+    for (int i = 0; i < num_rows; i++) {
+        for (int j = 0; j < num_rows; j++) {
             val = mass_LU[i * num_rows + j];
             if (val != 0) {
                 entry[entry_index].val = val;
@@ -178,7 +178,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
         }
     }
     double sum3 = 0.0;
-    for(i = 0; i < total_non_zeros; ++i) {
+    for(int i = 0; i < total_non_zeros; ++i) {
 	if(entry[i].val != 1) {
 		sum3 += entry[i].val;
 	}
@@ -187,7 +187,7 @@ int ConjugateGradientSolver::init(int num_nodes, int num_elements, std::vector<m
     // Create the jacobi preconditioner matrix (diagonal)
     preconditioner = new(std::nothrow) scalar[num_rows];
     if (!preconditioner) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in ConjugateGradientSolver\n"); 
-    for (i = 0; i < num_rows; i++)
+    for (int i = 0; i < num_rows; i++)
         preconditioner[i] = 1.0 / mass_LU[i * num_rows + i];
 
     // create the work vectors necessary for use by the conjugate gradient solver

@@ -329,11 +329,11 @@ public:
     
     void get_node_0(int index, arr3 &v);
 
-    void copy_node_positions(arr3 *nodes);
+    void copy_node_positions(std::vector<arr3*> &nodes);
 
-    arr3 ** get_actual_node_positions();
+    std::vector<arr3*> &get_actual_node_positions();
 
-    void set_node_positions(arr3 *node_pos);
+    void set_node_positions(const std::vector<arr3*> &node_pos);
 
     void add_force_to_node(arr3 f, int index);
 
@@ -473,9 +473,6 @@ public:
 
 private:
 
-    /** Total number of nodes in Blob */
-    int num_nodes;
-
     /** Total number of elements in Blob */
     int num_elements;
 
@@ -523,7 +520,7 @@ private:
     std::vector<mesh_node> node;
 
     /** Array of node positions only */
-    arr3 **node_position;
+    std::vector<arr3 *> node_position;
 
     /** Array of elements */
     tetra_element_linear *elem;

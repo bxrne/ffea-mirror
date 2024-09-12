@@ -195,7 +195,7 @@ void SparseMatrixFixedPattern::apply(arr3 *in, arr3 *result) {
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Each element applies to whole vector */
 /* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
-void SparseMatrixFixedPattern::block_apply(arr3 *in, arr3 *result) {
+void SparseMatrixFixedPattern::block_apply(const std::vector<arr3> &in, std::vector<arr3> &result) {
     int i, j;
     for(i = 0; i < num_rows; ++i) {
         result[i][0] = 0;
@@ -212,7 +212,7 @@ void SparseMatrixFixedPattern::block_apply(arr3 *in, arr3 *result) {
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Each element applies to whole vector */
 /* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
-void SparseMatrixFixedPattern::block_apply(arr3 **in, arr3 **result) {
+void SparseMatrixFixedPattern::block_apply(const std::vector<arr3*> &in, std::vector<arr3*> &result) {
     int i, j;
     for(i = 0; i < num_rows; ++i) {
         (*result[i])[0] = 0;
@@ -228,7 +228,7 @@ void SparseMatrixFixedPattern::block_apply(arr3 **in, arr3 **result) {
 
 /* Applies this matrix to the given vector 'in', also writing the result to 'in'. 'in' is made of 'arr3's */
 /* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
-void SparseMatrixFixedPattern::block_apply(arr3 **in) {
+void SparseMatrixFixedPattern::block_apply(std::vector<arr3*> &in) {
     int i, j;
     vector<arr3> result(num_rows);
 

@@ -60,10 +60,10 @@ NoMassCGSolver::~NoMassCGSolver() {
 }
 
 /* */
-int NoMassCGSolver::init(int num_nodes, int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+int NoMassCGSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
 
-    this->num_rows = 3 * num_nodes;
-    this->num_nodes = num_nodes;
+    this->num_rows = 3 * node.size();
+    this->num_nodes = node.size();
     this->epsilon2 = params->epsilon2;
     this->i_max = params->max_iterations_cg;
     this->one = 1;
@@ -72,18 +72,15 @@ int NoMassCGSolver::init(int num_nodes, int num_elements, std::vector<mesh_node>
     sparsity_pattern_viscosity_matrix.init(num_rows);
 
     scalar *mem_loc;
-    int n, ni, nj, ni_index, nj_index, ni_row, nj_row, i, j;
+    int n, ni, nj, ni_index, nj_index, ni_row, nj_row;
     matrix3 J;
 
     // Create a temporary lookup for checking if a node is 'pinned' or not.
     // if it is, then only a 1 on the diagonal corresponding to that node should
     // be placed (no off diagonal), effectively taking this node out of the equation
     // and therefore meaning the force on it should always be zero.
-    vector<int> is_pinned(num_nodes);
-    for (i = 0; i < num_nodes; i++) {
-        is_pinned[i] = 0;
-    }
-    for (i = 0; i < num_pinned_nodes; i++) {
+    vector<int> is_pinned(node.size(), 0);
+    for (int i = 0; i < num_pinned_nodes; i++) {
         is_pinned[pinned_nodes_list[i]] = 1;
     }
     for(set<int>::iterator it = bsite_pinned_node_list.begin(); it != bsite_pinned_node_list.end(); ++it) {
@@ -100,8 +97,8 @@ int NoMassCGSolver::init(int num_nodes, int num_elements, std::vector<mesh_node>
                 nj_index = elem[n].n[nj]->index;
 		ni_row = ni_index * 3;
 		nj_row = nj_index * 3;
-                for (i = 0; i < 3; ++i) {
-                    for (j = 0; j < 3; ++j) {
+                for (int i = 0; i < 3; ++i) {
+                    for (int j = 0; j < 3; ++j) {
 			if(is_pinned[ni_index] == 0 && is_pinned[nj_index] == 0) {
 		            if (ni < 4 && nj < 4) {
 		                mem_loc = &elem[n].viscosity_matrix[ni + 4 * i][nj + 4 * j];

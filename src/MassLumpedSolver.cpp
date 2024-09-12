@@ -37,12 +37,12 @@ MassLumpedSolver::~MassLumpedSolver() {
 }
 
 /* */
-int MassLumpedSolver::init(int num_nodes, int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+int MassLumpedSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
     int n, i, ni;
 
     // Store the number of rows, error threshold (stopping criterion for solver) and max
     // number of iterations, on this Solver (these quantities will be used a lot)
-    this->num_rows = num_nodes;
+    this->num_rows = node.size();
     inv_M = new scalar[num_rows];
 
     if (!inv_M) {

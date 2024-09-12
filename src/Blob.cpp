@@ -31,7 +31,6 @@ Blob::Blob() {
     previous_conformation_index = 0;
     state_index = 0;
     previous_state_index = 0;
-    num_nodes = 0;
     num_elements = 0;
     num_surface_faces = 0;
     num_beads = 0;
@@ -58,7 +57,7 @@ Blob::Blob() {
     mass = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
     node = {};
-    node_position = nullptr;
+    node_position = {};
     elem = nullptr;
     surface = nullptr;
     binding_site = nullptr;
@@ -95,8 +94,7 @@ Blob::Blob() {
 Blob::~Blob() {
     /* Release the node, element and surface arrays */
     node.clear();
-    delete[] node_position;
-    node_position = nullptr;
+    node_position.clear();
     delete[] elem;
     elem = nullptr;
     delete[] surface;
@@ -183,7 +181,6 @@ Blob::~Blob() {
     previous_conformation_index = 0;
     state_index = 0;
     previous_state_index = 0;
-    num_nodes = 0;
     num_elements = 0;
     num_surface_elements = 0;
     num_interior_elements = 0;
@@ -375,16 +372,16 @@ int Blob::init(){
 
         // Initialise the Solver (whatever it may be)
         printf("\t\tBuilding solver:\n");
-        if (solver->init(num_nodes, num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
+        if (solver->init(num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error initialising solver.\n")
         }
     }
 
 
     // Allocate the force vector array for the whole Blob
-    force = new(std::nothrow) arr3[num_nodes];
+    force = new(std::nothrow) arr3[node.size()];
     if (!force) FFEA_ERROR_MESSG("Could not store the force vector array\n");
-    for (int i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < node.size(); i++) {
         force[i][0] = 0;
         force[i][1] = 0;
         force[i][2] = 0;
@@ -534,13 +531,13 @@ int Blob::init(){
          */
 
         // Create the vector containing the charge distribution across the elements
-        q = new(std::nothrow) scalar[num_nodes];
+        q = new(std::nothrow) scalar[node.size()];
 
         if (!q) {
             FFEA_ERROR_MESSG("Could not allocate memory (for q array).\n");
         }
 
-        for (int i = 0; i < num_nodes; i++) {
+        for (int i = 0; i < node.size(); i++) {
             q[i] = 0;
         }
 
@@ -552,7 +549,7 @@ int Blob::init(){
             }
         }
 
-        for (int i = 0; i < num_nodes; i++) {
+        for (int i = 0; i < node.size(); i++) {
             node[i].rho = q[i];
         }
 
@@ -584,12 +581,12 @@ int Blob::init(){
     }
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-        toBePrinted_nodes = new scalar[10*num_nodes];
+        toBePrinted_nodes = new scalar[10 * node.size()];
     } else {
         if (params->calc_es == 0) {
-            toBePrinted_nodes = new scalar[3*num_nodes];
+            toBePrinted_nodes = new scalar[3 * node.size()];
         } else {
-            toBePrinted_nodes = new scalar[4*num_nodes];
+            toBePrinted_nodes = new scalar[4 * node.size()];
         }
     }
 
@@ -639,7 +636,7 @@ int Blob::update_internal_forces() {
         return FFEA_OK;
     }
 
-    if(num_pinned_nodes == num_nodes) {
+    if(num_pinned_nodes == node.size()) {
         return FFEA_OK;
     }
 
@@ -766,7 +763,7 @@ int Blob::reset_solver() {
 
     // Delete and rebuild (to make sure everything is overwritten)
 
-    if (solver->init(num_nodes, num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
+    if (solver->init(num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error reinitialising solver.\n")
     } else {
         return FFEA_OK;
@@ -779,17 +776,15 @@ void Blob::translate_linear(arr3 *vec) {
     // Get a mapping from all node indices to just linear node indices
     int num_linear_nodes = get_num_linear_nodes();
     vector<int> map(num_linear_nodes);
-    int i, j;
-    j = 0;
-    for(i = 0; i < num_nodes; ++i) {
+    int j = 0;
+    for(int i = 0; i < node.size(); ++i) {
         if(node[i].am_I_linear()) {
-            map[j] = i;
-            j++;
+            map[j++] = i;
         }
     }
 
     // Translate linear nodes
-    for(i = 0; i < num_linear_nodes; ++i) {
+    for(int i = 0; i < num_linear_nodes; ++i) {
         node[map[i]].pos[0] += vec[i][0];
         node[map[i]].pos[1] += vec[i][1];
         node[map[i]].pos[2] += vec[i][2];
@@ -827,7 +822,6 @@ void Blob::rotate(float xang, float yang, float zang, bool beads) {
 }
 
 void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r23, float r31, float r32, float r33, bool beads) {
-    int i;
     arr3 com;
     scalar x, y, z;
 
@@ -835,16 +829,16 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
 
     // Move all nodes to the origin:
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(none) private(i) shared(com)
+    #pragma omp parallel for default(none) shared(com)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < node.size(); i++) {
         node[i].pos[0] -= com[0];
         node[i].pos[1] -= com[1];
         node[i].pos[2] -= com[2];
     }
 
     // Do the actual rotation and bring the nodes back to its initial position:
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < node.size(); i++) {
         x = node[i].pos[0];
         y = node[i].pos[1];
         z = node[i].pos[2];
@@ -860,14 +854,14 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
     if (beads) {
         if (num_beads > 0) {
             // Move all beads to the origin:
-            for (i = 0; i < num_beads; i++) {
+            for (int i = 0; i < num_beads; i++) {
                 bead_position[3*i] -= com[0];
                 bead_position[3*i+1] -= com[1];
                 bead_position[3*i+2] -= com[2];
             }
 
             // Do the actual rotation and bring the beads back to its initial position:
-            for (i = 0; i < num_beads; i++) {
+            for (int i = 0; i < num_beads; i++) {
                 x = bead_position[3*i];
                 y = bead_position[3*i+1];
                 z = bead_position[3*i+2];
@@ -883,24 +877,23 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
 
 
 arr3 Blob::position(scalar x, scalar y, scalar z) {
-    int i;
     scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
     arr3 v;
     // scalar dx, dy, dz;
 
     // Calculate centroid of entire Blob mesh
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(shared) private(i) reduction(+:centroid_x,centroid_y,centroid_z)
+    #pragma omp parallel for default(shared) reduction(+:centroid_x,centroid_y,centroid_z)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < node.size(); ++i) {
         centroid_x += node[i].pos[0];
         centroid_y += node[i].pos[1];
         centroid_z += node[i].pos[2];
     }
 
-    centroid_x *= (1.0 / num_nodes);
-    centroid_y *= (1.0 / num_nodes);
-    centroid_z *= (1.0 / num_nodes);
+    centroid_x *= (1.0 / node.size());
+    centroid_y *= (1.0 / node.size());
+    centroid_z *= (1.0 / node.size());
 
     // Calculate displacement vector required to move centroid to requested position
     v[0] = x - centroid_x;
@@ -909,9 +902,9 @@ arr3 Blob::position(scalar x, scalar y, scalar z) {
 
     // Move all nodes in mesh by displacement vector
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(none) private(i) shared(v)
+    #pragma omp parallel for default(none) shared(v)
 #endif
-    for (i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < node.size(); ++i) {
         node[i].pos[0] += v[0];
         node[i].pos[1] += v[1];
         node[i].pos[2] += v[2];
@@ -932,10 +925,10 @@ void Blob::position_beads(scalar x, scalar y, scalar z) {
 }
 
 void Blob::move(scalar dx, scalar dy, scalar dz) {
-    for (int i = 0; i < num_nodes; i++) {
-        node[i].pos[0] += dx;
-        node[i].pos[1] += dy;
-        node[i].pos[2] += dz;
+    for (auto& node_i : node) {
+        node_i.pos[0] += dx;
+        node_i.pos[1] += dy;
+        node_i.pos[2] += dz;
     }
     for(int i = 0; i < get_num_faces(); ++i) {
         if(get_motion_state() != FFEA_BLOB_IS_DYNAMIC && surface[i].n[3] != nullptr) {
@@ -971,14 +964,14 @@ void Blob::get_centroid(arr3 &com) {
     com[0] = 0;
     com[1] = 0;
     com[2] = 0;
-    for (int n = 0; n < num_nodes; n++) {
-        com[0] += node[n].pos[0];
-        com[1] += node[n].pos[1];
-        com[2] += node[n].pos[2];
+    for (auto& node_i : node) {
+        com[0] += node_i.pos[0];
+        com[1] += node_i.pos[1];
+        com[2] += node_i.pos[2];
     }
-    com[0] /= num_nodes;
-    com[1] /= num_nodes;
-    com[2] /= num_nodes;
+    com[0] /= node.size();
+    com[1] /= node.size();
+    com[2] /= node.size();
 }
 
 void Blob::calc_and_store_centroid(arr3 &com) {
@@ -998,56 +991,52 @@ arr3 Blob::calc_centroid() {
     com[0] = 0.0;
     com[1] = 0.0;
     com[2] = 0.0;
-    for (int n = 0; n < num_nodes; n++) {
-        com[0] += node[n].pos[0];
-        com[1] += node[n].pos[1];
-        com[2] += node[n].pos[2];
+    for (const auto &node_i:node) {
+        com[0] += node_i.pos[0];
+        com[1] += node_i.pos[1];
+        com[2] += node_i.pos[2];
     }
-    com[0] /= num_nodes;
-    com[1] /= num_nodes;
-    com[2] /= num_nodes;
+    com[0] /= node.size();
+    com[1] /= node.size();
+    com[2] /= node.size();
     return com;
 }
 
-arr3 ** Blob::get_actual_node_positions() {
+std::vector<arr3 *> &Blob::get_actual_node_positions() {
     return node_position;
 }
 
-void Blob::copy_node_positions(arr3 *nodes) {
-
-    for(int i = 0; i < num_nodes; ++i) {
-        nodes[i][0] = node[i].pos[0];
-        nodes[i][1] = node[i].pos[1];
-        nodes[i][2] = node[i].pos[2];
+void Blob::copy_node_positions(std::vector<arr3*> &nodes) {
+    for(size_t i = 0; i < node.size(); ++i) {
+        (*nodes[i])[0] = node[i].pos[0];
+        (*nodes[i])[1] = node[i].pos[1];
+        (*nodes[i])[2] = node[i].pos[2];
     }
 }
 
-void Blob::set_node_positions(arr3 *node_pos) {
-
-    for (int i = 0; i < num_nodes; i++) {
-        node[i].pos[0] = node_pos[i][0];
-        node[i].pos[1] = node_pos[i][1];
-        node[i].pos[2] = node_pos[i][2];
+void Blob::set_node_positions(const std::vector<arr3*> &node_pos) {
+    for (size_t i = 0; i < node.size(); ++i) {
+        node[i].pos[0] = (*node_pos[i])[0];
+        node[i].pos[1] = (*node_pos[i])[1];
+        node[i].pos[2] = (*node_pos[i])[2];
     }
 }
 
 void Blob::set_pos_0() {
-
     CoG_0[0] = 0.0;
     CoG_0[1] = 0.0;
     CoG_0[2] = 0.0;
-    for (int i = 0; i < num_nodes; i++) {
-        node[i].pos_0[0] = node[i].pos[0];
-        node[i].pos_0[1] = node[i].pos[1];
-        node[i].pos_0[2] = node[i].pos[2];
-        CoG_0[0] += node[i].pos_0[0];
-        CoG_0[1] += node[i].pos_0[1];
-        CoG_0[2] += node[i].pos_0[2];
+    for (auto& node_i : node) {
+        node_i.pos_0[0] = node_i.pos[0];
+        node_i.pos_0[1] = node_i.pos[1];
+        node_i.pos_0[2] = node_i.pos[2];
+        CoG_0[0] += node_i.pos_0[0];
+        CoG_0[1] += node_i.pos_0[1];
+        CoG_0[2] += node_i.pos_0[2];
     }
-    CoG_0[0] /= num_nodes;
-    CoG_0[1] /= num_nodes;
-    CoG_0[2] /= num_nodes;
-
+    CoG_0[0] /= node.size();
+    CoG_0[1] /= node.size();
+    CoG_0[2] /= node.size();
 }
 
 void Blob::kinetically_set_faces(bool state) {
@@ -1089,10 +1078,10 @@ void Blob::compress_blob(scalar compress) {
     arr3 cog,cogaft;
     this->get_centroid(cog);
     //loop moves nodes in by
-    for (int i = 0; i < num_nodes; i++) {
-        node[i].pos[0] *= compress;
-        node[i].pos[1] *= compress;
-        node[i].pos[2] *= compress;
+    for (auto& node_i : node) {
+        node_i.pos[0] *= compress;
+        node_i.pos[1] *= compress;
+        node_i.pos[2] *= compress;
     }
     this->get_centroid(cogaft);
 
@@ -1118,7 +1107,7 @@ int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
     printf("\t\tWriting to viewer nodes file: %s\n", new_node_filename);
 
     fprintf(out, "ffea viewer node file\n");
-    fprintf(out, "num_nodes %d\n", num_nodes);
+    fprintf(out, "num_nodes %llu\n", node.size());
     fprintf(out, "num_surface_nodes %d\n", num_surface_nodes);
     fprintf(out, "num_interior_nodes %d\n", num_interior_nodes);
 
@@ -1129,8 +1118,8 @@ int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
     }
 
     fprintf(out, "interior nodes:\n");
-    for (i = num_surface_nodes; i < num_nodes; i++) {
-        fprintf(out, "%le %le %le\n", node[i].pos[0] / scale, node[i].pos[1] / scale, node[i].pos[2] / scale);
+    for (auto& node_i : node) {
+        fprintf(out, "%le %le %le\n", node_i.pos[0] / scale, node_i.pos[1] / scale, node_i.pos[2] / scale);
     }
 
     fclose(out);
@@ -1151,7 +1140,7 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
     }
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-        for (int i = 0; i < num_nodes; i++) {
+        for (size_t i = 0; i < node.size(); i++) {
             fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                     node[i].pos[0]*mesoDimensions::length, node[i].pos[1]*mesoDimensions::length, node[i].pos[2]*mesoDimensions::length,
                     node[i].vel[0]*mesoDimensions::velocity, node[i].vel[1]*mesoDimensions::velocity, node[i].vel[2]*mesoDimensions::velocity,
@@ -1160,17 +1149,17 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
         }
     } else {
         if (params->calc_es == 0) {
-            for (int i = 0; i < num_nodes; i++) {
+            for (auto& node_i : node) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
-                        node[i].pos[0]*mesoDimensions::length, node[i].pos[1]*mesoDimensions::length, node[i].pos[2]*mesoDimensions::length,
+                    node_i.pos[0]*mesoDimensions::length, node_i.pos[1]*mesoDimensions::length, node_i.pos[2]*mesoDimensions::length,
                         0., 0., 0., 0., 0., 0., 0.);
             }
         } else {
-            for (int i = 0; i < num_nodes; i++) {
+            for (auto& node_i : node) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
-                        node[i].pos[0]*mesoDimensions::length, node[i].pos[1]*mesoDimensions::length, node[i].pos[2]*mesoDimensions::length,
-                        0., 0., 0.,
-                        node[i].phi, 0., 0., 0.);
+                    node_i.pos[0]*mesoDimensions::length, node_i.pos[1]*mesoDimensions::length, node_i.pos[2]*mesoDimensions::length,
+                    0., 0., 0.,
+                    node_i.phi, 0., 0., 0.);
             }
         }
     }
@@ -1188,7 +1177,7 @@ void Blob::write_pre_print_to_file(FILE *trajectory_out) {
     }
 
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-        for (int i = 0; i < num_nodes; i++) {
+        for (size_t i = 0; i < node.size(); i++) {
             fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                     toBePrinted_nodes[10*i], toBePrinted_nodes[10*i+1], toBePrinted_nodes[10*i+2],
                     toBePrinted_nodes[10*i+3], toBePrinted_nodes[10*i+4], toBePrinted_nodes[10*i+5],
@@ -1197,13 +1186,13 @@ void Blob::write_pre_print_to_file(FILE *trajectory_out) {
         }
     } else {
         if (params->calc_es == 0) {
-            for (int i = 0; i < num_nodes; i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         toBePrinted_nodes[3*i], toBePrinted_nodes[3*i+1], toBePrinted_nodes[3*i+2],
                         0., 0., 0., 0., 0., 0., 0.);
             }
         } else {
-            for (int i = 0; i < num_nodes; i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         toBePrinted_nodes[3*i], toBePrinted_nodes[3*i+1], toBePrinted_nodes[3*i+2],
                         0., 0., 0.,
@@ -1228,7 +1217,7 @@ void Blob::pre_print() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
         #pragma omp parallel for default(none)
 #endif
-        for (int i = 0; i < num_nodes; i++) {
+        for (int i = 0; i < node.size(); i++) {
             toBePrinted_nodes[10*i   ] = node[i].pos[0]*mesoDimensions::length;
             toBePrinted_nodes[10*i +1] = node[i].pos[1]*mesoDimensions::length;
             toBePrinted_nodes[10*i +2] = node[i].pos[2]*mesoDimensions::length;
@@ -1245,7 +1234,7 @@ void Blob::pre_print() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
             #pragma omp parallel for default(none)
 #endif
-            for (int i = 0; i < num_nodes; i++) {
+            for (int i = 0; i < node.size(); i++) {
                 toBePrinted_nodes[3*i   ] = node[i].pos[0]*mesoDimensions::length;
                 toBePrinted_nodes[3*i +1] = node[i].pos[1]*mesoDimensions::length;
                 toBePrinted_nodes[3*i +2] = node[i].pos[2]*mesoDimensions::length;
@@ -1254,7 +1243,7 @@ void Blob::pre_print() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
             #pragma omp parallel for default(none)
 #endif
-            for (int i = 0; i < num_nodes; i++) {
+            for (int i = 0; i < node.size(); i++) {
                 toBePrinted_nodes[4*i   ] = node[i].pos[0]*mesoDimensions::length;
                 toBePrinted_nodes[4*i +1] = node[i].pos[1]*mesoDimensions::length;
                 toBePrinted_nodes[4*i +2] = node[i].pos[2]*mesoDimensions::length;
@@ -1285,7 +1274,7 @@ int Blob::read_nodes_from_file(FILE *trajectory_out) {
         }
     }
 
-    for (int i = 0; i < num_nodes; i++) {
+    for (int i = 0; i < node.size(); i++) {
         if (fscanf(trajectory_out, "%le %le %le %le %le %le %le %le %le %le\n", &node[i].pos[0], &node[i].pos[1], &node[i].pos[2], &node[i].vel[0], &node[i].vel[1], &node[i].vel[2], &node[i].phi, &force[i][0], &force[i][1], &force[i][2]) != 10) {
             FFEA_ERROR_MESSG("(When restarting) Error reading from trajectory file, for node %d\n", i)
         } else {
@@ -1487,40 +1476,39 @@ void Blob::make_measurements() {
 //#ifdef FFEA_PARALLEL_WITHIN_BLOB
 //#pragma omp parallel for default(none) reduction(+:brmsd, cogx, cogy, cogz) private(i, temp1, temp2, temp3)
 //#endif
-    for (i = 0; i < num_nodes; i++) {
-
+    for (const auto &node_i : node) {
         /*
          * Center of geometry contribution (geometry better on nodes than elements)
          */
-        cogx += node[i].pos[0];
-        cogy += node[i].pos[1];
-        cogz += node[i].pos[2];
+        cogx += node_i.pos[0];
+        cogy += node_i.pos[1];
+        cogz += node_i.pos[2];
 
     }
-    CoG[0] = cogx / num_nodes;
-    CoG[1] = cogy / num_nodes;
-    CoG[2] = cogz / num_nodes;
+    CoG[0] = cogx / node.size();
+    CoG[1] = cogy / node.size();
+    CoG[2] = cogz / node.size();
 
     // Remove translation and rotation (maybe make optional in future)
     bool remTrans = false;
     bool remRot = true;
 
     if(remTrans) {
-        for(i = 0; i < num_nodes; ++i) {
-            temp1 = node[i].pos[0] - node[i].pos_0[0] + CoG_0[0] - CoG[0];
-            temp2 = node[i].pos[1] - node[i].pos_0[1] + CoG_0[1] - CoG[1];
-            temp3 = node[i].pos[2] - node[i].pos_0[2] + CoG_0[2] - CoG[2];
+        for(const auto& node_i : node) {
+            temp1 = node_i.pos[0] - node_i.pos_0[0] + CoG_0[0] - CoG[0];
+            temp2 = node_i.pos[1] - node_i.pos_0[1] + CoG_0[1] - CoG[1];
+            temp3 = node_i.pos[2] - node_i.pos_0[2] + CoG_0[2] - CoG[2];
             brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
         }
     } else {
-        for(i = 0; i < num_nodes; ++i) {
-            temp1 = node[i].pos[0] - node[i].pos_0[0];
-            temp2 = node[i].pos[1] - node[i].pos_0[1];
-            temp3 = node[i].pos[2] - node[i].pos_0[2];
+        for(const auto& node_i : node) {
+            temp1 = node_i.pos[0] - node_i.pos_0[0];
+            temp2 = node_i.pos[1] - node_i.pos_0[1];
+            temp3 = node_i.pos[2] - node_i.pos_0[2];
             brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
         }
     }
-    rmsd = sqrt(brmsd / num_nodes);
+    rmsd = sqrt(brmsd / node.size());
     L[0] = lx;
     L[1] = ly;
     L[2] = lz;
@@ -1686,7 +1674,7 @@ scalar Blob::get_ssint_area() {
 
 int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 
-    int elem_index, a, b, i, j, global_a, global_a_lin, global_b, global_b_lin;
+    int elem_index, a, b, j, global_a, global_a_lin, global_b, global_b_lin;
     int row, column;
     scalar dx, val; // dxtemp;
     // matrix3 J, stress;
@@ -1695,9 +1683,9 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 
     // Firstly, get a mapping from all node indices to just linear node indices
     // int num_linear_nodes = get_num_linear_nodes();
-    vector<int> map(num_nodes);
+    vector<int> map(node.size());
     j = 0;
-    for(i = 0; i < num_nodes; ++i) {
+    for(size_t i = 0; i < node.size(); ++i) {
         if(node[i].am_I_linear()) {
             map[i] = j;
             j++;
@@ -1719,7 +1707,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
             global_a = elem[elem_index].n[a]->index;
             global_a_lin = map[elem[elem_index].n[a]->index];
 
-            for(i = 0; i < 3; ++i) {
+            for(int i = 0; i < 3; ++i) {
 
                 // Move node a in direction i and calculate the change
 
@@ -1743,7 +1731,7 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
                 for(b = 0; b < 4; ++b) {
 
                     // Get global index for node b
-                    global_b = elem[elem_index].n[b]->index;
+                    // global_b = elem[elem_index].n[b]->index;
                     global_b_lin = map[elem[elem_index].n[b]->index];
 
                     for(j = 0; j < 3; ++j) {
@@ -1775,9 +1763,9 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
     vector<Eigen::Triplet<scalar> > components;
 
     // Firstly, get a mapping from all node indices to just linear node indices
-    vector<int> map(num_nodes);
+    vector<int> map(node.size());
     int offset = 0;
-    for(int i = 0; i < num_nodes; ++i) {
+    for(size_t i = 0; i < node.size(); ++i) {
         if(node[i].am_I_linear()) {
             map[i] = i - offset;
         } else {
@@ -1822,7 +1810,7 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 
     // For each node, add stokes if necessary
     if(params->calc_stokes == 1) {
-        for(global_a = 0; global_a < num_nodes; ++global_a) {
+        for(global_a = 0; global_a < node.size(); ++global_a) {
             if(map[global_a] == -1) {
                 continue;
             } else {
@@ -1861,9 +1849,9 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 
     // Firstly, get a mapping from all node indices to just linear node indices
 
-    vector<int> map(num_nodes);
+    vector<int> map(node.size());
     int offset = 0;
-    for(i = 0; i < num_nodes; ++i) {
+    for(size_t i = 0; i < node.size(); ++i) {
 
         if(node[i].am_I_linear()) {
             //if(true) {
@@ -1926,15 +1914,15 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 
 int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
 
-    int i, j, n, m, num_linear_nodes;
+    int i, j, num_linear_nodes;
     scalar mod, mod2, a;
     Eigen_Matrix3 block, rr;
     Eigen_Vector3 sep;
 
     // Firstly, get a mapping from all node indices to just linear node indices
-    vector<int> map(num_nodes);
+    vector<int> map(node.size());
     int offset = 0;
-    for(i = 0; i < num_nodes; ++i) {
+    for(size_t i = 0; i < node.size(); ++i) {
         if(node[i].am_I_linear()) {
             map[i] = i - offset;
         } else {
@@ -1949,7 +1937,7 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
     D->setZero();
 
     // For each pair of nodes (upper triangle only)
-    for(n = 0; n < num_nodes; ++n) {
+    for(size_t n = 0; n < node.size(); ++n) {
 
         // If secondary node, continue
         if(map[n] == -1) {
@@ -1957,7 +1945,7 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
         } else {
             i = map[n];
         }
-        for(m = n; m < num_nodes; ++m) {
+        for(size_t m = n; m < node.size(); ++m) {
 
             // If secondary node, continue
             if(map[m] == -1) {
@@ -2147,7 +2135,7 @@ void Blob::zero_force() {
 }
 
 void Blob::set_forces_to_zero() {
-    for (int i = 0; i < num_nodes; ++i) {
+    for (int i = 0; i < node.size(); ++i) {
         force[i][0] = 0;
         force[i][1] = 0;
         force[i][2] = 0;
@@ -2173,11 +2161,10 @@ void Blob::add_force_to_node(arr3 f, int index) {
 }
 
 void Blob::velocity_all(scalar vel_x, scalar vel_y, scalar vel_z) {
-    int i;
-    for (i = 0; i < num_nodes; i++) {
-        node[i].vel[0] = vel_x;
-        node[i].vel[1] = vel_y;
-        node[i].vel[2] = vel_z;
+    for (auto &node_i : node) {
+        node_i.vel[0] = vel_x;
+        node_i.vel[1] = vel_y;
+        node_i.vel[2] = vel_z;
     }
 }
 
@@ -2283,7 +2270,7 @@ void Blob::enforce_box_boundaries(arr3 &box_dim) {
 }
 
 int Blob::get_num_nodes() {
-    return num_nodes;
+    return static_cast<int>(node.size());
 }
 
 int Blob::get_num_elements() {
@@ -2325,7 +2312,6 @@ scalar Blob::get_strain_energy() {
 }
 
 void Blob::get_min_max(arr3 &blob_min, arr3 &blob_max) {
-
     blob_min[0] = INFINITY;
     blob_max[0] = -1 * INFINITY;
     blob_min[1] = INFINITY;
@@ -2333,23 +2319,23 @@ void Blob::get_min_max(arr3 &blob_min, arr3 &blob_max) {
     blob_min[2] = INFINITY;
     blob_max[2] = -1 * INFINITY;
 
-    for(int i = 0; i < num_nodes; ++i) {
-        if(node[i].pos[0] > blob_max[0]) {
-            blob_max[0] = node[i].pos[0];
-        } else if (node[i].pos[0] < blob_min[0]) {
-            blob_min[0] = node[i].pos[0];
+    for(const auto &node_i : node) {
+        if(node_i.pos[0] > blob_max[0]) {
+            blob_max[0] = node_i.pos[0];
+        } else if (node_i.pos[0] < blob_min[0]) {
+            blob_min[0] = node_i.pos[0];
         }
 
-        if(node[i].pos[1] > blob_max[1]) {
-            blob_max[1] = node[i].pos[1];
-        } else if (node[i].pos[1] < blob_min[1]) {
-            blob_min[1] = node[i].pos[1];
+        if(node_i.pos[1] > blob_max[1]) {
+            blob_max[1] = node_i.pos[1];
+        } else if (node_i.pos[1] < blob_min[1]) {
+            blob_min[1] = node_i.pos[1];
         }
 
-        if(node[i].pos[2] > blob_max[2]) {
-            blob_max[2] = node[i].pos[2];
-        } else if (node[i].pos[2] < blob_min[2]) {
-            blob_min[2] = node[i].pos[2];
+        if(node_i.pos[2] > blob_max[2]) {
+            blob_max[2] = node_i.pos[2];
+        } else if (node_i.pos[2] < blob_min[2]) {
+            blob_min[2] = node_i.pos[2];
         }
     }
 }
@@ -2357,8 +2343,7 @@ void Blob::get_min_max(arr3 &blob_min, arr3 &blob_max) {
 /*
  */
 int Blob::load_nodes(const char *node_filename, scalar scale) {
-    FILE *in = nullptr;
-    int i;
+    FILE *in;
     double x, y, z;
     const int max_line_size = 50;
     char line[max_line_size];
@@ -2380,6 +2365,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
     }
 
     // read in the number of nodes in the file
+    int num_nodes;
     if (fscanf(in, "num_nodes %d\n", &num_nodes) != 1) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading number of nodes\n")
@@ -2402,13 +2388,9 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
 
     // Allocate the memory for all these nodes
     try {
-        node = std::vector<mesh_node>(num_nodes);        
+        node = std::vector<mesh_node>(num_nodes);
+        node_position = std::vector<arr3*>(num_nodes, nullptr);
     } catch (std::bad_alloc&) {
-        fclose(in);
-        FFEA_ERROR_MESSG("Unable to allocate memory for nodes array.\n")
-    }
-    node_position = new(std::nothrow) arr3*[num_nodes];
-    if (!node_position) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for nodes array.\n")
     }
@@ -2424,7 +2406,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
     }
 
     // Read in all the surface nodes from file
-    for (i = 0; i < num_nodes; i++) {
+    for (size_t i = 0; i < node.size(); i++) {
 
         if (i == num_surface_nodes) {
             // Check for "interior nodes:" line
@@ -2440,7 +2422,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
 
         if (fscanf(in, "%le %le %le\n", &x, &y, &z) != 3) {
             fclose(in);
-            FFEA_ERROR_MESSG("Error reading from nodes file at node %d\n", i)
+            FFEA_ERROR_MESSG("Error reading from nodes file at node %llu\n", i)
         } else {
             node[i].pos[0] = scale * (scalar) x;
             node[i].pos[1] = scale * (scalar) y;
@@ -2450,12 +2432,12 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
             node[i].vel[1] = 0;
             node[i].vel[2] = 0;
 
-            node[i].index = i;
+            node[i].index = static_cast<int>(i);
         }
     }
 
     fclose(in);
-    printf("\t\t\tRead %d nodes from %s\n", i, node_filename);
+    printf("\t\t\tRead %llu nodes from %s\n", node.size(), node_filename);
 
     return FFEA_OK;
 }
@@ -2541,16 +2523,16 @@ int Blob::load_topology(const char *topology_filename) {
             FFEA_ERROR_MESSG("Error reading from elements file at element %d\n", i)
         } else {
             // check that none of these reference nodes outside of the node array
-            if (n1 < 0 || n1 >= num_nodes ||
-                    n2 < 0 || n2 >= num_nodes ||
-                    n3 < 0 || n3 >= num_nodes ||
-                    n4 < 0 || n4 >= num_nodes ||
-                    n5 < 0 || n5 >= num_nodes ||
-                    n6 < 0 || n6 >= num_nodes ||
-                    n7 < 0 || n7 >= num_nodes ||
-                    n8 < 0 || n8 >= num_nodes ||
-                    n9 < 0 || n9 >= num_nodes ||
-                    n10 < 0 || n10 >= num_nodes) {
+            if (n1 < 0 || n1 >= node.size() ||
+                    n2 < 0 || n2 >= node.size() ||
+                    n3 < 0 || n3 >= node.size() ||
+                    n4 < 0 || n4 >= node.size() ||
+                    n5 < 0 || n5 >= node.size() ||
+                    n6 < 0 || n6 >= node.size() ||
+                    n7 < 0 || n7 >= node.size() ||
+                    n8 < 0 || n8 >= node.size() ||
+                    n9 < 0 || n9 >= node.size() ||
+                    n10 < 0 || n10 >= node.size()) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error: Element %d references an out of bounds node index\n", i)
             }
@@ -2639,9 +2621,9 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
             FFEA_ERROR_MESSG("Error reading from surface file at face %d. There should be 4 space separated integers. \n", i);
         } else {
             // check that none of these reference nodes outside of the node array
-            if (n1 < 0 || n1 >= num_nodes ||
-                    n2 < 0 || n2 >= num_nodes ||
-                    n3 < 0 || n3 >= num_nodes) {
+            if (n1 < 0 || n1 >= node.size() ||
+                    n2 < 0 || n2 >= node.size() ||
+                    n3 < 0 || n3 >= node.size()) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds node index\n", i);
             } else if (element < 0 || element >= num_elements) {
@@ -2738,9 +2720,9 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
             FFEA_ERROR_MESSG("Error reading from surface file at face %d. There should be 4 space separated integers. \n", i);
         } else {
             // check that none of these reference nodes outside of the node array
-            if (n1 < 0 || n1 >= num_nodes ||
-                    n2 < 0 || n2 >= num_nodes ||
-                    n3 < 0 || n3 >= num_nodes) {
+            if (n1 < 0 || n1 >= node.size() ||
+                    n2 < 0 || n2 >= node.size() ||
+                    n3 < 0 || n3 >= node.size()) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds node index\n", i);
             }
@@ -2854,15 +2836,15 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
     printf("\t\t\tNumber of nodes in stokes radii file = %d\n", num_stokes_nodes);
 
     // Check that we have same number of nodes in stokes radii file as in nodes file
-    if (num_stokes_nodes != num_nodes) {
+    if (num_stokes_nodes != node.size()) {
         fclose(in);
-        FFEA_ERROR_MESSG("Number of nodes in stokes radii file (%d) does not match number of nodes in nodes file (%d)\n", num_stokes_nodes, num_nodes)
+        FFEA_ERROR_MESSG("Number of nodes in stokes radii file (%d) does not match number of nodes in nodes file (%llu)\n", num_stokes_nodes, node.size())
     }
 
     // Set the stokes radius for each node in the Blob
     scalar stokes_radius = 0.0;
     int crap, i, check = 0;
-    for (i = 0; i < num_nodes; i++) {
+    for (i = 0; i < node.size(); i++) {
         if (fscanf(in, "%le\n", &stokes_radius) != 1) {
             fclose(in);
             FFEA_ERROR_MESSG("Error reading from stokes radii file at node %d. There should be 1 real value (stokes radius).\n", i);
@@ -3146,7 +3128,7 @@ int Blob::load_ctforces(string ctforces_fname) {
         int c_i = boost::lexical_cast<int>(line_split[5]); // read the conformation index
         if (c_i != conformation_index) continue;
         if (line_split[6].compare("all") == 0) {
-            num_l_ctf += num_nodes;
+            num_l_ctf += node.size();
         } else {
             num_l_ctf += 1;
         }
@@ -3178,7 +3160,7 @@ int Blob::load_ctforces(string ctforces_fname) {
             ctf_l_forces[3*cnt +2]  = Fz;
             cnt += 1;
         } else {
-            for (int j=0; j<num_nodes; j++) {
+            for (int j=0; j< node.size(); j++) {
                 ctf_l_nodes[cnt] = j;
                 ctf_l_forces[3*cnt   ]  = Fx;
                 ctf_l_forces[3*cnt +1]  = Fy;
@@ -3227,7 +3209,7 @@ int Blob::load_ctforces(string ctforces_fname) {
         int c_i = boost::lexical_cast<int>(line_split[9]); // read the conformation index
         if (c_i != conformation_index) continue;
         if (line_split[10].compare("all") == 0) {
-            num_r_ctf += num_nodes;
+            num_r_ctf += node.size();
         } else {
             num_r_ctf += 1;
         }
@@ -3278,7 +3260,7 @@ int Blob::load_ctforces(string ctforces_fname) {
             ctf_r_type[2*cnt + 1] = type[1];
             cnt += 1;
         } else {
-            for (int j=0; j<num_nodes; j++) {
+            for (int j=0; j< node.size(); j++) {
                 ctf_r_nodes[cnt] = j;
                 ctf_r_forces[cnt]  = F;
                 ctf_r_axis[6*cnt    ] = ctf_p[0];
@@ -3421,8 +3403,8 @@ int Blob::forget_beads() {
 
 void Blob::print_node_positions() {
 
-    for (int n = 0; n < num_nodes; n++) {
-        cout << "---n: " << node[n].pos[0] << " " << node[n].pos[1] << "  " << node[n].pos[2] << endl;
+    for (const auto &node_i : node) {
+        cout << "---n: " << node_i.pos[0] << " " << node_i.pos[1] << "  " << node_i.pos[2] << endl;
     }
 
 }
@@ -3685,7 +3667,7 @@ int Blob::load_pinned_nodes(const char *pin_filename) {
             FFEA_ERROR_MESSG("Error reading from pinned node file at face %d. There should be 1 integer per line. \n", i);
         } else {
             // check that this does not reference nodes outside of the node array
-            if (pn_index < 0 || pn_index >= num_nodes) {
+            if (pn_index < 0 || pn_index >= node.size()) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error: Pinned node %d references an out of bounds node index\n", i);
             }
@@ -3772,14 +3754,12 @@ void Blob::calc_rest_state_info() {
 /*
  */
 int Blob::aggregate_forces_and_solve() {
-    int n, m;
-
     // Aggregate the forces on each node by summing the contributions from each element.
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(none) private(n, m) schedule(guided)
+    #pragma omp parallel for default(none) schedule(guided)
 #endif
-    for (n = 0; n < num_nodes; n++) {
-        for (m = 0; m < node[n].num_element_contributors; m++) {
+    for (int n = 0; n < node.size(); ++n) {
+        for (int m = 0; m < node[n].num_element_contributors; m++) {
             force[n][0] += (*node[n].force_contributions[m])[0];
             force[n][1] += (*node[n].force_contributions[m])[1];
             force[n][2] += (*node[n].force_contributions[m])[2];
@@ -3787,7 +3767,7 @@ int Blob::aggregate_forces_and_solve() {
     }
 
     // Aggregate surface forces onto nodes
-    for (n = 0; n < num_surface_faces; n++) {
+    for (int n = 0; n < num_surface_faces; ++n) {
         for (int i = 0; i < 4; i++) {
             int sni = surface[n].n[i]->index;
             force[sni][0] += surface[n].force[i][0];
@@ -3812,7 +3792,7 @@ int Blob::aggregate_forces_and_solve() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                 #pragma omp for schedule(guided)
 #endif
-                for (int i = 0; i < num_nodes; i++) {
+                for (int i = 0; i < node.size(); ++i) {
                     force[i][0] -= node[i].vel[0] * node[i].stokes_drag;
                     force[i][1] -= node[i].vel[1] * node[i].stokes_drag;
                     force[i][2] -= node[i].vel[2] * node[i].stokes_drag;
@@ -3840,7 +3820,7 @@ int Blob::aggregate_forces_and_solve() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                     #pragma omp for schedule(guided)
 #endif
-                    for (int i = 0; i < num_nodes; i++) {
+                    for (int i = 0; i < node.size(); ++i) {
                         force[i][0] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                         force[i][1] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
                         force[i][2] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
@@ -3856,7 +3836,7 @@ int Blob::aggregate_forces_and_solve() {
     linearise_force();
 
     // Set to zero any forces on the pinned nodes
-    for (n = 0; n < num_pinned_nodes; n++) {
+    for (int n = 0; n < num_pinned_nodes; n++) {
         int pn_index = pinned_nodes_list[n];
         force[pn_index][0] = 0;
         force[pn_index][1] = 0;
@@ -3883,14 +3863,12 @@ int Blob::aggregate_forces_and_solve() {
  *
  */
 void Blob::euler_integrate() {
-    int i;
-
     // Update the velocities and positions of all the nodes
     if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-        #pragma omp parallel for default(none) private(i) schedule(static)
+        #pragma omp parallel for default(none) schedule(static)
 #endif
-        for (i = 0; i < num_nodes; i++) {
+        for (int i = 0; i < node.size(); ++i) {
             node[i].vel[0] = force[i][0];
             node[i].vel[1] = force[i][1];
             node[i].vel[2] = force[i][2];
@@ -3902,9 +3880,9 @@ void Blob::euler_integrate() {
 
     } else {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-        #pragma omp parallel for default(none) private(i) schedule(static)
+        #pragma omp parallel for default(none) schedule(static)
 #endif
-        for (i = 0; i < num_nodes; i++) {
+        for (int i = 0; i < node.size(); ++i) {
             node[i].vel[0] += force[i][0] * params->dt;
             node[i].vel[1] += force[i][1] * params->dt;
             node[i].vel[2] += force[i][2] * params->dt;
@@ -3920,48 +3898,36 @@ void Blob::euler_integrate() {
  *
  */
 int Blob::calculate_node_element_connectivity() {
-    int i, j;
-    int *node_counter = nullptr;
 
     // initialise num_element_contributors to zero
-    for (i = 0; i < num_nodes; i++)
-        node[i].num_element_contributors = 0;
+    for(auto &node_i : node)
+        node_i.num_element_contributors = 0;
 
     // count how many times each node is referenced in the list of elements
-    for (i = 0; i < num_elements; i++)
-        for (j = 0; j < NUM_NODES_QUADRATIC_TET; j++)
+    for (int i = 0; i < num_elements; ++i)
+        for (int j = 0; j < NUM_NODES_QUADRATIC_TET; ++j)
             node[elem[i].n[j]->index].num_element_contributors++;
 
     // allocate the contributions array for each node to the length given by num_element_contributors
-    for (i = 0; i < num_nodes; i++) {
+    for (size_t i = 0; i < node.size(); ++i) {
         node[i].force_contributions = new(std::nothrow) arr3 *[node[i].num_element_contributors];
-        if (node[i].force_contributions == nullptr) {
-            FFEA_ERROR_MESSG("Failed to allocate memory for 'force_contributions' array (on node %d)\n", i);
+        if (!node[i].force_contributions) {
+            FFEA_ERROR_MESSG("Failed to allocate memory for 'force_contributions' array (on node %llu)\n", i);
         }
     }
 
     // create an array of counters keeping track of how full each contributions array is on each node
-    node_counter = new(std::nothrow) int[num_nodes];
-    if (!node_counter) {
-        FFEA_ERROR_MESSG("Failed to allocate node_counter array.\n");
-    }
-
-    // initialise the node_counter array to zero
-    for (i = 0; i < num_nodes; i++)
-        node_counter[i] = 0;
+    std::vector node_counter(node.size(), 0);
 
     // go back through the elements array and fill the contributions arrays with pointers to the
     // appropriate force contributions in the elements
     int node_index;
-    for (i = 0; i < num_elements; i++)
-        for (j = 0; j < NUM_NODES_QUADRATIC_TET; j++) {
+    for (int i = 0; i < num_elements; i++)
+        for (int j = 0; j < NUM_NODES_QUADRATIC_TET; j++) {
             node_index = elem[i].n[j]->index;
             node[node_index].force_contributions[node_counter[node_index]] = &elem[i].node_force[j];
             node_counter[node_index]++;
         }
-
-    // release node counter array
-    delete[] node_counter;
 
     return FFEA_OK;
 }
@@ -4042,7 +4008,7 @@ int Blob::build_mass_matrix() {
     // Calculate the Sparsity Pattern for the Mass matrix
     printf("\t\tCalculating sparsity pattern for 2nd order Mass matrix\n");
     SparsityPattern sparsity_pattern_mass_matrix;
-    sparsity_pattern_mass_matrix.init(num_nodes);
+    sparsity_pattern_mass_matrix.init(node.size());
 
     MassMatrixQuadratic *M_alpha = new(std::nothrow) MassMatrixQuadratic[num_elements];
     if (!M_alpha) FFEA_ERROR_MESSG("Failed to allocate memory for the mass matrix\n");

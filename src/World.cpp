@@ -2494,10 +2494,10 @@ int World::change_kinetic_state(int blob_index, int target_state)
         int inversionCheck;
 
         // Get current nodes
-        arr3 **current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
+        std::vector<arr3 *> current_nodes = active_blob_array[blob_index]->get_actual_node_positions();
 
         // Get target nodes
-        arr3 **target_nodes = blob_array[blob_index][target_conformation].get_actual_node_positions();
+        std::vector<arr3*> target_nodes = blob_array[blob_index][target_conformation].get_actual_node_positions();
 
         // Apply map
         kinetic_map[blob_index][current_conformation][target_conformation].block_apply(current_nodes, target_nodes);
