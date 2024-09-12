@@ -31,7 +31,6 @@ Blob::Blob() {
     previous_conformation_index = 0;
     state_index = 0;
     previous_state_index = 0;
-    num_elements = 0;
     num_surface_faces = 0;
     num_beads = 0;
     num_l_ctf = 0;
@@ -58,7 +57,7 @@ Blob::Blob() {
     blob_state = FFEA_BLOB_IS_STATIC;
     node = {};
     node_position = {};
-    elem = nullptr;
+    elem = {};
     surface = nullptr;
     binding_site = nullptr;
     solver = nullptr;
@@ -95,8 +94,7 @@ Blob::~Blob() {
     /* Release the node, element and surface arrays */
     node.clear();
     node_position.clear();
-    delete[] elem;
-    elem = nullptr;
+    elem.clear();
     delete[] surface;
     surface = nullptr;
 
@@ -181,7 +179,6 @@ Blob::~Blob() {
     previous_conformation_index = 0;
     state_index = 0;
     previous_state_index = 0;
-    num_elements = 0;
     num_surface_elements = 0;
     num_interior_elements = 0;
     num_surface_faces = 0;
@@ -328,8 +325,8 @@ int Blob::init(){
     }
 
     // Linearise all the elements
-    for (int i = 0; i < num_elements; i++) {
-        elem[i].linearise_element();
+    for (auto &elem_i : elem) {
+        elem_i.linearise_element();
     }
 
     // Get the rest jacobian, rest volume etc. of this Blob and store it for later use
@@ -372,7 +369,7 @@ int Blob::init(){
 
         // Initialise the Solver (whatever it may be)
         printf("\t\tBuilding solver:\n");
-        if (solver->init(num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
+        if (solver->init(node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error initialising solver.\n")
         }
     }
@@ -423,7 +420,7 @@ int Blob::init(){
 
         scalar *mem_loc;
         int ni_index, nj_index;
-        for (int el = 0; el < num_elements; el++) {
+        for (int el = 0; el < elem.size(); el++) {
             for (int ni = 0; ni < 10; ni++) {
                 for (int nj = 0; nj < 10; nj++) {
 
@@ -543,7 +540,7 @@ int Blob::init(){
 
         // const scalar charge_density = 6.0e25;
         const scalar charge_density = 6.0e25 * mesoDimensions::volume / mesoDimensions::charge;
-        for (int n = 0; n < num_elements; n++) {
+        for (int n = 0; n < elem.size(); n++) {
             for (int i = 0; i < 10; i++) {
                 q[elem[n].n[i]->index] += charge_density * elem[n].vol_0;
             }
@@ -576,7 +573,7 @@ int Blob::init(){
 
 
     //If calc_compress option set in input script (default off), compress by factor specified in script
-    if (calc_compress ==1) {
+    if (calc_compress == 1) {
         compress_blob(compress);
     }
 
@@ -603,17 +600,17 @@ int Blob::check_inversion() {
 	vector<int> invEls;
 	invEls.clear();
 
-        for (n = 0; n < num_elements; n++) {
+    for (n = 0; n < elem.size(); n++) {
 
-            // calculate jacobian for this element
-            elem[n].calculate_jacobian(J);
+        // calculate jacobian for this element
+        elem[n].calculate_jacobian(J);
 
-            // get the 12 derivatives of the shape functions (by inverting the jacobian)
-            // and also get the element volume. The function returns an error in the
-            // case of an element inverting itself (determinant changing sign since last step)
-            if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
+        // get the 12 derivatives of the shape functions (by inverting the jacobian)
+        // and also get the element volume. The function returns an error in the
+        // case of an element inverting itself (determinant changing sign since last step)
+        if (elem[n].calc_shape_function_derivatives_and_volume(J) == FFEA_ERROR) {
 	        invEls.push_back(n);
-            }
+        }
 	}
 
 	// Are we screwed?
@@ -648,13 +645,12 @@ int Blob::update_internal_forces() {
     matrix3 J; // Holds the Jacobian calculated for the *current* element being processed
     matrix3 stress; // Holds the current stress tensor (elastic stress, with thermal fluctuations)
     vector12 du; // Holds the force change for the current element
-    int n; // Iterates through all the elements
     int tid; // Holds the current thread id (in parallel regions)
     int num_inversions = 0; // Counts the number of elements that have inverted (if > 0 then simulation has failed)
 
     // Element loop
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel default(none) private(J, stress, du, tid, n) reduction(+:num_inversions)
+    #pragma omp parallel default(none) private(J, stress, du, tid) reduction(+:num_inversions)
     {
 #endif
 #ifdef USE_OPENMP
@@ -666,7 +662,7 @@ int Blob::update_internal_forces() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
         #pragma omp for schedule(guided)
 #endif
-        for (n = 0; n < num_elements; n++) {
+        for (int n = 0; n < elem.size(); n++) {
 
             // calculate jacobian for this element
             elem[n].calculate_jacobian(J);
@@ -752,7 +748,7 @@ int Blob::update_positions() {
     //}
 
     // Linearise the 2nd order elements
-    for (int n = 0; n < num_elements; n++) {
+    for (int n = 0; n < elem.size(); n++) {
         elem[n].linearise_element();
     }
 
@@ -763,7 +759,7 @@ int Blob::reset_solver() {
 
     // Delete and rebuild (to make sure everything is overwritten)
 
-    if (solver->init(num_elements, node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
+    if (solver->init(node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error reinitialising solver.\n")
     } else {
         return FFEA_OK;
@@ -946,17 +942,17 @@ void Blob::get_CoM(arr3 &com) {
     com[2] = 0;
 
 
-    for (int n = 0; n < num_elements; n++) {
+    for (int n = 0; n < elem.size(); n++) {
         com[0] += (elem[n].mass * elem[n].n[0]->pos[0] + elem[n].n[1]->pos[0] + elem[n].n[2]->pos[0] + elem[n].n[3]->pos[0]) / 4;
         com[1] += (elem[n].mass * elem[n].n[0]->pos[1] + elem[n].n[1]->pos[1] + elem[n].n[2]->pos[1] + elem[n].n[3]->pos[1]) / 4;
         com[2] += (elem[n].mass * elem[n].n[0]->pos[2] + elem[n].n[1]->pos[2] + elem[n].n[2]->pos[2] + elem[n].n[3]->pos[2]) / 4;
     }
-    if (num_elements == 0) {
+    if (elem.empty()) {
         return;
     } else {
-        com[0] /= num_elements;
-        com[1] /= num_elements;
-        com[2] /= num_elements;
+        com[0] /= elem.size();
+        com[1] /= elem.size();
+        com[2] /= elem.size();
     }
 }
 
@@ -1046,15 +1042,15 @@ void Blob::kinetically_set_faces(bool state) {
 }
 
 void Blob::linearise_elements() {
-    for(int i = 0; i < num_elements; ++i) {
-        elem[i].linearise_element();
+    for(auto &elem_i : elem) {
+        elem_i.linearise_element();
     }
 }
 
 void Blob::linearise_force() {
 
     int nIdx[NUM_NODES_QUADRATIC_TET];
-    for (int i=0; i< num_elements; i++) {
+    for (int i=0; i< elem.size(); i++) {
         for (int j=0; j<NUM_NODES_QUADRATIC_TET; j++) {
             nIdx[j] = elem[i].n[j]->index;
         }
@@ -1297,7 +1293,7 @@ int Blob::calculate_deformation() {
 
     int num_inversions = 0;
     matrix3 J;
-    for (int n = 0; n < num_elements; n++) {
+    for (int n = 0; n < elem.size(); n++) {
 
         // calculate jacobian for this element
         elem[n].calculate_jacobian(J);
@@ -1326,7 +1322,7 @@ int Blob::calculate_deformation() {
 scalar Blob::calc_volume() {
 
     scalar volume = 0.0;
-    for(int i = 0; i < num_elements; ++i) {
+    for(int i = 0; i < elem.size(); ++i) {
         volume += elem[i].calc_volume();
     }
     return volume;
@@ -1337,7 +1333,7 @@ scalar Blob::calculate_strain_energy() {
     int n;
     scalar C, detF, strain_energy = 0.0;
     calculate_deformation();
-    for(n = 0; n < num_elements; ++n) {
+    for(n = 0; n < elem.size(); ++n) {
         C = elem[n].E - elem[n].G * 2.0 / 3.0;
         detF = elem[n].vol / elem[n].vol_0;
         strain_energy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
@@ -1370,10 +1366,8 @@ void Blob::make_measurements() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp parallel for default(none) reduction(+:kenergy, senergy) private(n, vec, temp1, temp2, temp3)
 #endif
-    for (n = 0; n < num_elements; n++) {
-
+    for (n = 0; n < elem.size(); n++) {
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-
             /*
              * Kinetic energy contribution:
              */
@@ -1444,8 +1438,7 @@ void Blob::make_measurements() {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
         #pragma omp parallel for default(none) reduction(+:lx, ly, lz) shared(MM) private(n, r, temp1, temp2, temp3, i, j)
 #endif
-        for (n = 0; n < num_elements; n++) {
-
+        for (n = 0; n < elem.size(); n++) {
             // Find the separation vectors for this element
             for (i = 0; i < 4; i++) {
                 r[i][0] = elem[n].n[i]->pos[0] - CoM[0];
@@ -1530,7 +1523,7 @@ void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
     int n;
     if (stress_out != nullptr) {
         fprintf(stress_out, "blob\t%d\n", blob_number);
-        for (n = 0; n < num_elements; n++) {
+        for (n = 0; n < elem.size(); n++) {
             fprintf(stress_out, "%e\n", elem[n].internal_stress_mag);
         }
         fprintf(stress_out, "\n");
@@ -1544,15 +1537,13 @@ void Blob::calc_centroids_and_normals_of_all_faces() {
 }
 
 void Blob::calc_all_centroids() {
-
     int i;
     for (i = 0; i < num_surface_faces; i++) {
         surface[i].calc_area_normal_centroid();
     }
-    for(i = 0; i < num_elements; ++i) {
+    for(i = 0; i < elem.size(); ++i) {
         elem[i].calc_centroid();
     }
-
 }
 
 /*
@@ -1673,10 +1664,6 @@ scalar Blob::get_ssint_area() {
 //		 */
 
 int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
-
-    int elem_index, a, b, j, global_a, global_a_lin, global_b, global_b_lin;
-    int row, column;
-    scalar dx, val; // dxtemp;
     // matrix3 J, stress;
     vector12 elastic_force[2];
     vector<Eigen::Triplet<scalar> > components;
@@ -1684,31 +1671,32 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
     // Firstly, get a mapping from all node indices to just linear node indices
     // int num_linear_nodes = get_num_linear_nodes();
     vector<int> map(node.size());
-    j = 0;
-    for(size_t i = 0; i < node.size(); ++i) {
-        if(node[i].am_I_linear()) {
-            map[i] = j;
-            j++;
-        } else {
-            map[i] = -1;
+    {
+        int j = 0;
+        for (size_t i = 0; i < node.size(); ++i) {
+            if (node[i].am_I_linear()) {
+                map[i] = j;
+                j++;
+            } else {
+                map[i] = -1;
+            }
         }
     }
 
     // For each element
-    for(elem_index = 0; elem_index < num_elements; ++elem_index) {
+    for(int elem_index = 0; elem_index < elem.size(); ++elem_index) {
 
         // Calculate dx, how far each node should be moved for a linearisataion, as well as unstrained parameter
-        dx = cbrt(elem[elem_index].calc_volume()) / 1000.0;
+        scalar dx = cbrt(elem[elem_index].calc_volume()) / 1000.0;
 
         // For every node a in every direction i
-        for(a = 0; a < 4; ++a) {
+        for(int a = 0; a < 4; ++a) {
 
             // Get global index for node a
-            global_a = elem[elem_index].n[a]->index;
-            global_a_lin = map[elem[elem_index].n[a]->index];
+            int global_a = elem[elem_index].n[a]->index;
+            int global_a_lin = map[elem[elem_index].n[a]->index];
 
             for(int i = 0; i < 3; ++i) {
-
                 // Move node a in direction i and calculate the change
 
                 // Move
@@ -1728,20 +1716,19 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 
                 // Now, how has each component changed because of this change?
                 // For the component representing node b in direction j
-                for(b = 0; b < 4; ++b) {
-
+                for(int b = 0; b < 4; ++b) {
                     // Get global index for node b
-                    // global_b = elem[elem_index].n[b]->index;
-                    global_b_lin = map[elem[elem_index].n[b]->index];
+                    // int global_b = elem[elem_index].n[b]->index;
+                    int global_b_lin = map[elem[elem_index].n[b]->index];
 
-                    for(j = 0; j < 3; ++j) {
-                        val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
+                    for(int j = 0; j < 3; ++j) {
+                        scalar val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
 
                         // Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,y0,z0,x1,y1,z1..[0]n,yn,zn
                         //row = num_linear_nodes * i + global_a;
                         //column = num_linear_nodes * j + global_b;
-                        row = 3 * global_a_lin + i;
-                        column = 3 * global_b_lin + j;
+                        int row = 3 * global_a_lin + i;
+                        int column = 3 * global_b_lin + j;
                         components.push_back(Eigen::Triplet<scalar>(row, column, val));
                     }
                 }
@@ -1755,17 +1742,12 @@ int Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 }
 
 int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
-
-    int i, j, a, b, global_a, global_b, row, column;
-    int elem_index, num_linear_nodes;
-    scalar val;
-    matrix3 J;
     vector<Eigen::Triplet<scalar> > components;
 
     // Firstly, get a mapping from all node indices to just linear node indices
     vector<int> map(node.size());
     int offset = 0;
-    for(size_t i = 0; i < node.size(); ++i) {
+    for(int i = 0; i < node.size(); ++i) {
         if(node[i].am_I_linear()) {
             map[i] = i - offset;
         } else {
@@ -1774,12 +1756,13 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
         }
     }
 
-    num_linear_nodes = get_num_linear_nodes();
+    //int num_linear_nodes = get_num_linear_nodes();
 
     // For each element
-    for(elem_index = 0; elem_index < num_elements; ++elem_index) {
+    for(int elem_index = 0; elem_index < elem.size(); ++elem_index) {
 
         // Calculate a local viscosity matrix
+        matrix3 J;
         elem[elem_index].calculate_jacobian(J);
         elem[elem_index].calc_shape_function_derivatives_and_volume(J);
         elem[elem_index].create_viscosity_matrix();
@@ -1787,20 +1770,19 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
         // Add each component of the local matrix to the global matrix
 
         //For each node
-        for(a = 0; a < 4; ++a) {
-            global_a = map[elem[elem_index].n[a]->index];
-
-            for(b = 0; b < 4; ++b) {
-                global_b = map[elem[elem_index].n[b]->index];
+        for(int a = 0; a < 4; ++a) {
+            int global_a = map[elem[elem_index].n[a]->index];
+            for(int b = 0; b < 4; ++b) {
+                int global_b = map[elem[elem_index].n[b]->index];
 
                 // And each direction
-                for(i = 0; i < 3; ++i) {
-                    for(j = 0; j < 3; ++j) {
-                        val = elem[elem_index].viscosity_matrix[4 * i + a][4 * j + b];
+                for(int i = 0; i < 3; ++i) {
+                    for(int j = 0; j < 3; ++j) {
+                        scalar val = elem[elem_index].viscosity_matrix[4 * i + a][4 * j + b];
                         //row = num_linear_nodes * i + global_a;
                         //column = num_linear_nodes * j + global_b;
-                        row = 3 * global_a + i;
-                        column = 3 * global_b + j;
+                        int row = 3 * global_a + i;
+                        int column = 3 * global_b + j;
                         components.push_back(Eigen::Triplet<scalar>(row, column, val));
                     }
                 }
@@ -1810,15 +1792,15 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 
     // For each node, add stokes if necessary
     if(params->calc_stokes == 1) {
-        for(global_a = 0; global_a < node.size(); ++global_a) {
+        for(int global_a = 0; global_a < node.size(); ++global_a) {
             if(map[global_a] == -1) {
                 continue;
             } else {
-                for(i = 0; i < 3; ++i) {
-                    val = node[map[global_a]].stokes_drag;
+                for(int i = 0; i < 3; ++i) {
+                    scalar val = node[map[global_a]].stokes_drag;
                     //row = 4 * i + map[global_a];
-                    row = 3 * map[global_a] + i;
-                    column = row;
+                    int row = 3 * map[global_a] + i;
+                    int column = row;
                     components.push_back(Eigen::Triplet<scalar>(row, column, val));
                 }
             }
@@ -1828,7 +1810,7 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
     // Now build the matrix and get the symmetric part (just in case)
     K->setFromTriplets(components.begin(), components.end());
     components.clear();
-    for(j = 0; j < K->outerSize(); ++j) {
+    for(int j = 0; j < K->outerSize(); ++j) {
         for(Eigen::SparseMatrix<scalar>::InnerIterator it(*K,j); it; ++it) {
             components.push_back(Eigen::Triplet<scalar>(it.row(), it.col(), 0.5 * it.value()));
             components.push_back(Eigen::Triplet<scalar>(it.col(), it.row(), 0.5 * it.value()));
@@ -1839,10 +1821,6 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
 }
 
 int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
-
-    int i, j, a, b, global_a, global_b, row, column;
-    int elem_index, num_linear_nodes;
-    scalar val;
     //MassMatrixQuadratic M_el;
     MassMatrixLinear M_el;
     vector<Eigen::Triplet<scalar> > components;
@@ -1851,7 +1829,7 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 
     vector<int> map(node.size());
     int offset = 0;
-    for(size_t i = 0; i < node.size(); ++i) {
+    for(int i = 0; i < node.size(); ++i) {
 
         if(node[i].am_I_linear()) {
             //if(true) {
@@ -1862,11 +1840,11 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
         }
     }
 
-    num_linear_nodes = get_num_linear_nodes();
+    // num_linear_nodes = get_num_linear_nodes();
 
     // For each element
     scalar sum = 0.0, sum2 = 0.0;
-    for(elem_index = 0; elem_index < num_elements; ++elem_index) {
+    for(int elem_index = 0; elem_index < elem.size(); ++elem_index) {
 
         // Build mass matrix
         elem[elem_index].construct_element_mass_matrix(&M_el);
@@ -1874,22 +1852,21 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
         // Add each component of the local matrix to the global matrix
 
         // For each node
-        for(a = 0; a < 4; ++a) {
-            global_a = map[elem[elem_index].n[a]->index];
+        for(int a = 0; a < 4; ++a) {
+            int global_a = map[elem[elem_index].n[a]->index];
 
-            for(b = 0; b < 4; ++b) {
-                global_b = map[elem[elem_index].n[b]->index];
+            for(int b = 0; b < 4; ++b) {
+                int global_b = map[elem[elem_index].n[b]->index];
 
                 // From another function that get's actual memory location. Dereference for value
                 // Val same for each direction
-                val = M_el.get_M_alpha_value(a, b);
+                scalar val = M_el.get_M_alpha_value(a, b);
                 //sum2 += val;
                 //cout << a << " " << b << " " << val * mesoDimensions::mass << endl;
                 // And each direction
-                for(i = 0; i < 3; ++i) {
-
-                    row = 3 * global_a + i;
-                    column = 3 * global_b + i;
+                for(int i = 0; i < 3; ++i) {
+                    int row = 3 * global_a + i;
+                    int column = 3 * global_b + i;
                     components.push_back(Eigen::Triplet<scalar>(row, column, val));
                 }
             }
@@ -1899,7 +1876,7 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
     // Now build the matrix and get the symmetric part (just in case)
     M->setFromTriplets(components.begin(), components.end());
     components.clear();
-    for(j = 0; j < M->outerSize(); ++j) {
+    for(int j = 0; j < M->outerSize(); ++j) {
         for(Eigen::SparseMatrix<scalar>::InnerIterator it(*M,j); it; ++it) {
             components.push_back(Eigen::Triplet<scalar>(it.row(), it.col(), 0.5 * it.value()));
             components.push_back(Eigen::Triplet<scalar>(it.col(), it.row(), 0.5 * it.value()));
@@ -1909,7 +1886,6 @@ int Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
     //cout << "Blob mass matrix sums: " << mesoDimensions::mass * sum2 << " " << mesoDimensions::mass * sum << endl;
     M->setFromTriplets(components.begin(), components.end());
     return FFEA_OK;
-
 }
 
 int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
@@ -2054,7 +2030,6 @@ int Blob::solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT) {
 
 
 int Blob::apply_ctforces() {
-
     // CTF 1 - Add the linear constant forces, stored in ctf_force.
     // If there are no forces, num_l_ctf will be zero.
     for (int i=0; i<num_l_ctf; i++) {
@@ -2126,7 +2101,7 @@ int Blob::apply_ctforces() {
 /*
  */
 void Blob::zero_force() {
-    for (int i = 0; i < num_elements; i++) {
+    for (int i = 0; i < elem.size(); i++) {
         elem[i].zero_force();
     }
     for (int i = 0; i < num_surface_faces; i++) {
@@ -2178,7 +2153,7 @@ void Blob::build_poisson_matrices() {
          */
 
         /* Calculate the K_alpha matrices for each element (the diffusion matrix * epsilon * volume) */
-        for (int n = 0; n < num_elements; n++) {
+        for (int n = 0; n < elem.size(); n++) {
             elem[n].calculate_K_alpha();
             //			elem[n].add_K_alpha(K, num_nodes);
         }
@@ -2274,7 +2249,7 @@ int Blob::get_num_nodes() {
 }
 
 int Blob::get_num_elements() {
-    return num_elements;
+    return static_cast<int>(elem.size());
 }
 
 int Blob::get_motion_state() {
@@ -2290,15 +2265,12 @@ scalar Blob::get_RandU01() {
 }
 
 int Blob::get_num_linear_nodes() {
-
-    int n, i;
     set<int> node_indices;
-    for(n = 0; n < num_elements; ++n) {
-        for(i = 0; i < 4; ++i) {
+    for(int n = 0; n < elem.size(); ++n) {
+        for(int i = 0; i < 4; ++i) {
             node_indices.insert(elem[n].n[i]->index);
         }
     }
-
     return node_indices.size();
 }
 
@@ -2445,8 +2417,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
 /*
  */
 int Blob::load_topology(const char *topology_filename) {
-    FILE *in = nullptr;
-    int i, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10;
+    FILE *in;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -2467,6 +2438,7 @@ int Blob::load_topology(const char *topology_filename) {
     }
 
     // read in the total number of elements in the file
+    int num_elements;
     if (fscanf(in, "num_elements %d\n", &num_elements) != 1) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading number of elements\n")
@@ -2488,8 +2460,9 @@ int Blob::load_topology(const char *topology_filename) {
     printf("\t\t\tNumber of interior elements = %d\n", num_interior_elements);
 
     // Allocate the memory for all these elements
-    elem = new(std::nothrow) tetra_element_linear[num_elements];
-    if (!elem) {
+    try {
+        elem = std::vector<tetra_element_linear>(num_elements);
+    } catch (std::bad_alloc &) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for element array.\n")
     }
@@ -2505,7 +2478,8 @@ int Blob::load_topology(const char *topology_filename) {
     }
 
     // Read in all the elements from file
-    for (i = 0; i < num_elements; i++) {
+    int i = 0;
+    for (; i < num_elements; i++) {
         if (i == num_surface_elements) {
             // Check for "interior elements:" line
             if (!fgets(line, max_line_size, in)) {
@@ -2518,6 +2492,7 @@ int Blob::load_topology(const char *topology_filename) {
             }
         }
 
+        int n1, n2, n3, n4, n5, n6, n7, n8, n9, n10;
         if (fscanf(in, "%d %d %d %d %d %d %d %d %d %d\n", &n1, &n2, &n3, &n4, &n5, &n6, &n7, &n8, &n9, &n10) != 10) {
             fclose(in);
             FFEA_ERROR_MESSG("Error reading from elements file at element %d\n", i)
@@ -2626,7 +2601,7 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
                     n3 < 0 || n3 >= node.size()) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds node index\n", i);
-            } else if (element < 0 || element >= num_elements) {
+            } else if (element < 0 || element >= elem.size()) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error: Surface face %d references an out of bounds element index\n", i);
             }
@@ -2777,15 +2752,15 @@ int Blob::load_material_params(const char *material_params_filename) {
     printf("\t\t\tNumber of elements in material params file = %d\n", num_material_elements);
 
     // Check that we have same number of elements in material params file as in topology file
-    if (num_material_elements != num_elements) {
+    if (num_material_elements != elem.size()) {
         fclose(in);
-        FFEA_ERROR_MESSG("Number of elements in material params file (%d) does not match number of elements in topology file (%d)\n", num_material_elements, num_elements)
+        FFEA_ERROR_MESSG("Number of elements in material params file (%d) does not match number of elements in topology file (%zu)\n", num_material_elements, elem.size())
     }
 
     // Set the material parameters for each element in the Blob
     scalar density = 0.0, shear_visc = 0.0, bulk_visc = 0.0, shear_mod = 0.0, bulk_mod = 0.0, dielectric = 0.0;
     int i;
-    for (i = 0; i < num_elements; i++) {
+    for (i = 0; i < elem.size(); i++) {
         if (fscanf(in, "%le %le %le %le %le %le\n", &density, &shear_visc, &bulk_visc, &shear_mod, &bulk_mod, &dielectric) != 6) {
             fclose(in);
             FFEA_ERROR_MESSG("Error reading from material params file at element %d. There should be 6 space separated real values (density, shear_visc, bulk_visc, shear_mod, bulk_mod, dielectric).\n", i);
@@ -3700,7 +3675,7 @@ void Blob::calc_rest_state_info() {
     int min_vol_elem = 0;
     mass = 0;
     scalar total_vol = 0;
-    for (int i = 0; i < num_elements; i++) {
+    for (int i = 0; i < elem.size(); i++) {
         // Get jacobian matrix for this element
         elem[i].calculate_jacobian(J);
 
@@ -3745,7 +3720,7 @@ void Blob::calc_rest_state_info() {
     }
 
     // Calc the total mass of this Blob
-    for (int i = 0; i < num_elements; i++) {
+    for (int i = 0; i < elem.size(); i++) {
         mass += elem[i].mass;
     }
     printf("\t\tTotal mass of blob = %e\n", mass*mesoDimensions::mass);
@@ -3904,7 +3879,7 @@ int Blob::calculate_node_element_connectivity() {
         node_i.num_element_contributors = 0;
 
     // count how many times each node is referenced in the list of elements
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < elem.size(); ++i)
         for (int j = 0; j < NUM_NODES_QUADRATIC_TET; ++j)
             node[elem[i].n[j]->index].num_element_contributors++;
 
@@ -3922,7 +3897,7 @@ int Blob::calculate_node_element_connectivity() {
     // go back through the elements array and fill the contributions arrays with pointers to the
     // appropriate force contributions in the elements
     int node_index;
-    for (int i = 0; i < num_elements; i++)
+    for (int i = 0; i < elem.size(); i++)
         for (int j = 0; j < NUM_NODES_QUADRATIC_TET; j++) {
             node_index = elem[i].n[j]->index;
             node[node_index].force_contributions[node_counter[node_index]] = &elem[i].node_force[j];
@@ -4010,12 +3985,12 @@ int Blob::build_mass_matrix() {
     SparsityPattern sparsity_pattern_mass_matrix;
     sparsity_pattern_mass_matrix.init(node.size());
 
-    MassMatrixQuadratic *M_alpha = new(std::nothrow) MassMatrixQuadratic[num_elements];
+    MassMatrixQuadratic *M_alpha = new(std::nothrow) MassMatrixQuadratic[elem.size()];
     if (!M_alpha) FFEA_ERROR_MESSG("Failed to allocate memory for the mass matrix\n");
 
     scalar *mem_loc;
     int ni_index, nj_index;
-    for (int el = 0; el < num_elements; el++) {
+    for (int el = 0; el < elem.size(); el++) {
 
         elem[el].construct_element_mass_matrix(&M_alpha[el]);
 

@@ -60,7 +60,7 @@ NoMassCGSolver::~NoMassCGSolver() {
 }
 
 /* */
-int NoMassCGSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
 
     this->num_rows = 3 * node.size();
     this->num_nodes = node.size();
@@ -72,7 +72,6 @@ int NoMassCGSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_e
     sparsity_pattern_viscosity_matrix.init(num_rows);
 
     scalar *mem_loc;
-    int n, ni, nj, ni_index, nj_index, ni_row, nj_row;
     matrix3 J;
 
     // Create a temporary lookup for checking if a node is 'pinned' or not.
@@ -87,38 +86,38 @@ int NoMassCGSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_e
         is_pinned[*it] = 1;
     }
 
-    for (n = 0; n < num_elements; n++) {
+    for (int n = 0; n < elem.size(); n++) {
         elem[n].calculate_jacobian(J);
         elem[n].calc_shape_function_derivatives_and_volume(J);
         elem[n].create_viscosity_matrix();
-        for (ni = 0; ni < 10; ++ni) {
-            for (nj = 0; nj < 10; ++nj) {
-                ni_index = elem[n].n[ni]->index;
-                nj_index = elem[n].n[nj]->index;
-		ni_row = ni_index * 3;
-		nj_row = nj_index * 3;
+        for (int ni = 0; ni < 10; ++ni) {
+            for (int nj = 0; nj < 10; ++nj) {
+                int ni_index = elem[n].n[ni]->index;
+                int nj_index = elem[n].n[nj]->index;
+                int ni_row = ni_index * 3;
+                int nj_row = nj_index * 3;
                 for (int i = 0; i < 3; ++i) {
                     for (int j = 0; j < 3; ++j) {
-			if(is_pinned[ni_index] == 0 && is_pinned[nj_index] == 0) {
-		            if (ni < 4 && nj < 4) {
-		                mem_loc = &elem[n].viscosity_matrix[ni + 4 * i][nj + 4 * j];
-		                sparsity_pattern_viscosity_matrix.register_contribution(ni_row + i, nj_row + j, mem_loc);
-		            } else {
-		                if (ni == nj && i == j) {
-		                    if (sparsity_pattern_viscosity_matrix.check_for_contribution(ni_row + i, nj_row + j) == false) {
-		                        mem_loc = &one;
+			            if(is_pinned[ni_index] == 0 && is_pinned[nj_index] == 0) {
+		                    if (ni < 4 && nj < 4) {
+		                        mem_loc = &elem[n].viscosity_matrix[ni + 4 * i][nj + 4 * j];
 		                        sparsity_pattern_viscosity_matrix.register_contribution(ni_row + i, nj_row + j, mem_loc);
+		                    } else {
+		                        if (ni == nj && i == j) {
+		                            if (sparsity_pattern_viscosity_matrix.check_for_contribution(ni_row + i, nj_row + j) == false) {
+		                                mem_loc = &one;
+		                                sparsity_pattern_viscosity_matrix.register_contribution(ni_row + i, nj_row + j, mem_loc);
+		                            }
+		                        }
 		                    }
-		                }
-		            }
-			} else {
-			    if (ni == nj && i == j) {
-		                if (sparsity_pattern_viscosity_matrix.check_for_contribution(ni_row + i, nj_row + j) == false) {
-		                    mem_loc = &one;
-		                    sparsity_pattern_viscosity_matrix.register_contribution(ni_row + i, nj_row + j, mem_loc);
-		                }
-		            }
-			}
+			            } else {
+			                if (ni == nj && i == j) {
+		                        if (sparsity_pattern_viscosity_matrix.check_for_contribution(ni_row + i, nj_row + j) == false) {
+		                            mem_loc = &one;
+		                            sparsity_pattern_viscosity_matrix.register_contribution(ni_row + i, nj_row + j, mem_loc);
+		                        }
+		                    }
+			            }
                     }
                 }
             }
@@ -126,9 +125,9 @@ int NoMassCGSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_e
     }
 
     if (params->calc_stokes == 1) {
-        for (ni = 0; ni < num_nodes; ++ni) {
+        for (int ni = 0; ni < num_nodes; ++ni) {
 	    if(is_pinned[ni] == 0) {
-                for (nj = 0; nj < 3; ++nj) {
+                for (int nj = 0; nj < 3; ++nj) {
                     sparsity_pattern_viscosity_matrix.register_contribution(3 * ni + nj, 3 * ni + nj, &node[ni].stokes_drag);
                 }
 	    }

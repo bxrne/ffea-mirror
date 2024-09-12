@@ -59,8 +59,8 @@ ConjugateGradientSolver::~ConjugateGradientSolver() {
     i_max = 0;
 }
 
-int ConjugateGradientSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
-    int n, ni, nj;
+int ConjugateGradientSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+    int ni, nj;
 
     // Store the number of rows, error threshold (stopping criterion for solver) and max
     // number of iterations, on this Solver (these quantities will be used a lot)
@@ -96,7 +96,7 @@ int ConjugateGradientSolver::init(int num_elements, std::vector<mesh_node> &node
     // build the matrix
     scalar sum1 = 0.0, sum2 = 0.0;
     printf("\t\tBuilding the mass matrix...\n");
-    for (n = 0; n < num_elements; n++) {
+    for (int n = 0; n < elem.size(); n++) {
         // add mass matrix for this element
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
@@ -128,8 +128,8 @@ int ConjugateGradientSolver::init(int num_elements, std::vector<mesh_node> &node
     }
     printf("\t\t...done\n");
 
-    for (n = 0; n < num_elements; n++) {
-	sum2 += elem[n].vol_0 * elem[n].rho;
+    for (int n = 0; n < elem.size(); n++) {
+	    sum2 += elem[n].vol_0 * elem[n].rho;
     }
     // Allocate memory for and initialise 'key' array
     key = new(std::nothrow) int[num_rows + 1];

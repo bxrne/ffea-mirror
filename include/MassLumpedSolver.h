@@ -45,7 +45,7 @@ public:
     ~MassLumpedSolver();
 
     /** Builds the diagonal mass matrix and gets reciprocal of each value */
-    int init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list);
+    int init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list);
 
     /** Applies inverse mass matrix (since diagonal: Mx = f => x = f_i/M_i */
     int solve(arr3 *x);

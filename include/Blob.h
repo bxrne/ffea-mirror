@@ -473,9 +473,6 @@ public:
 
 private:
 
-    /** Total number of elements in Blob */
-    int num_elements;
-
     /** Total number of surface elements in Blob */
     int num_surface_elements;
 
@@ -514,7 +511,7 @@ private:
     scalar mass;
 
     /** Total ssint energy between blobs */
-    scalar ssint_bb_energy{};
+    //scalar ssint_bb_energy{};
 
     /** Array of nodes */
     std::vector<mesh_node> node;
@@ -523,7 +520,7 @@ private:
     std::vector<arr3 *> node_position;
 
     /** Array of elements */
-    tetra_element_linear *elem;
+    std::vector<tetra_element_linear> elem;
 
     /** Array of surface faces */
     Face *surface;

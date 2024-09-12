@@ -37,7 +37,7 @@ MassLumpedSolver::~MassLumpedSolver() {
 }
 
 /* */
-int MassLumpedSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+int MassLumpedSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
     int n, i, ni;
 
     // Store the number of rows, error threshold (stopping criterion for solver) and max
@@ -52,7 +52,7 @@ int MassLumpedSolver::init(int num_elements, std::vector<mesh_node> &node, tetra
     for (i = 0; i < num_rows; i++) {
         inv_M[i] = 0;
     }
-    for (n = 0; n < num_elements; n++) {
+    for (n = 0; n < elem.size(); n++) {
         // add mass contribution for this element
         for (i = 0; i < 10; i++) {
             if (i < 4) {

@@ -47,7 +47,7 @@ SparseSubstitutionSolver::~SparseSubstitutionSolver() {
     U = nullptr;
 }
 
-int SparseSubstitutionSolver::init(int num_elements, std::vector<mesh_node> &node, tetra_element_linear *elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+int SparseSubstitutionSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
 
     // Mass matrix will have as many rows as there are nodes in the mesh
     num_rows = node.size();
@@ -80,7 +80,7 @@ int SparseSubstitutionSolver::init(int num_elements, std::vector<mesh_node> &nod
     // build the matrix
     printf("Building the mass matrix...\n");
     int ni, nj;
-    for (int n = 0; n < num_elements; n++) {
+    for (int n = 0; n < elem.size(); n++) {
         // add mass matrix for this element
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
