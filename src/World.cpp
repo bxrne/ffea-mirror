@@ -3548,7 +3548,7 @@ int World::calculate_kinetic_rates()
                 target_type = kinetic_state[i][j].get_target_bsite_type();
 
                 // Scan all sites on this blob
-                for (base_bsindex = 0; base_bsindex < active_blob_array[i]->num_binding_sites; ++base_bsindex)
+                for (base_bsindex = 0; base_bsindex < active_blob_array[i]->getNumBindingSites(); ++base_bsindex)
                 {
                     base_site = active_blob_array[i]->get_binding_site(base_bsindex);
 
@@ -3569,7 +3569,7 @@ int World::calculate_kinetic_rates()
                         }
 
                         // Scan all sites on this blob too
-                        for (target_bsindex = 0; target_bsindex < active_blob_array[other_blob_index]->num_binding_sites; ++target_bsindex)
+                        for (target_bsindex = 0; target_bsindex < active_blob_array[other_blob_index]->getNumBindingSites(); ++target_bsindex)
                         {
 
                             target_site = active_blob_array[other_blob_index]->get_binding_site(target_bsindex);
@@ -3590,7 +3590,7 @@ int World::calculate_kinetic_rates()
 
                                 // And return from this crazy loop
                                 other_blob_index = params.num_blobs;
-                                base_bsindex = active_blob_array[i]->num_binding_sites;
+                                base_bsindex = active_blob_array[i]->getNumBindingSites();
                                 break;
                             }
                         }

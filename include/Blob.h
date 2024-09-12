@@ -416,6 +416,8 @@ public:
     int get_num_beads();
     bool is_using_beads();
 
+    int getNumBindingSites();
+
     scalar get_rmsd();
 
     int get_linear_solver();
@@ -441,10 +443,6 @@ public:
     int blob_index;
     int conformation_index, previous_conformation_index;
     int state_index, previous_state_index;
-
-    /** Binding sites must be known publicly */
-    int num_binding_sites;
-    BindingSite *binding_site;
 
     /*
      *
@@ -647,7 +645,8 @@ private:
      */
     SparseMatrixFixedPattern *M{};
 
-
+    std::vector<BindingSite> binding_site;
+    
     /*
      */
     scalar *toBePrinted_nodes; 

@@ -36,7 +36,6 @@ Blob::Blob() {
     num_r_ctf = 0;
     num_sltotal_ctf = 0;
     num_slsets_ctf = 0;
-    num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
     num_surface_elements = 0;
@@ -58,7 +57,7 @@ Blob::Blob() {
     node_position = {};
     elem = {};
     surface = {};
-    binding_site = nullptr;
+    binding_site = {};
     solver = nullptr;
     linear_solver = 0;
     mass_in_blob = false;
@@ -94,9 +93,8 @@ Blob::~Blob() {
     node_position.clear();
     elem.clear();
     surface.clear();
-
-    delete[] binding_site;
-    binding_site = nullptr;
+    
+    binding_site.clear();
 
     /* Release the force vector */
     force.clear();
@@ -166,7 +164,6 @@ Blob::~Blob() {
     previous_state_index = 0;
     num_surface_elements = 0;
     num_interior_elements = 0;
-    num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
@@ -1519,18 +1516,16 @@ void Blob::calc_all_centroids() {
     }
 }
 
-/*
- *
- */
 int Blob::get_num_faces() {
     return surface.size();
 }
 
-/*
- *
- */
 int Blob::get_num_beads() {
     return num_beads;
+}
+
+int Blob::getNumBindingSites() {
+    return binding_site.size();
 }
 
 bool Blob::is_using_beads() {
@@ -3474,6 +3469,7 @@ int Blob::load_binding_sites() {
     }
 
     // read in the number of binding sites in the file
+    int num_binding_sites;
     fin >> buf_string >> num_binding_sites;
     cout << "\t\t\tNumber of binding sites = " << num_binding_sites << endl;
 
@@ -3486,8 +3482,11 @@ int Blob::load_binding_sites() {
     }
 
     // Create binding sites
-    binding_site = new(std::nothrow) BindingSite[num_binding_sites];
-    if (!binding_site) FFEA_ERROR_MESSG("Failed to allocate array of binding sites\n");
+    try {
+        binding_site = std::vector<BindingSite>(num_binding_sites);
+    } catch (std::bad_alloc&) {
+        FFEA_ERROR_MESSG("Failed to allocate array of binding sites\n");
+    }
 
     // Check for "binding sites:" line
     fin.getline(buf, MAX_BUF_SIZE);
@@ -3537,10 +3536,8 @@ int Blob::load_binding_sites() {
             face_index = atoi(string_vec.at(j + 1).c_str());
             if(face_index >= surface.size()) {
                 FFEA_ERROR_MESSG("Face index %d specifies face outside range of surface faces defined in surface file (%zu)\n", face_index, surface.size())
-                return FFEA_ERROR;
             } else {
                 binding_site[i].add_face(&surface[face_index]);
-
             }
         }
 
@@ -3554,7 +3551,7 @@ int Blob::load_binding_sites() {
 /*
  */
 int Blob::load_pinned_nodes(const char *pin_filename) {
-    FILE *in = nullptr;
+    FILE *in;
     int i, pn_index;
     const int max_line_size = 50;
     char line[max_line_size];
