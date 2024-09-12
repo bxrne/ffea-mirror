@@ -520,7 +520,7 @@ private:
     scalar ssint_bb_energy{};
 
     /** Array of nodes */
-    mesh_node *node;
+    std::vector<mesh_node> node;
 
     /** Array of node positions only */
     arr3 **node_position;

@@ -57,7 +57,7 @@ Blob::Blob() {
     ctf_sl_forces = nullptr;
     mass = 0;
     blob_state = FFEA_BLOB_IS_STATIC;
-    node = nullptr;
+    node = {};
     node_position = nullptr;
     elem = nullptr;
     surface = nullptr;
@@ -94,8 +94,7 @@ Blob::Blob() {
 
 Blob::~Blob() {
     /* Release the node, element and surface arrays */
-    delete[] node;
-    node = nullptr;
+    node.clear();
     delete[] node_position;
     node_position = nullptr;
     delete[] elem;
@@ -406,8 +405,8 @@ int Blob::init(){
 
     // Store stokes drag on nodes, for use in viscosity matrix
     if (params->calc_stokes == 1) {
-        for (int i = 0; i < num_nodes; ++i) {
-            node[i].stokes_drag = 6.0 * ffea_const::pi * params->stokes_visc * node[i].stokes_radius;
+        for (auto &node_i : node) {
+            node_i.stokes_drag = 6.0 * ffea_const::pi * params->stokes_visc * node_i.stokes_radius;
         }
     }
 
@@ -2402,10 +2401,14 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
     printf("\t\t\tNumber of interior nodes = %d\n", num_interior_nodes);
 
     // Allocate the memory for all these nodes
-    node = new(std::nothrow) mesh_node[num_nodes];
+    try {
+        node = std::vector<mesh_node>(num_nodes);        
+    } catch (std::bad_alloc&) {
+        fclose(in);
+        FFEA_ERROR_MESSG("Unable to allocate memory for nodes array.\n")
+    }
     node_position = new(std::nothrow) arr3*[num_nodes];
-
-    if (!node || !node_position) {
+    if (!node_position) {
         fclose(in);
         FFEA_ERROR_MESSG("Unable to allocate memory for nodes array.\n")
     }
