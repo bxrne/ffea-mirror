@@ -523,7 +523,7 @@ private:
     std::vector<Face> surface;
 
     /** List of fixed ('pinned') nodes */
-    int *pinned_nodes_list;
+    std::vector<int> pinned_nodes_list;
 
     /** Additional pinned node list for binding processes */
     set<int> bsite_pinned_nodes_list;

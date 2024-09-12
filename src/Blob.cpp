@@ -74,8 +74,8 @@ Blob::Blob() {
     nodal_q = nullptr;
     poisson_rhs = nullptr;
     num_pinned_nodes = 0;
-    pinned_nodes_list = nullptr;
-    bsite_pinned_nodes_list.clear();
+    pinned_nodes_list = {};
+    bsite_pinned_nodes_list = {};
 
     num_contributing_faces = nullptr;
 
@@ -125,8 +125,7 @@ Blob::~Blob() {
     nodal_q = nullptr;
     delete[] poisson_rhs;
     poisson_rhs = nullptr;
-    delete[] pinned_nodes_list;
-    pinned_nodes_list = nullptr;
+    pinned_nodes_list.clear();
 
     /* delete precomp stuff */
     if (num_beads > 0) {
@@ -318,7 +317,7 @@ int Blob::init(){
         }
     } else {
         num_pinned_nodes = 0;
-        pinned_nodes_list = nullptr;
+        pinned_nodes_list.clear();
     }
 
     // Linearise all the elements
@@ -366,7 +365,7 @@ int Blob::init(){
 
         // Initialise the Solver (whatever it may be)
         printf("\t\tBuilding solver:\n");
-        if (solver->init(node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
+        if (solver->init(node, elem, params, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error initialising solver.\n")
         }
     }
@@ -756,7 +755,7 @@ int Blob::reset_solver() {
 
     // Delete and rebuild (to make sure everything is overwritten)
 
-    if (solver->init(node, elem, params, num_pinned_nodes, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
+    if (solver->init(node, elem, params, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error reinitialising solver.\n")
     } else {
         return FFEA_OK;
@@ -3261,7 +3260,6 @@ int Blob::load_ctforces(string ctforces_fname) {
     if (now_reading >= ctforces_lines.size()) { // Out of bounds!
         if (n_cts_lforces > 0) { // And we should be in!!!
             FFEA_ERROR_MESSG("Wrong number of lines in ctforces. ABORTING");
-            return FFEA_ERROR;
         } else return FFEA_OK; // Oh, the work was over.
     }
     // check that we have a line saying "linear surface forces:"
@@ -3269,7 +3267,6 @@ int Blob::load_ctforces(string ctforces_fname) {
         // if not, and needed: ABORT.
         if (n_cts_lforces > 0) {
             FFEA_ERROR_MESSG("Wrong header; it should announce the start of the linear surface ctforces, but instead read: %s\n", ctforces_lines[now_reading].c_str());
-            return FFEA_ERROR;
         }
     } else {
         now_reading += 1;
@@ -3284,7 +3281,6 @@ int Blob::load_ctforces(string ctforces_fname) {
         // at least check the minimum length of the line:
         if (line_split.size() < 7) {
             FFEA_ERROR_MESSG("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
-            return FFEA_ERROR;
         }
         int b_i = boost::lexical_cast<int>(line_split[4]); // read the blob index
         if (b_i != blob_index) continue;
@@ -3375,21 +3371,17 @@ int Blob::forget_beads() {
 
 
 void Blob::print_node_positions() {
-
     for (const auto &node_i : node) {
         cout << "---n: " << node_i.pos[0] << " " << node_i.pos[1] << "  " << node_i.pos[2] << endl;
     }
-
 }
 
 void Blob::print_bead_positions() {
-
     for (int i=0; i<num_beads; i++) {
         cout << "---b: " << bead_position[3*i] << " "
              << bead_position[3*i+1] << " "
              << bead_position[3*i+2] << endl;
     }
-
 }
 
 /*
@@ -3483,7 +3475,6 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
 /*
  */
 int Blob::load_binding_sites() {
-
     int num_binding_site_types = binding_matrix->get_num_interaction_types();
 
     // Return successful as params.calc_kinetics == 0 or no sites are required
@@ -3536,7 +3527,7 @@ int Blob::load_binding_sites() {
     }
 
     // Get all binding sites
-    unsigned int num_faces = 0;
+    unsigned int num_faces;
     int bind_type = -1, face_index;
     for(int i = 0; i < num_binding_sites; ++i) {
 
@@ -3619,8 +3610,11 @@ int Blob::load_pinned_nodes(const char *pin_filename) {
     printf("\t\t\tNumber of pinned nodes = %d\n", num_pinned_nodes);
 
     // Allocate the memory for the list of pinned node indices
-    pinned_nodes_list = new int[num_pinned_nodes];
-    if (pinned_nodes_list == nullptr) FFEA_ERROR_MESSG("Failed to allocate pinned_nodes_list\n");
+    try {
+        pinned_nodes_list.resize(num_pinned_nodes);
+    } catch (std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate pinned_nodes_list\n");
+    }
 
     // Check for "pinned nodes:" line
     if (!fgets(line, max_line_size, in)) {
@@ -3870,7 +3864,6 @@ void Blob::euler_integrate() {
  *
  */
 int Blob::calculate_node_element_connectivity() {
-
     // initialise num_element_contributors to zero
     for(auto &node_i : node)
         node_i.num_element_contributors = 0;
@@ -3905,7 +3898,6 @@ int Blob::calculate_node_element_connectivity() {
 }
 
 void Blob::pin_binding_site(set<int> node_indices) {
-
     set<int>::iterator it;
     for(it = node_indices.begin(); it != node_indices.end(); ++it) {
         bsite_pinned_nodes_list.insert(*it);
@@ -3913,7 +3905,6 @@ void Blob::pin_binding_site(set<int> node_indices) {
 }
 
 void Blob::unpin_binding_site(set<int> node_indices) {
-
     set<int>::iterator it, it2;
     for(it = node_indices.begin(); it != node_indices.end(); ++it) {
         bsite_pinned_nodes_list.erase(*it);
@@ -3921,58 +3912,47 @@ void Blob::unpin_binding_site(set<int> node_indices) {
 }
 
 int Blob::create_pinned_nodes(set<int> list) {
-
-    int i;
-    set<int>::iterator it;
-    delete[] pinned_nodes_list;
-
-    pinned_nodes_list = new(std::nothrow) int[list.size()];
-    if (!pinned_nodes_list) FFEA_ERROR_MESSG("Could not allocate memory for pinned_nodes_list\n");
-    i = 0;
-    for(it = list.begin(); it != list.end(); ++it) {
+    try {
+        pinned_nodes_list.resize(list.size());
+    } catch(std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Could not allocate memory for pinned_nodes_list\n");
+    }
+    int i = 0;
+    for(auto it = list.begin(); it != list.end(); ++it) {
         pinned_nodes_list[i++] = *it;
     }
-
     return FFEA_OK;
 }
 
 int Blob::get_state_index() {
-
     return state_index;
 }
 
 void Blob::set_state_index(int index) {
-
     this->state_index = index;
 }
 
 int Blob::get_previous_state_index() {
-
     return previous_state_index;
 }
 
 void Blob::set_previous_state_index(int index) {
-
     this->previous_state_index = index;
 }
 
 int Blob::get_conformation_index() {
-
     return conformation_index;
 }
 
 int Blob::get_previous_conformation_index() {
-
     return previous_conformation_index;
 }
 
 void Blob::set_previous_conformation_index(int index) {
-
     this->previous_conformation_index = index;
 }
 
 BindingSite* Blob::get_binding_site(int index) {
-
     return &binding_site[index];
 }
 
@@ -4034,4 +4014,3 @@ bool Blob::there_is_ssint() {
 bool Blob::there_are_beads() {
     return beads_on_blob;
 }
-

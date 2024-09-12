@@ -60,7 +60,7 @@ NoMassCGSolver::~NoMassCGSolver() {
 }
 
 /* */
-int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
+int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list) {
 
     this->num_rows = 3 * node.size();
     this->num_nodes = node.size();
@@ -79,7 +79,7 @@ int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element
     // be placed (no off diagonal), effectively taking this node out of the equation
     // and therefore meaning the force on it should always be zero.
     vector<int> is_pinned(node.size(), 0);
-    for (int i = 0; i < num_pinned_nodes; i++) {
+    for (int i = 0; i < pinned_nodes_list.size(); ++i) {
         is_pinned[pinned_nodes_list[i]] = 1;
     }
     for(set<int>::iterator it = bsite_pinned_node_list.begin(); it != bsite_pinned_node_list.end(); ++it) {

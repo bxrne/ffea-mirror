@@ -37,9 +37,7 @@ MassLumpedSolver::~MassLumpedSolver() {
 }
 
 /* */
-int MassLumpedSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, int num_pinned_nodes, int *pinned_nodes_list, set<int> bsite_pinned_node_list) {
-    int n, i, ni;
-
+int MassLumpedSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list) {
     // Store the number of rows, error threshold (stopping criterion for solver) and max
     // number of iterations, on this Solver (these quantities will be used a lot)
     this->num_rows = node.size();
@@ -49,29 +47,29 @@ int MassLumpedSolver::init(std::vector<mesh_node> &node, std::vector<tetra_eleme
         FFEA_ERROR_MESSG("could not allocate inv_M\n");
     }
 
-    for (i = 0; i < num_rows; i++) {
+    for (int i = 0; i < num_rows; i++) {
         inv_M[i] = 0;
     }
-    for (n = 0; n < elem.size(); n++) {
+    for (int n = 0; n < elem.size(); n++) {
         // add mass contribution for this element
-        for (i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             if (i < 4) {
-                ni = elem[n].n[i]->index;
+                int ni = elem[n].n[i]->index;
                 inv_M[ni] += .25 * elem[n].rho * elem[n].vol_0;
             } else {
-                ni = elem[n].n[i]->index;
+                int ni = elem[n].n[i]->index;
                 inv_M[ni] = 1;
             }
         }
     }
 
     // set elements corresponding to unmovable 'pinned' nodes to 1
-    for (i = 0; i < num_pinned_nodes; i++) {
+    for (int i = 0; i < pinned_nodes_list.size(); ++i) {
         inv_M[pinned_nodes_list[i]] = 1.0;
     }
 
     // inverse
-    for (i = 0; i < num_rows; i++) {
+    for (int i = 0; i < num_rows; i++) {
         inv_M[i] = 1.0 / inv_M[i];
     }
 
