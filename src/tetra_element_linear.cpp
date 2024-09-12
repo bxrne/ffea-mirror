@@ -414,8 +414,8 @@ void tetra_element_linear::add_bulk_elastic_stress(matrix3 stress) {
  * to the given 12-vector du.
  *
  */
-void tetra_element_linear::add_fluctuating_stress(SimulationParams *params, RngStream rng[], matrix3 stress, int thread_id) {
-    scalar c = sqrt((24 * params->kT) / (vol * params->dt));
+void tetra_element_linear::add_fluctuating_stress(const SimulationParams &params, RngStream rng[], matrix3 stress, int thread_id) {
+    scalar c = sqrt((24 * params.kT) / (vol * params.dt));
 
     // Bulk fluctuation term
     scalar bf = sqrt(B) * RAND(-.5, .5);

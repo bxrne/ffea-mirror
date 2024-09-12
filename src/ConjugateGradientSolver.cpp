@@ -59,14 +59,14 @@ ConjugateGradientSolver::~ConjugateGradientSolver() {
     i_max = 0;
 }
 
-int ConjugateGradientSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list) {
+int ConjugateGradientSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, const SimulationParams &params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list) {
     int ni, nj;
 
     // Store the number of rows, error threshold (stopping criterion for solver) and max
     // number of iterations, on this Solver (these quantities will be used a lot)
     this->num_rows = node.size();
-    this->epsilon2 = params->epsilon2;
-    this->i_max = params->max_iterations_cg;
+    this->epsilon2 = params.epsilon2;
+    this->i_max = params.max_iterations_cg;
 
     printf("\t\tAttempting to allocate %d scalars for mass_LU...\n", num_rows * num_rows);
     scalar *mass_LU = new(std::nothrow) scalar[num_rows * num_rows];

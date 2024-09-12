@@ -3098,7 +3098,7 @@ int World::read_and_build_system(vector<string> script_vector)
             if (blob_array[i][j].config(i, j, nodes[j], topology[j], surface[j],
                                         material[j], stokes[j], ssint[j], pin[j], binding[j],
                                         beads[j], scale, calc_compress, compress, solver,
-                                        motion_state[j], &params, &pc_params, &ssint_matrix,
+                                        motion_state[j], params, pc_params, &ssint_matrix,
                                         &binding_matrix, rng) == FFEA_ERROR)
             {
                 FFEA_ERROR_MESSG("\tError when trying to pre-initialise Blob %d, conformation %d.\n", i, j);

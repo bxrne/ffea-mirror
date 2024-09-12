@@ -118,8 +118,8 @@ public:
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string ssint_filename, string pin_filename, 
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
-             PreComp_params *pc_params, SSINT_matrix *ssint_matrix,
+             scalar compress, int linear_solver, int blob_state, const SimulationParams &params,
+             const PreComp_params &pc_params, SSINT_matrix *ssint_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]);
     int init();
 
@@ -577,9 +577,9 @@ private:
     /** Compression stuff: */
     scalar calc_compress{}, compress{}; 
 
-    /** A pointer to a class containing simulation parameters, such as the time step, dt */
-    SimulationParams *params{};
-    PreComp_params *pc_params{};
+    /** Class containing simulation parameters, such as the time step, dt */
+    SimulationParams params;
+    PreComp_params pc_params;
 
     /** A pointer to the same binding matrix configured in World */ 
     BindingSite_matrix *binding_matrix{};
@@ -667,13 +667,13 @@ private:
     /**
      * Opens and reads the given 'ffea surface file', extracting all the faces for this Blob.
      */
-    int load_surface(const char *surface_filename, SimulationParams* params);
+    int load_surface(const char *surface_filename);
 
 
     /**
      * Opens and reads the given 'ffea surface file', extracting all the faces for this Blob, ignoring topology.
      */
-    int load_surface_no_topology(const char *surface_filename, SimulationParams *params);
+    int load_surface_no_topology(const char *surface_filename);
 
     /**
      * Opens and reads the given 'ffea material params file', extracting the material parameters for each element.
@@ -694,7 +694,7 @@ private:
     /**
      * Opens and reads the given 'ffea beads file', extracting all the beads types and positions and for this Blob.
      */
-    int load_beads(const char *beads_filename, PreComp_params *pc_params, scalar scale);
+    int load_beads(const char *beads_filename, scalar scale);
 
 
     /**

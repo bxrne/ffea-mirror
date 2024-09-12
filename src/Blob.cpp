@@ -202,8 +202,8 @@ int Blob::config(const int blob_index, const int conformation_index, string node
              string topology_filename, string surface_filename, string material_params_filename,
              string stokes_filename, string ssint_filename, string pin_filename,
              string binding_filename, string beads_filename, scalar scale, scalar calc_compress,
-             scalar compress, int linear_solver, int blob_state, SimulationParams *params,
-             PreComp_params *pc_params, SSINT_matrix *ssint_matrix,
+             scalar compress, int linear_solver, int blob_state, const SimulationParams &params,
+             const PreComp_params &pc_params, SSINT_matrix *ssint_matrix,
              BindingSite_matrix *binding_matrix, RngStream rng[]){
 
     // Which blob and conformation am i?
@@ -237,9 +237,8 @@ int Blob::config(const int blob_index, const int conformation_index, string node
     // lennard-jones interaction matrix:
     this->ssint_matrix = ssint_matrix;
 
-    // Store the pointer to the simulation parameters class
+    // Store the simulation parameters
     this->params = params;
-    this->pc_params = pc_params;
 
     // Store the pointer to the random number generator array
     this->rng = rng;
@@ -265,11 +264,11 @@ int Blob::init(){
         if (load_topology(s_topology_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob topology.\n");
         }
-        if (load_surface(s_surface_filename.c_str(), params) == FFEA_ERROR) {
+        if (load_surface(s_surface_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob surface.\n");
         }
     } else {
-        if (load_surface_no_topology(s_surface_filename.c_str(), params) == FFEA_ERROR) {
+        if (load_surface_no_topology(s_surface_filename.c_str()) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading Blob surface (ignoring topology).\n");
         }
     }
@@ -283,22 +282,22 @@ int Blob::init(){
         }
     }
 
-    if (params->calc_ssint == 1 || params->calc_steric == 1) {
-        if (load_ssint(s_ssint_filename.c_str(), ssint_matrix->get_num_types(), params->ssint_type) == FFEA_ERROR) {
+    if (params.calc_ssint == 1 || params.calc_steric == 1) {
+        if (load_ssint(s_ssint_filename.c_str(), ssint_matrix->get_num_types(), params.ssint_type) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading ssint parameter file.\n")
         }
     }
 
-    if (params->calc_preComp == 1) {
+    if (params.calc_preComp == 1) {
         if (strcmp(s_beads_filename.c_str(), "") == 0) {
             FFEA_CAUTION_MESSG("No beads file was assigned to Blob %d\n", blob_index);
-        } else if (load_beads(s_beads_filename.c_str(), pc_params, scale) == FFEA_ERROR) {
+        } else if (load_beads(s_beads_filename.c_str(), scale) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading beads file.\n")
         }
     }
 
-    if (params->calc_ctforces == 1) {
-        if (load_ctforces(params->ctforces_fname) == FFEA_ERROR) {
+    if (params.calc_ctforces == 1) {
+        if (load_ctforces(params.ctforces_fname) == FFEA_ERROR) {
             FFEA_ERROR_MESSG("Error when loading constant forces\n");
         }
     }
@@ -334,7 +333,7 @@ int Blob::init(){
         printf("\t\tdone\n");
 
         // Run a check on parameters that are dependent upon the solver type
-        if((params->calc_stokes == 0 && params->calc_noise == 0) && (params->calc_springs == 1 || params->calc_ctforces == 1)) {
+        if((params.calc_stokes == 0 && params.calc_noise == 0) && (params.calc_springs == 1 || params.calc_ctforces == 1)) {
             if(linear_solver == FFEA_NOMASS_CG_SOLVER) {
                 FFEA_CAUTION_MESSG("For Blob %d, Conformation %d:\n\tUsing Springs / Constant forces in conjuction with the CG_nomass solver without calc_stokes or calc_noise may not converge, specially if there are very few ctforces or springs.\n\tIf you encounter this problem, consider setting either calc_stokes or calc_noise (you may try a low temperature) re-run the system :)\n", blob_index, conformation_index)
             }
@@ -391,14 +390,14 @@ int Blob::init(){
     }
 
     // Store stokes drag on nodes, for use in viscosity matrix
-    if (params->calc_stokes == 1) {
+    if (params.calc_stokes == 1) {
         for (auto &node_i : node) {
-            node_i.stokes_drag = 6.0 * ffea_const::pi * params->stokes_visc * node_i.stokes_radius;
+            node_i.stokes_drag = 6.0 * ffea_const::pi * params.stokes_visc * node_i.stokes_radius;
         }
     }
 
     // Generate the Mass matrix for this Blob
-    if (params->calc_es == 1) {
+    if (params.calc_es == 1) {
         build_mass_matrix();
     }
 
@@ -451,7 +450,7 @@ int Blob::init(){
         // Create a conjugate gradient solver for use with the 'unknowns' (interior) poisson matrix
         printf("\t\tCreating and initialising Poisson Solver...");
         poisson_solver = new CG_solver();
-        if (poisson_solver->init(num_interior_nodes, params->epsilon2, params->max_iterations_cg) != FFEA_OK) {
+        if (poisson_solver->init(num_interior_nodes, params.epsilon2, params.max_iterations_cg) != FFEA_OK) {
             FFEA_ERROR_MESSG("Failed to initialise poisson_solver\n");
         }
 
@@ -573,7 +572,7 @@ int Blob::init(){
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
         toBePrinted_nodes = new scalar[10 * node.size()];
     } else {
-        if (params->calc_es == 0) {
+        if (params.calc_es == 0) {
             toBePrinted_nodes = new scalar[3 * node.size()];
         } else {
             toBePrinted_nodes = new scalar[4 * node.size()];
@@ -630,7 +629,7 @@ int Blob::update_internal_forces() {
         return FFEA_OK;
     }
 
-    if (params->calc_ctforces) apply_ctforces();
+    if (params.calc_ctforces) apply_ctforces();
 
 
 
@@ -678,7 +677,7 @@ int Blob::update_internal_forces() {
             elem[n].add_shear_elastic_stress(J, stress);
             elem[n].add_bulk_elastic_stress(stress);
 
-            if (params->calc_noise == 1) {
+            if (params.calc_noise == 1) {
                 elem[n].add_fluctuating_stress(params, rng, stress, tid);
             }
 
@@ -698,7 +697,7 @@ int Blob::update_internal_forces() {
             // the element - they will be aggregated on the actual nodes outside of this parallel region)
             elem[n].add_element_force_vector(du);
 
-            if (params->calc_es == 1) {
+            if (params.calc_es == 1) {
                 elem[n].calculate_electrostatic_forces();
             }
         }
@@ -749,15 +748,12 @@ int Blob::update_positions() {
 }
 
 int Blob::reset_solver() {
-
     // Delete and rebuild (to make sure everything is overwritten)
-
     if (solver->init(node, elem, params, pinned_nodes_list, bsite_pinned_nodes_list) == FFEA_ERROR) {
         FFEA_ERROR_MESSG("Error reinitialising solver.\n")
     } else {
         return FFEA_OK;
     }
-    params->calc_noise = 0;
 }
 
 void Blob::translate_linear(arr3 *vec) {
@@ -1137,7 +1133,7 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
                     force[i][0]*mesoDimensions::force, force[i][1]*mesoDimensions::force, force[i][2]*mesoDimensions::force);
         }
     } else {
-        if (params->calc_es == 0) {
+        if (params.calc_es == 0) {
             for (auto& node_i : node) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                     node_i.pos[0]*mesoDimensions::length, node_i.pos[1]*mesoDimensions::length, node_i.pos[2]*mesoDimensions::length,
@@ -1174,7 +1170,7 @@ void Blob::write_pre_print_to_file(FILE *trajectory_out) {
                     toBePrinted_nodes[10*i+9]);
         }
     } else {
-        if (params->calc_es == 0) {
+        if (params.calc_es == 0) {
             for (size_t i = 0; i < node.size(); i++) {
                 fprintf(trajectory_out, "%e %e %e %e %e %e %e %e %e %e\n",
                         toBePrinted_nodes[3*i], toBePrinted_nodes[3*i+1], toBePrinted_nodes[3*i+2],
@@ -1219,7 +1215,7 @@ void Blob::pre_print() {
             toBePrinted_nodes[10*i +9] = force[i][2]*mesoDimensions::force;
         }
     } else {
-        if (params->calc_es == 0) {
+        if (params.calc_es == 0) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
             #pragma omp parallel for default(none)
 #endif
@@ -1784,7 +1780,7 @@ int Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
     }
 
     // For each node, add stokes if necessary
-    if(params->calc_stokes == 1) {
+    if(params.calc_stokes == 1) {
         for(int global_a = 0; global_a < node.size(); ++global_a) {
             if(map[global_a] == -1) {
                 continue;
@@ -1928,7 +1924,7 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
 
             // If we are on the block diagonal
             if(n == m) {
-                block = Eigen::Matrix3d::Identity() *  params->kT / node[n].stokes_drag;
+                block = Eigen::Matrix3d::Identity() *  params.kT / node[n].stokes_drag;
             } else {
 
                 // Get distance between nodes and the outer product of the separation
@@ -1952,12 +1948,12 @@ int Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
                     block *= 2 * a * a / mod2;
                     block += Eigen_Matrix3::Identity() * mod2;
                     block += rr;
-                    block *= params->kT / (8 * ffea_const::pi * params->stokes_visc * mod2 * mod);
+                    block *= params.kT / (8 * ffea_const::pi * params.stokes_visc * mod2 * mod);
 
                 } else {
                     block = Eigen::Matrix3d::Identity() * (1 - ((9 * mod) / (32.0 * a)));
                     block += rr * (3 / (32.0 * a * mod));
-                    block *= params->kT / (6 * ffea_const::pi * params->stokes_visc * a);
+                    block *= params.kT / (6 * ffea_const::pi * params.stokes_visc * a);
                 }
             }
 
@@ -2177,7 +2173,7 @@ scalar Blob::get_mass() {
 /*
  */
 void Blob::enforce_box_boundaries(arr3 &box_dim) {
-    if (params->wall_x_1 == WALL_TYPE_HARD) {
+    if (params.wall_x_1 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
             if (node[i].pos[0] < 0) {
                 if (node[i].vel[0] < 0) {
@@ -2186,7 +2182,7 @@ void Blob::enforce_box_boundaries(arr3 &box_dim) {
             }
         }
     }
-    if (params->wall_x_2 == WALL_TYPE_HARD) {
+    if (params.wall_x_2 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
             if (node[i].pos[0] > box_dim[0]) {
                 if (node[i].vel[0] > 0) {
@@ -2195,7 +2191,7 @@ void Blob::enforce_box_boundaries(arr3 &box_dim) {
             }
         }
     }
-    if (params->wall_y_1 == WALL_TYPE_HARD) {
+    if (params.wall_y_1 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
             if (node[i].pos[1] < 0) {
                 if (node[i].vel[1] < 0) {
@@ -2204,7 +2200,7 @@ void Blob::enforce_box_boundaries(arr3 &box_dim) {
             }
         }
     }
-    if (params->wall_y_2 == WALL_TYPE_HARD) {
+    if (params.wall_y_2 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
             if (node[i].pos[1] > box_dim[1]) {
                 if (node[i].vel[1] > 0) {
@@ -2213,7 +2209,7 @@ void Blob::enforce_box_boundaries(arr3 &box_dim) {
             }
         }
     }
-    if (params->wall_z_1 == WALL_TYPE_HARD) {
+    if (params.wall_z_1 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
             if (node[i].pos[2] < 0) {
                 if (node[i].vel[2] < 0) {
@@ -2222,7 +2218,7 @@ void Blob::enforce_box_boundaries(arr3 &box_dim) {
             }
         }
     }
-    if (params->wall_z_2 == WALL_TYPE_HARD) {
+    if (params.wall_z_2 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
             if (node[i].pos[2] > box_dim[2]) {
                 if (node[i].vel[2] > 0) {
@@ -2535,7 +2531,7 @@ int Blob::load_topology(const char *topology_filename) {
 
 /*
  */
-int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
+int Blob::load_surface(const char *surface_filename) {
     FILE *in = nullptr;
     int i, n1, n2, n3, element;
     const int max_line_size = 50;
@@ -2638,7 +2634,7 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
 
 /*
  */
-int Blob::load_surface_no_topology(const char *surface_filename, SimulationParams *params) {
+int Blob::load_surface_no_topology(const char *surface_filename) {
     FILE *in = nullptr;
     int i, n1, n2, n3, element;
     const int max_line_size = 50;
@@ -2854,7 +2850,7 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
  * @ingroup FMM
  * @details
  */
-int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scalar scale) {
+int Blob::load_beads(const char *beads_filename, scalar scale) {
 
     ifstream fin;
     string line;
@@ -2967,11 +2963,11 @@ int Blob::load_beads(const char *beads_filename, PreComp_params *pc_params, scal
     if (!bead_type) FFEA_ERROR_MESSG("Failed to allocate memory for bead types\n")
         int index;
     for (unsigned int i=0; i<stypes.size(); i++) {
-        it = std::find(pc_params->types.begin(), pc_params->types.end(), stypes[i]);
-        if (it == pc_params->types.end()) { // type in beads file not matching the types in .ffea file!!
+        it = std::find(pc_params.types.begin(), pc_params.types.end(), stypes[i]);
+        if (it == pc_params.types.end()) { // type in beads file not matching the types in .ffea file!!
             FFEA_ERROR_MESSG("Type '%s' read in beads file does not match any of the bead types specified in the .ffea file\n", stypes[i].c_str());
         }
-        index = std::distance(pc_params->types.begin(), it);
+        index = std::distance(pc_params.types.begin(), it);
         bead_type[i] = index;
     }
 
@@ -3429,7 +3425,7 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     int ssint_type = 0;
 
     // If steric only, set all to type 0
-    if (params->calc_ssint == 0) {
+    if (params.calc_ssint == 0) {
         for(int i = 0; i < surface.size(); ++i) {
             if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
@@ -3742,7 +3738,7 @@ int Blob::aggregate_forces_and_solve() {
         }
     }
     //	printf("----\n\n");
-    if (params->calc_stokes == 1) {
+    if (params.calc_stokes == 1) {
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
             #pragma omp parallel default(none)
@@ -3760,17 +3756,17 @@ int Blob::aggregate_forces_and_solve() {
                     force[i][0] -= node[i].vel[0] * node[i].stokes_drag;
                     force[i][1] -= node[i].vel[1] * node[i].stokes_drag;
                     force[i][2] -= node[i].vel[2] * node[i].stokes_drag;
-                    if (params->calc_noise == 1) {
-                        force[i][0] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                        force[i][1] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                        force[i][2] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                    if (params.calc_noise == 1) {
+                        force[i][0] -= RAND(-.5, .5) * sqrt((24 * params.kT * node[i].stokes_drag) / (params.dt));
+                        force[i][1] -= RAND(-.5, .5) * sqrt((24 * params.kT * node[i].stokes_drag) / (params.dt));
+                        force[i][2] -= RAND(-.5, .5) * sqrt((24 * params.kT * node[i].stokes_drag) / (params.dt));
                     }
                 }
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
             }
 #endif
         } else {
-            if (params->calc_noise == 1) {
+            if (params.calc_noise == 1) {
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                 #pragma omp parallel default(none)
@@ -3785,9 +3781,9 @@ int Blob::aggregate_forces_and_solve() {
                     #pragma omp for schedule(guided)
 #endif
                     for (int i = 0; i < node.size(); ++i) {
-                        force[i][0] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                        force[i][1] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
-                        force[i][2] -= RAND(-.5, .5) * sqrt((24 * params->kT * node[i].stokes_drag) / (params->dt));
+                        force[i][0] -= RAND(-.5, .5) * sqrt((24 * params.kT * node[i].stokes_drag) / (params.dt));
+                        force[i][1] -= RAND(-.5, .5) * sqrt((24 * params.kT * node[i].stokes_drag) / (params.dt));
+                        force[i][2] -= RAND(-.5, .5) * sqrt((24 * params.kT * node[i].stokes_drag) / (params.dt));
                     }
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                 }
@@ -3837,9 +3833,9 @@ void Blob::euler_integrate() {
             node[i].vel[1] = force[i][1];
             node[i].vel[2] = force[i][2];
 
-            node[i].pos[0] += force[i][0] * params->dt; // really meaning v * dt
-            node[i].pos[1] += force[i][1] * params->dt;
-            node[i].pos[2] += force[i][2] * params->dt;
+            node[i].pos[0] += force[i][0] * params.dt; // really meaning v * dt
+            node[i].pos[1] += force[i][1] * params.dt;
+            node[i].pos[2] += force[i][2] * params.dt;
         }
 
     } else {
@@ -3847,13 +3843,13 @@ void Blob::euler_integrate() {
         #pragma omp parallel for default(none) schedule(static)
 #endif
         for (int i = 0; i < node.size(); ++i) {
-            node[i].vel[0] += force[i][0] * params->dt;
-            node[i].vel[1] += force[i][1] * params->dt;
-            node[i].vel[2] += force[i][2] * params->dt;
+            node[i].vel[0] += force[i][0] * params.dt;
+            node[i].vel[1] += force[i][1] * params.dt;
+            node[i].vel[2] += force[i][2] * params.dt;
 
-            node[i].pos[0] += node[i].vel[0] * params->dt;
-            node[i].pos[1] += node[i].vel[1] * params->dt;
-            node[i].pos[2] += node[i].vel[2] * params->dt;
+            node[i].pos[0] += node[i].vel[0] * params.dt;
+            node[i].pos[1] += node[i].vel[1] * params.dt;
+            node[i].pos[2] += node[i].vel[2] * params.dt;
         }
     }
 }

@@ -60,12 +60,12 @@ NoMassCGSolver::~NoMassCGSolver() {
 }
 
 /* */
-int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, SimulationParams *params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list) {
+int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, const SimulationParams &params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list) {
 
     this->num_rows = 3 * node.size();
     this->num_nodes = node.size();
-    this->epsilon2 = params->epsilon2;
-    this->i_max = params->max_iterations_cg;
+    this->epsilon2 = params.epsilon2;
+    this->i_max = params.max_iterations_cg;
     this->one = 1;
     //printf("\t\t\tCalculating Sparsity Pattern for a 1st Order Viscosity Matrix\n");
     SparsityPattern sparsity_pattern_viscosity_matrix;
@@ -124,7 +124,7 @@ int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element
         }
     }
 
-    if (params->calc_stokes == 1) {
+    if (params.calc_stokes == 1) {
         for (int ni = 0; ni < num_nodes; ++ni) {
 	    if(is_pinned[ni] == 0) {
                 for (int nj = 0; nj < 3; ++nj) {
