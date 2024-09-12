@@ -479,9 +479,6 @@ private:
     /** Total number of interior elements in Blob */
     int num_interior_elements;
 
-    /** Total number of faces on Blob surface */
-    int num_surface_faces;
-
     /** Total number of nodes on Blob surface */
     int num_surface_nodes;
 
@@ -523,7 +520,7 @@ private:
     std::vector<tetra_element_linear> elem;
 
     /** Array of surface faces */
-    Face *surface;
+    std::vector<Face> surface;
 
     /** List of fixed ('pinned') nodes */
     int *pinned_nodes_list;

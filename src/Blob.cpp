@@ -31,7 +31,6 @@ Blob::Blob() {
     previous_conformation_index = 0;
     state_index = 0;
     previous_state_index = 0;
-    num_surface_faces = 0;
     num_beads = 0;
     num_l_ctf = 0;
     num_r_ctf = 0;
@@ -58,7 +57,7 @@ Blob::Blob() {
     node = {};
     node_position = {};
     elem = {};
-    surface = nullptr;
+    surface = {};
     binding_site = nullptr;
     solver = nullptr;
     linear_solver = 0;
@@ -95,8 +94,7 @@ Blob::~Blob() {
     node.clear();
     node_position.clear();
     elem.clear();
-    delete[] surface;
-    surface = nullptr;
+    surface.clear();
 
     delete[] binding_site;
     binding_site = nullptr;
@@ -181,7 +179,6 @@ Blob::~Blob() {
     previous_state_index = 0;
     num_surface_elements = 0;
     num_interior_elements = 0;
-    num_surface_faces = 0;
     num_binding_sites = 0;
     num_surface_nodes = 0;
     num_interior_nodes = 0;
@@ -391,7 +388,7 @@ int Blob::init(){
     for (int i = 0; i < num_surface_nodes; i++) {
         num_contributing_faces[i] = 0;
     }
-    for (int i = 0; i < num_surface_faces; i++) {
+    for (int i = 0; i < surface.size(); i++) {
         for (int j = 0; j < 3; j++) {
             num_contributing_faces[surface[i].n[j]->index]++;
         }
@@ -1036,7 +1033,7 @@ void Blob::set_pos_0() {
 }
 
 void Blob::kinetically_set_faces(bool state) {
-    for(int i = 0; i < num_surface_faces; ++i) {
+    for(int i = 0; i < surface.size(); ++i) {
         surface[i].set_kinetic_state(state);
     }
 }
@@ -1532,13 +1529,13 @@ void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
 
 void Blob::calc_centroids_and_normals_of_all_faces() {
     int i;
-    for (i = 0; i < num_surface_faces; i++)
+    for (i = 0; i < surface.size(); i++)
         surface[i].calc_area_normal_centroid();
 }
 
 void Blob::calc_all_centroids() {
     int i;
-    for (i = 0; i < num_surface_faces; i++) {
+    for (i = 0; i < surface.size(); i++) {
         surface[i].calc_area_normal_centroid();
     }
     for(i = 0; i < elem.size(); ++i) {
@@ -1550,7 +1547,7 @@ void Blob::calc_all_centroids() {
  *
  */
 int Blob::get_num_faces() {
-    return num_surface_faces;
+    return surface.size();
 }
 
 /*
@@ -1989,7 +1986,7 @@ int Blob::solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT) {
             phi_Gamma[i] = 0;
         }
 
-        for (int i = 0; i < num_surface_faces; i++) {
+        for (int i = 0; i < surface.size(); i++) {
             for (int j = 0; j < 3; j++) {
                 phi_Gamma[surface[i].n[j]->index] += phi_gamma_IN[i];
             }
@@ -2020,7 +2017,7 @@ int Blob::solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT) {
             //			printf("phi_Omega[%d] = %e\n", n, phi_Omega[n]);
         }
 
-        for (int i = 0; i < num_surface_faces; i++) {
+        for (int i = 0; i < surface.size(); i++) {
             J_Gamma_OUT[i] = surface[i].get_normal_flux();
         }
     }
@@ -2104,7 +2101,7 @@ void Blob::zero_force() {
     for (int i = 0; i < elem.size(); i++) {
         elem[i].zero_force();
     }
-    for (int i = 0; i < num_surface_faces; i++) {
+    for (int i = 0; i < surface.size(); i++) {
         surface[i].zero_force();
     }
 }
@@ -2118,15 +2115,11 @@ void Blob::set_forces_to_zero() {
 }
 
 void Blob::get_node(int index, arr3 &v) {
-
     arr3Store<scalar,arr3>(node[index].pos, v);
-
 }
 
 void Blob::get_node_0(int index, arr3 &v) {
-
     arr3Store<scalar,arr3>(node[index].pos_0, v);
-
 }
 
 void Blob::add_force_to_node(arr3 f, int index) {
@@ -2568,6 +2561,7 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
     }
 
     // read in the number of faces in the file
+    int num_surface_faces;
     if (fscanf(in, "num_surface_faces %d\n", &num_surface_faces) != 1) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading number of faces\n")
@@ -2575,8 +2569,11 @@ int Blob::load_surface(const char *surface_filename, SimulationParams* params) {
     printf("\t\t\tNumber of faces = %d\n", num_surface_faces);
 
     // Allocate the memory for all these faces
-    surface = new(std::nothrow) Face[num_surface_faces];
-    if (!surface) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
+    try {
+        surface = std::vector<Face>(num_surface_faces);
+    } catch (std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
+    }
 
     // Check for "faces:" line
     if (!fgets(line, max_line_size, in)) {
@@ -2667,6 +2664,7 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
     }
 
     // read in the number of faces in the file
+    int num_surface_faces;
     if (fscanf(in, "num_surface_faces %d\n", &num_surface_faces) != 1) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading number of faces\n")
@@ -2674,8 +2672,11 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
     printf("\t\t\tNumber of faces = %d\n", num_surface_faces);
 
     // Allocate the memory for all these faces
-    surface = new(std::nothrow) Face[num_surface_faces];
-    if (!surface) FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
+    try {
+        surface = std::vector<Face>(num_surface_faces);
+    } catch (std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate memory for the faces\n");
+    }
 
     // Check for "faces:" line
     if (!fgets(line, max_line_size, in)) {
@@ -2689,7 +2690,7 @@ int Blob::load_surface_no_topology(const char *surface_filename, SimulationParam
 
     // Read in all the faces from file (element will always be zero here, because no internal structure exists)
     scalar smallest_A = INFINITY;
-    for (i = 0; i < num_surface_faces; i++) {
+    for (i = 0; i < surface.size(); i++) {
         if (fscanf(in, "%d %d %d %d\n", &element, &n1, &n2, &n3) != 4) {
             fclose(in);
             FFEA_ERROR_MESSG("Error reading from surface file at face %d. There should be 4 space separated integers. \n", i);
@@ -3290,7 +3291,7 @@ int Blob::load_ctforces(string ctforces_fname) {
         int c_i = boost::lexical_cast<int>(line_split[5]); // read the conformation index
         if (c_i != conformation_index) continue;
         if (line_split[6].compare("all") == 0) {
-            num_sltotal_ctf += num_surface_faces;
+            num_sltotal_ctf += surface.size();
             return FFEA_ERROR;
         } else {
             num_sltotal_ctf += line_split.size() - 6;  // there may be many faces in every 'surface'!
@@ -3325,8 +3326,8 @@ int Blob::load_ctforces(string ctforces_fname) {
                 cnt += 1;
             }
         } else {
-            ctf_sl_surfsize[i] = num_surface_faces;
-            for (int j=0; j<num_surface_faces; j++) {
+            ctf_sl_surfsize[i] = surface.size();
+            for (int j=0; j< surface.size(); j++) {
                 ctf_sl_faces[cnt] = j;
                 cnt += 1;
             }
@@ -3350,9 +3351,7 @@ int Blob::load_ctforces(string ctforces_fname) {
 
 
 void Blob::add_steric_nodes() {
-
-    int i;
-    for(i = 0; i < num_surface_faces; ++i) {
+    for(int i = 0; i < surface.size(); ++i) {
         surface[i].build_opposite_node();
     }
 }
@@ -3365,7 +3364,6 @@ void Blob::add_steric_nodes() {
  *      * They can be removed later on.
  */
 int Blob::forget_beads() {
-
     num_beads = 0;
     delete[] bead_position;
     bead_position = nullptr;
@@ -3424,8 +3422,8 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     }
     printf("\t\t\tNumber of faces = %d\n", num_ssint_faces);
 
-    if (num_ssint_faces != num_surface_faces) {
-        FFEA_ERROR_MESSG("Number of faces specified in VDW file (%d) does not agree with number in surface file (%d)\n", num_ssint_faces, num_surface_faces)
+    if (num_ssint_faces != surface.size()) {
+        FFEA_ERROR_MESSG("Number of faces specified in VDW file (%d) does not agree with number in surface file (%zu)\n", num_ssint_faces, surface.size())
     }
 
     // Check for "ssint params:" line
@@ -3439,12 +3437,11 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     }
 
     // Read in all the ssint parameters from the file, assigning them to the appropriate faces
-    int i;
     int ssint_type = 0;
 
     // If steric only, set all to type 0
     if (params->calc_ssint == 0) {
-        for(i = 0; i < num_surface_faces; ++i) {
+        for(int i = 0; i < surface.size(); ++i) {
             if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error reading from VDW file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
@@ -3456,7 +3453,7 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
             }
         }
     } else {
-        for (i = 0; i < num_surface_faces; i++) {
+        for (int i = 0; i < surface.size(); i++) {
             if (fscanf(in, "%d\n", &ssint_type) != 1) {
                 fclose(in);
                 FFEA_ERROR_MESSG("Error reading from VDW file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
@@ -3470,7 +3467,7 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     }
 
     // Set whether vdw is active on blob
-    for(i = 0; i < num_surface_faces; ++i) {
+    for(int i = 0; i < surface.size(); ++i) {
         if(surface[i].ssint_interaction_type != -1) {
             ssint_on_blob = true;
             break;
@@ -3478,7 +3475,7 @@ int Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, strin
     }
     fclose(in);
 
-    printf("\t\t\tRead %d VDW faces from %s\n", i, ssint_filename);
+    printf("\t\t\tRead %zu VDW faces from %s\n", surface.size(), ssint_filename);
 
     return FFEA_OK;
 }
@@ -3517,8 +3514,8 @@ int Blob::load_binding_sites() {
     fin >> buf_string >> num_binding_sites;
     cout << "\t\t\tNumber of binding sites = " << num_binding_sites << endl;
 
-    if (num_binding_sites > num_surface_faces) {
-        FFEA_ERROR_MESSG("Number of binding sites specified in binding sites file (%d) cannot exceed number of surface faces (%d)\n", num_binding_sites, num_surface_faces)
+    if (num_binding_sites > surface.size()) {
+        FFEA_ERROR_MESSG("Number of binding sites specified in binding sites file (%d) cannot exceed number of surface faces (%zu)\n", num_binding_sites, surface.size())
     }
 
     if (num_binding_sites == 0) {
@@ -3575,8 +3572,8 @@ int Blob::load_binding_sites() {
 
         for(unsigned int j = 0; j < num_faces; ++j) {
             face_index = atoi(string_vec.at(j + 1).c_str());
-            if(face_index >= num_surface_faces) {
-                FFEA_ERROR_MESSG("Face index %d specifies face outside range of surface faces defined in surface file (%d)\n", face_index, num_surface_faces)
+            if(face_index >= surface.size()) {
+                FFEA_ERROR_MESSG("Face index %d specifies face outside range of surface faces defined in surface file (%zu)\n", face_index, surface.size())
                 return FFEA_ERROR;
             } else {
                 binding_site[i].add_face(&surface[face_index]);
@@ -3702,7 +3699,7 @@ void Blob::calc_rest_state_info() {
         elem[i].mass = elem[i].vol_0 * elem[i].rho;
     }
 
-    for (int i=0; i<num_surface_faces; i++) {
+    for (int i=0; i< surface.size(); i++) {
         scalar longest_surface_edge_i = surface[i].length_of_longest_edge();
         if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i;
     }
@@ -3742,7 +3739,7 @@ int Blob::aggregate_forces_and_solve() {
     }
 
     // Aggregate surface forces onto nodes
-    for (int n = 0; n < num_surface_faces; ++n) {
+    for (int n = 0; n < surface.size(); ++n) {
         for (int i = 0; i < 4; i++) {
             int sni = surface[n].n[i]->index;
             force[sni][0] += surface[n].force[i][0];
