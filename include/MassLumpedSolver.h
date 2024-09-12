@@ -48,7 +48,7 @@ public:
     int init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, const SimulationParams &params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list);
 
     /** Applies inverse mass matrix (since diagonal: Mx = f => x = f_i/M_i */
-    int solve(arr3 *x);
+    int solve(std::vector<arr3> &x);
 
     /** Applies the mass matrix to the given vector, 'in', putting the result in 'result'*/
     void apply_matrix(scalar *in, scalar *result);

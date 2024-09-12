@@ -51,10 +51,10 @@ public:
     int init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, const SimulationParams &params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list);
 
     /** Adds values to sparse viscosity matrix and uses it to solve the system Kv = f using conjugate gradient*/
-    int solve(arr3* x);
+    int solve(std::vector<arr3> &x);
 
     /* */
-    void print_matrices(arr3* force);
+    void print_matrices(std::vector<arr3> &x);
 
 private:
 
@@ -77,19 +77,19 @@ private:
     scalar *preconditioner;
 
     /** Work vectors */
-    arr3 *r, *p, *z, *q, *f;
+    std::vector<arr3> r, p, z, q, f;
 
     /** Unchanging memory locoation */
     scalar one;
 
     /* */
-    scalar conjugate_gradient_residual_assume_x_zero(arr3 *b);
+    scalar conjugate_gradient_residual_assume_x_zero(std::vector<arr3> &b);
 
     /* */
     scalar residual2();
 
     /* */
-    scalar modx(arr3 *x);
+    scalar modx(const std::vector<arr3> &x);
 
     scalar get_alpha_denominator();
 
@@ -97,11 +97,10 @@ private:
     scalar parallel_apply_preconditioner();
 
     /* */
-    void check(arr3 *x);
+    void check(const std::vector<arr3> &x);
 
     /* */
-    void apply_matrix(scalar *in, scalar *result) {
-    }
+    void apply_matrix(scalar *in, scalar *result) { }
 
 };
 

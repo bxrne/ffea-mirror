@@ -531,7 +531,7 @@ private:
 
     /** 2D vector with the set of nodes where every bead should be assigned to.
       *   It will be removed after PreComp_solver is initialised [precomp] */
-    vector <vector<int>> bead_assignment;
+    std::vector<std::vector<int>> bead_assignment;
 
     /** Array with bead types [precomp]
       *   will be nullptr after info is loaded into PreComp_solver */
@@ -609,7 +609,7 @@ private:
     bool beads_on_blob;
 
     /** The Blob force vector (an array of the force on every node) */
-    arr3 *force;
+    std::vector<arr3> force;
 
     /** The array of random number generators (needed for parallel runs) */
     RngStream *rng;

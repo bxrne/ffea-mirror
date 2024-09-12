@@ -77,7 +77,7 @@ int MassLumpedSolver::init(std::vector<mesh_node> &node, std::vector<tetra_eleme
 }
 
 /* */
-int MassLumpedSolver::solve(arr3 *x) {
+int MassLumpedSolver::solve(std::vector<arr3> &x) {
     int i = 0;
     for (i = 0; i < num_rows; i++) {
         x[i][0] = x[i][0] * inv_M[i];

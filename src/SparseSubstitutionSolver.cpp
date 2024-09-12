@@ -194,7 +194,7 @@ int SparseSubstitutionSolver::init(std::vector<mesh_node> &node, std::vector<tet
     return FFEA_OK;
 }
 
-int SparseSubstitutionSolver::solve(arr3 *x) {
+int SparseSubstitutionSolver::solve(std::vector<arr3> &x) {
     int i, j, index;
 
     // Forward substitution step Ly = b :

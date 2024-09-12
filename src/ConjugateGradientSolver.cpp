@@ -30,30 +30,25 @@ ConjugateGradientSolver::ConjugateGradientSolver() {
     key = nullptr;
     entry = nullptr;
     preconditioner = nullptr;
-    d = nullptr;
-    r = nullptr;
-    q = nullptr;
-    s = nullptr;
-    f = nullptr;
+    d = {};
+    r = {};
+    q = {};
+    s = {};
+    f = {};
 }
 
 ConjugateGradientSolver::~ConjugateGradientSolver() {
     delete[] key;
     delete[] entry;
     delete[] preconditioner;
-    delete[] d;
-    delete[] r;
-    delete[] q;
-    delete[] s;
-    delete[] f;
     key = nullptr;
     entry = nullptr;
     preconditioner = nullptr;
-    d = nullptr;
-    r = nullptr;
-    q = nullptr;
-    s = nullptr;
-    f = nullptr;
+    d.clear();
+    r.clear();
+    q.clear();
+    s.clear();
+    f.clear();
     num_rows = 0;
     epsilon2 = 0;
     i_max = 0;
@@ -191,24 +186,25 @@ int ConjugateGradientSolver::init(std::vector<mesh_node> &node, std::vector<tetr
         preconditioner[i] = 1.0 / mass_LU[i * num_rows + i];
 
     // create the work vectors necessary for use by the conjugate gradient solver
-    d = new(std::nothrow) arr3[num_rows];
-    r = new(std::nothrow) arr3[num_rows];
-    q = new(std::nothrow) arr3[num_rows];
-    s = new(std::nothrow) arr3[num_rows];
-    f = new(std::nothrow) arr3[num_rows];
-    if (!d || !r || !q || !s || !f) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for ConjugateGradientSolver\n"); 
+    try {
+        d = std::vector<arr3>(num_rows);
+        r = std::vector<arr3>(num_rows);
+        q = std::vector<arr3>(num_rows);
+        s = std::vector<arr3>(num_rows);
+        f = std::vector<arr3>(num_rows);
+    } catch (std::bad_alloc &) {
+        FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for ConjugateGradientSolver\n");
+    }
 
     delete[] mass_LU;
 
     return FFEA_OK;
 }
 
-int ConjugateGradientSolver::solve(arr3 *x) {
-    int i = 0;
-
+int ConjugateGradientSolver::solve(std::vector<arr3> &x) {
     scalar delta_new, delta_old, dTq, alpha;
     delta_new = conjugate_gradient_residual_assume_x_zero(x);
-    for (i = 0; i < i_max; i++) {
+    for (int i = 0; i < i_max; i++) {
 
         // Once convergence is achieved, return
         if (residual2() < epsilon2) {
@@ -241,7 +237,7 @@ void ConjugateGradientSolver::apply_matrix(scalar *in, scalar *result) {
 }
 
 /* */
-scalar ConjugateGradientSolver::conjugate_gradient_residual_assume_x_zero(arr3 *b) {
+scalar ConjugateGradientSolver::conjugate_gradient_residual_assume_x_zero(std::vector<arr3> &b) {
     int i;
     scalar delta_new = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
@@ -289,7 +285,7 @@ scalar ConjugateGradientSolver::parallel_sparse_matrix_apply() {
     return dTq;
 }
 
-void ConjugateGradientSolver::parallel_vector_add_self(arr3 *v1, scalar a, arr3 *v2, int vec_size) {
+void ConjugateGradientSolver::parallel_vector_add_self(std::vector<arr3> &v1, scalar a, std::vector<arr3> &v2, int vec_size) {
     int i;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) private(i) shared(v1, a, v2, vec_size)
@@ -301,7 +297,7 @@ void ConjugateGradientSolver::parallel_vector_add_self(arr3 *v1, scalar a, arr3 
     }
 }
 
-void ConjugateGradientSolver::parallel_vector_add(arr3 *v1, scalar a, arr3 *v2, int vec_size) {
+void ConjugateGradientSolver::parallel_vector_add(std::vector<arr3> &v1, scalar a, std::vector<arr3> &v2, int vec_size) {
     int i;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) private(i) shared(v1, a, v2, vec_size)

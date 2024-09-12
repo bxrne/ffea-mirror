@@ -147,20 +147,17 @@ void SparseMatrixFixedPattern::apply(scalar *in, scalar *result) {
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Designed for use in NoMassCGSolver */
-void SparseMatrixFixedPattern::apply(arr3 *in, arr3 *result) {
-
-    int i, j;
-
+void SparseMatrixFixedPattern::apply(const std::vector<arr3> &in, std::vector<arr3> &result) {
     // To get rid of conditionals, define an array 'num_rows' long, and copy into result at end
     vector<scalar> work_in(num_rows);
     vector<scalar> work_result(num_rows);
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel default(none) private(i, j) shared(result, work_result, in, work_in)
+    #pragma omp parallel default(none) shared(result, work_result, in, work_in)
     {
     #pragma omp for 
 #endif
-    for(i = 0; i < num_rows / 3; ++i) {
+    for(int i = 0; i < num_rows / 3; ++i) {
         work_in[3 * i] = in[i][0];
         work_in[3 * i + 1] = in[i][1];
         work_in[3 * i + 2] = in[i][2];
@@ -169,12 +166,11 @@ void SparseMatrixFixedPattern::apply(arr3 *in, arr3 *result) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp for 
 #endif
-    for (i = 0; i < num_rows; i++) {
-
+    for (int i = 0; i < num_rows; i++) {
         // Zero array first
         work_result[i] = 0.0;
 
-        for(j = key[i]; j < key[i + 1]; ++j) {
+        for(int j = key[i]; j < key[i + 1]; ++j) {
             work_result[i] += entry[j].val * work_in[entry[j].column_index];
         }
     }
@@ -182,7 +178,7 @@ void SparseMatrixFixedPattern::apply(arr3 *in, arr3 *result) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp for 
 #endif
-    for(i = 0; i < num_rows / 3; ++i) {
+    for(int i = 0; i < num_rows / 3; ++i) {
         result[i][0] = work_result[3 * i];
         result[i][1] = work_result[3 * i + 1];
         result[i][2] = work_result[3 * i + 2];
@@ -196,12 +192,11 @@ void SparseMatrixFixedPattern::apply(arr3 *in, arr3 *result) {
 /* Each element applies to whole vector */
 /* Designed to apply sparse matrix (kinetic map) to list of node positions for conformation changes */
 void SparseMatrixFixedPattern::block_apply(const std::vector<arr3> &in, std::vector<arr3> &result) {
-    int i, j;
-    for(i = 0; i < num_rows; ++i) {
+    for(int i = 0; i < num_rows; ++i) {
         result[i][0] = 0;
         result[i][1] = 0;
         result[i][2] = 0;
-        for(j = key[i]; j < key[i + 1]; ++j) {
+        for(int j = key[i]; j < key[i + 1]; ++j) {
             result[i][0] += entry[j].val * in[entry[j].column_index][0];
             result[i][1] += entry[j].val * in[entry[j].column_index][1];
             result[i][2] += entry[j].val * in[entry[j].column_index][2];
@@ -250,9 +245,6 @@ void SparseMatrixFixedPattern::block_apply(std::vector<arr3*> &in) {
 }
 
 SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPattern *in) {
-
-    int i, j, k, l;
-
     // Build big matrix first, sparse it up later
     int num_rows_A = num_rows;
     int num_rows_B = in->get_num_rows();
@@ -260,24 +252,17 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
 
     // Get num_columns_result
     int num_columns_result = in->get_num_columns();
-    scalar **result_dense = new scalar*[num_rows_result];
-
-    for(i = 0; i < num_rows_result; ++i) {
-        result_dense[i] = new scalar[num_columns_result];
-        for(j = 0; j < num_columns_result; ++j) {
-            result_dense[i][j] = 0.0;
-        }
-    }
+    std::vector<std::vector<scalar>> result_dense(num_rows_result, std::vector<scalar>(num_columns_result, 0.0));
 
     // Get in matrix pointers for quick access
     sparse_entry *in_entry = in->get_entries();
     int *in_key = in->get_key();
 
     // Make big result matrix of doom
-    for(i = 0; i < num_rows_A; ++i) {
-        for(j = key[i] ; j < key[i + 1]; ++j) {
-            for(k = 0; k < num_rows_B; ++k) {
-                for(l = in_key[k] ; l < in_key[k + 1]; ++l) {
+    for(int i = 0; i < num_rows_A; ++i) {
+        for(int j = key[i] ; j < key[i + 1]; ++j) {
+            for(int k = 0; k < num_rows_B; ++k) {
+                for(int l = in_key[k] ; l < in_key[k + 1]; ++l) {
                     if(entry[j].column_index == k) {
                         result_dense[i][in_entry[l].column_index] += entry[j].val * in_entry[l].val;
                     }
@@ -288,8 +273,8 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
 
     // Build sparse matrix from big matrix
     int num_entries_result = 0;
-    for(i = 0; i < num_rows_result; ++i) {
-        for(j = 0; j < num_columns_result; ++j) {
+    for(int i = 0; i < num_rows_result; ++i) {
+        for(int j = 0; j < num_columns_result; ++j) {
             if(fabs(result_dense[i][j]) >= 0.001) {
                 num_entries_result++;
             }
@@ -300,10 +285,10 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
     int *key_result = new int[num_rows_result + 1];
     int *col_indices_result = new int[num_entries_result];
 
-    l = 0;
+    int l = 0;
     key_result[0] = 0;
-    for(i = 0; i < num_rows_result; ++i) {
-        for(j = 0; j < num_columns_result; ++j) {
+    for(int i = 0; i < num_rows_result; ++i) {
+        for(int j = 0; j < num_columns_result; ++j) {
             if(fabs(result_dense[i][j]) >= 0.001) {
                 entries_result[l] = result_dense[i][j];
                 col_indices_result[l] = j;
@@ -315,12 +300,7 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
 
     SparseMatrixFixedPattern *result_sparse = new SparseMatrixFixedPattern();
     result_sparse->init(num_rows_result, num_entries_result, entries_result, key_result, col_indices_result);
-
-    // Release big one
-    for(i = 0; i < num_rows_result; ++i) {
-        delete[] result_dense[i];
-    }
-    delete[] result_dense;
+    
     return result_sparse;
 }
 
@@ -357,7 +337,7 @@ void SparseMatrixFixedPattern::print_dense() {
 }
 
 /* Prints dense matrix out to file for analysis. I suggest only letting this function run once (step = 1?) */
-void SparseMatrixFixedPattern::print_dense_to_file(arr3 *a) {
+void SparseMatrixFixedPattern::print_dense_to_file(std::vector<arr3> &a) {
     FILE *fout, *fout2;
     fout = fopen("dense_matrix.csv", "w");
     fout2 = fopen("force.csv", "w");

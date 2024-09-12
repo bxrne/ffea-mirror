@@ -65,7 +65,7 @@ Blob::Blob() {
     ssint_on_blob = false;
     springs_on_blob = false;
     beads_on_blob = false;
-    force = nullptr;
+    force = {};
     rng = nullptr;
     poisson_solver = nullptr;
     phi_Omega = nullptr;
@@ -99,8 +99,7 @@ Blob::~Blob() {
     binding_site = nullptr;
 
     /* Release the force vector */
-    delete[] force;
-    force = nullptr;
+    force.clear();
 
     /* Release the Solver */
     delete solver;
@@ -368,12 +367,10 @@ int Blob::init(){
 
 
     // Allocate the force vector array for the whole Blob
-    force = new(std::nothrow) arr3[node.size()];
-    if (!force) FFEA_ERROR_MESSG("Could not store the force vector array\n");
-    for (int i = 0; i < node.size(); i++) {
-        force[i][0] = 0;
-        force[i][1] = 0;
-        force[i][2] = 0;
+    try {
+        force = std::vector<arr3>(node.size(), {0,0,0});
+    } catch (std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Could not store the force vector array\n");
     }
 
     // Calculate how many faces each surface node is a part of
@@ -1037,7 +1034,6 @@ void Blob::linearise_elements() {
 }
 
 void Blob::linearise_force() {
-
     int nIdx[NUM_NODES_QUADRATIC_TET];
     for (int i=0; i< elem.size(); i++) {
         for (int j=0; j<NUM_NODES_QUADRATIC_TET; j++) {
@@ -1058,8 +1054,6 @@ void Blob::linearise_force() {
 }
 
 void Blob::compress_blob(scalar compress) {
-
-
     arr3 cog,cogaft;
     this->get_centroid(cog);
     //loop moves nodes in by

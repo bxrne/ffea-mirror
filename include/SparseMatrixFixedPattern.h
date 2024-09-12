@@ -50,7 +50,7 @@ public:
     void apply(scalar *in, scalar *result);
 
     /** Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
-    void apply(arr3 *in, arr3 *result);
+    void apply(const std::vector<arr3> &in, std::vector<arr3> &result);
 
     /** Applies each matrix element to vector i.e. each arr3 acts as a scalar */
     void block_apply(const std::vector<arr3> &in, std::vector<arr3> &result);
@@ -71,7 +71,7 @@ public:
     void print_dense();
 
     /** Prints dense matrix out to file for analysis. I suggest only letting this function run once (step = 1?) */
-    void print_dense_to_file(arr3 *a);
+    void print_dense_to_file(std::vector<arr3> &a);
 
     void print_row_column();
 

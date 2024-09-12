@@ -29,27 +29,22 @@ NoMassCGSolver::NoMassCGSolver() {
     epsilon2 = 0;
     i_max = 0;
     preconditioner = nullptr;
-    r = nullptr;
-    p = nullptr;
-    z = nullptr;
-    q = nullptr;
-    f = nullptr;
+    r.clear();
+    p.clear();
+    z.clear();
+    q.clear();
+    f.clear();
     V = nullptr;
 }
 
 /* */
 NoMassCGSolver::~NoMassCGSolver() {
-    delete[] r;
-    delete[] p;
-    delete[] z;
-    delete[] q;
-    delete[] f;
     delete[] preconditioner;
-    r = nullptr;
-    p = nullptr;
-    z = nullptr;
-    q = nullptr;
-    f = nullptr;
+    r.clear();
+    p.clear();
+    z.clear();
+    q.clear();
+    f.clear();
     preconditioner = nullptr;
     num_rows = 0;
     num_nodes = 0;
@@ -61,7 +56,6 @@ NoMassCGSolver::~NoMassCGSolver() {
 
 /* */
 int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element_linear> &elem, const SimulationParams &params, const std::vector<int> &pinned_nodes_list, const set<int> &bsite_pinned_node_list) {
-
     this->num_rows = 3 * node.size();
     this->num_nodes = node.size();
     this->epsilon2 = params.epsilon2;
@@ -147,18 +141,21 @@ int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element
 
 
     // create the work vectors necessary for use by the conjugate gradient solver in 'solve'
-    r = new(std::nothrow) arr3[num_nodes];
-    p = new(std::nothrow) arr3[num_nodes];
-    z = new(std::nothrow) arr3[num_nodes];
-    q = new(std::nothrow) arr3[num_nodes];
-    f = new(std::nothrow) arr3[num_nodes];
-    if (!r || !p || !z || !q || !f ) FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for NoMassCGSolver\n"); 
+    try {
+        r = std::vector<arr3>(num_nodes);
+        p = std::vector<arr3>(num_nodes);
+        z = std::vector<arr3>(num_nodes);
+        q = std::vector<arr3>(num_nodes);
+        f = std::vector<arr3>(num_nodes);
+    } catch(std::bad_alloc &) {
+        FFEA_ERROR_MESSG(" Failed to create the work vectors necessary for NoMassCGSolver\n");
+    }
 
     return FFEA_OK;
 }
 
 /*  */
-int NoMassCGSolver::solve(arr3* x) {
+int NoMassCGSolver::solve(std::vector<arr3> &x) {
     // Complete the sparse viscosity matrix
     V->build();
     V->calc_inverse_diagonal(preconditioner);
@@ -193,12 +190,12 @@ int NoMassCGSolver::solve(arr3* x) {
 }
 
 /* */
-void NoMassCGSolver::print_matrices(arr3* force) {
+void NoMassCGSolver::print_matrices(std::vector<arr3> &force) {
     V->print_dense_to_file(force);
 }
 
 /* */
-scalar NoMassCGSolver::conjugate_gradient_residual_assume_x_zero(arr3 *b) {
+scalar NoMassCGSolver::conjugate_gradient_residual_assume_x_zero(std::vector<arr3> &b) {
 
     scalar delta_new = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
@@ -243,7 +240,7 @@ scalar NoMassCGSolver::residual2() {
 }
 
 /* */
-scalar NoMassCGSolver::modx(arr3 *x) {
+scalar NoMassCGSolver::modx(const std::vector<arr3> &x) {
     scalar r2 = 0;
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
 #pragma omp parallel for default(none) shared(x) reduction(+:r2)
@@ -287,12 +284,12 @@ scalar NoMassCGSolver::parallel_apply_preconditioner() {
 }
 
 /* */
-void NoMassCGSolver::check(arr3 *x) {
+void NoMassCGSolver::check(const std::vector<arr3> &x) {
     FILE *fout2;
     fout2 = fopen("/localhome/py09bh/output/nomass/cube_viscosity_no_mass.csv", "a");
     int i;
     double temp = 0, temp2 = 0;
-    arr3 *temp_vec = new arr3[num_nodes];
+    std::vector<arr3> temp_vec = std::vector<arr3>(num_nodes);
     V->apply(x, temp_vec);
     for (i = 0; i < num_nodes; ++i) {
         temp += x[i][0] * temp_vec[i][0] + x[i][1] * temp_vec[i][1] + x[i][2] * temp_vec[i][2];
@@ -300,10 +297,4 @@ void NoMassCGSolver::check(arr3 *x) {
     }
     fprintf(fout2, "%e,%e\n", temp2, fabs(temp - temp2));
     fclose(fout2);
-
 }
-
-/* */
-
-
-
