@@ -1107,7 +1107,7 @@ int Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
     printf("\t\tWriting to viewer nodes file: %s\n", new_node_filename);
 
     fprintf(out, "ffea viewer node file\n");
-    fprintf(out, "num_nodes %llu\n", node.size());
+    fprintf(out, "num_nodes %zu\n", node.size());
     fprintf(out, "num_surface_nodes %d\n", num_surface_nodes);
     fprintf(out, "num_interior_nodes %d\n", num_interior_nodes);
 
@@ -2406,7 +2406,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
     }
 
     // Read in all the surface nodes from file
-    for (size_t i = 0; i < node.size(); i++) {
+    for (int i = 0; i < node.size(); i++) {
 
         if (i == num_surface_nodes) {
             // Check for "interior nodes:" line
@@ -2422,7 +2422,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
 
         if (fscanf(in, "%le %le %le\n", &x, &y, &z) != 3) {
             fclose(in);
-            FFEA_ERROR_MESSG("Error reading from nodes file at node %llu\n", i)
+            FFEA_ERROR_MESSG("Error reading from nodes file at node %d\n", i)
         } else {
             node[i].pos[0] = scale * (scalar) x;
             node[i].pos[1] = scale * (scalar) y;
@@ -2437,7 +2437,7 @@ int Blob::load_nodes(const char *node_filename, scalar scale) {
     }
 
     fclose(in);
-    printf("\t\t\tRead %llu nodes from %s\n", node.size(), node_filename);
+    printf("\t\t\tRead %zu nodes from %s\n", node.size(), node_filename);
 
     return FFEA_OK;
 }
@@ -2838,7 +2838,7 @@ int Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
     // Check that we have same number of nodes in stokes radii file as in nodes file
     if (num_stokes_nodes != node.size()) {
         fclose(in);
-        FFEA_ERROR_MESSG("Number of nodes in stokes radii file (%d) does not match number of nodes in nodes file (%llu)\n", num_stokes_nodes, node.size())
+        FFEA_ERROR_MESSG("Number of nodes in stokes radii file (%d) does not match number of nodes in nodes file (%zu)\n", num_stokes_nodes, node.size())
     }
 
     // Set the stokes radius for each node in the Blob
@@ -3909,10 +3909,10 @@ int Blob::calculate_node_element_connectivity() {
             node[elem[i].n[j]->index].num_element_contributors++;
 
     // allocate the contributions array for each node to the length given by num_element_contributors
-    for (size_t i = 0; i < node.size(); ++i) {
+    for (int i = 0; i < node.size(); ++i) {
         node[i].force_contributions = new(std::nothrow) arr3 *[node[i].num_element_contributors];
         if (!node[i].force_contributions) {
-            FFEA_ERROR_MESSG("Failed to allocate memory for 'force_contributions' array (on node %llu)\n", i);
+            FFEA_ERROR_MESSG("Failed to allocate memory for 'force_contributions' array (on node %d)\n", i);
         }
     }
 
