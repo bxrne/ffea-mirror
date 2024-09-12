@@ -73,7 +73,6 @@ Blob::Blob() {
     q = nullptr;
     nodal_q = nullptr;
     poisson_rhs = nullptr;
-    num_pinned_nodes = 0;
     pinned_nodes_list = {};
     bsite_pinned_nodes_list = {};
 
@@ -184,7 +183,6 @@ Blob::~Blob() {
     blob_state = FFEA_BLOB_IS_STATIC;
     mass = 0;
     rng = nullptr;
-    num_pinned_nodes = 0;
     bsite_pinned_nodes_list.clear();
 
     delete[] toBePrinted_nodes;
@@ -316,7 +314,6 @@ int Blob::init(){
             FFEA_ERROR_MESSG("Error when loading Blob pinned nodes file.\n");
         }
     } else {
-        num_pinned_nodes = 0;
         pinned_nodes_list.clear();
     }
 
@@ -629,7 +626,7 @@ int Blob::update_internal_forces() {
         return FFEA_OK;
     }
 
-    if(num_pinned_nodes == node.size()) {
+    if(pinned_nodes_list.size() == node.size()) {
         return FFEA_OK;
     }
 
@@ -3603,6 +3600,7 @@ int Blob::load_pinned_nodes(const char *pin_filename) {
     }
 
     // read in the number of pinned node indices in the file
+    int num_pinned_nodes;
     if (fscanf(in, "num_pinned_nodes %d\n", &num_pinned_nodes) != 1) {
         fclose(in);
         FFEA_ERROR_MESSG("Error reading number of pinned nodes\n")
@@ -3611,7 +3609,7 @@ int Blob::load_pinned_nodes(const char *pin_filename) {
 
     // Allocate the memory for the list of pinned node indices
     try {
-        pinned_nodes_list.resize(num_pinned_nodes);
+        pinned_nodes_list = std::vector<int>(num_pinned_nodes);
     } catch (std::bad_alloc &) {
         FFEA_ERROR_MESSG("Failed to allocate pinned_nodes_list\n");
     }
@@ -3802,7 +3800,7 @@ int Blob::aggregate_forces_and_solve() {
     linearise_force();
 
     // Set to zero any forces on the pinned nodes
-    for (int n = 0; n < num_pinned_nodes; n++) {
+    for (int n = 0; n < pinned_nodes_list.size(); ++n) {
         int pn_index = pinned_nodes_list[n];
         force[pn_index][0] = 0;
         force[pn_index][1] = 0;

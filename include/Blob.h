@@ -485,9 +485,6 @@ private:
     /** Total number of nodes on Blob interior */
     int num_interior_nodes;
 
-    /** Number of 'pinned' nodes (nodes which are not able to move, removing degrees of freedom from system) */
-    int num_pinned_nodes;
-
     /** Amount of interacting beads within this Blob
       *   will be zero after info is loaded into PreComp_solver */
     int num_beads;
