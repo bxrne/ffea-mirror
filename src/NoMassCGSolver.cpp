@@ -28,24 +28,23 @@ NoMassCGSolver::NoMassCGSolver() {
     num_nodes = 0;
     epsilon2 = 0;
     i_max = 0;
-    preconditioner = nullptr;
-    r.clear();
-    p.clear();
-    z.clear();
-    q.clear();
-    f.clear();
+    preconditioner = {};
+    r = {};
+    p = {};
+    z = {};
+    q = {};
+    f = {};
     V = nullptr;
 }
 
 /* */
 NoMassCGSolver::~NoMassCGSolver() {
-    delete[] preconditioner;
     r.clear();
     p.clear();
     z.clear();
     q.clear();
     f.clear();
-    preconditioner = nullptr;
+    preconditioner.clear();
     num_rows = 0;
     num_nodes = 0;
     epsilon2 = 0;
@@ -136,9 +135,11 @@ int NoMassCGSolver::init(std::vector<mesh_node> &node, std::vector<tetra_element
     //return FFEA_ERROR;
     // create a preconditioner for solving in less iterations
     // Create the jacobi preconditioner matrix (diagonal)
-    preconditioner = new(std::nothrow) scalar[num_rows];
-    if (!preconditioner) FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in NoMassCGSolver\n");
-
+    try {
+        preconditioner = std::vector<scalar>(num_rows);
+    } catch(std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate 'preconditioner' in NoMassCGSolver\n");
+    }
 
     // create the work vectors necessary for use by the conjugate gradient solver in 'solve'
     try {

@@ -74,7 +74,7 @@ private:
     int num_nodes;
 
     /** Jacobi preconditioner (inverse of the viscosity matrix diagonal) */
-    scalar *preconditioner;
+    std::vector<scalar> preconditioner;
 
     /** Work vectors */
     std::vector<arr3> r, p, z, q, f;

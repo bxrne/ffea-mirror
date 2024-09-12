@@ -31,7 +31,6 @@ Blob::Blob() {
     previous_conformation_index = 0;
     state_index = 0;
     previous_state_index = 0;
-    num_beads = 0;
     num_l_ctf = 0;
     num_r_ctf = 0;
     num_sltotal_ctf = 0;
@@ -66,16 +65,16 @@ Blob::Blob() {
     beads_on_blob = false;
     force = {};
     rng = nullptr;
-    poisson_solver = nullptr;
-    phi_Omega = nullptr;
-    phi_Gamma = nullptr;
-    q = nullptr;
-    nodal_q = nullptr;
-    poisson_rhs = nullptr;
+    poisson_solver.reset();
+    phi_Omega = {};
+    phi_Gamma = {};
+    q = {};
+    // nodal_q = {};
+    poisson_rhs = {};
     pinned_nodes_list = {};
     bsite_pinned_nodes_list = {};
 
-    num_contributing_faces = nullptr;
+    num_contributing_faces = {};
 
     pbc_count[0] = 0;
     pbc_count[1] = 0;
@@ -100,8 +99,7 @@ Blob::~Blob() {
     force.clear();
 
     /* Release the Solver */
-    delete solver;
-    solver = nullptr;
+    solver.reset();
     linear_solver = 0;
     mass_in_blob = false;
     ssint_on_blob = false;
@@ -109,27 +107,18 @@ Blob::~Blob() {
     beads_on_blob = false;
 
     /* Release the Poisson Solver */
-    delete poisson_solver;
-    poisson_solver = nullptr;
-    delete[] phi_Omega;
-    phi_Omega = nullptr;
-    delete[] phi_Gamma;
-    phi_Gamma = nullptr;
-    delete[] q;
-    q = nullptr;
-    delete[] nodal_q;
-    nodal_q = nullptr;
-    delete[] poisson_rhs;
-    poisson_rhs = nullptr;
+    poisson_solver.reset();
+    phi_Omega.clear();
+    phi_Gamma.clear();
+    q.clear();
+    // nodal_q.clear();
+    poisson_rhs.clear();
     pinned_nodes_list.clear();
 
     /* delete precomp stuff */
-    if (num_beads > 0) {
-        num_beads = 0;
-        delete[] bead_position;
-        bead_position = nullptr;
-        delete[] bead_type;
-        bead_type = nullptr;
+    if (!bead_position.empty()) {
+        bead_position.clear();
+        bead_type.clear();
     }
 
     /* delete ctforces stuff */
@@ -173,9 +162,8 @@ Blob::~Blob() {
 
     delete[] toBePrinted_nodes;
     toBePrinted_nodes = nullptr;
-
-    delete[] num_contributing_faces;
-    num_contributing_faces = nullptr;
+    
+    num_contributing_faces.clear();
 
     delete poisson_surface_matrix;
     delete poisson_interior_matrix;
@@ -325,20 +313,20 @@ int Blob::init(){
             }
         }
 
-        // Create the chosen linear equation Solver for this Blob
+    // Create the chosen linear equation Solver for this Blob
 	// Only initialise for dynamic blobs. Static don not need to be mechanically solved
 	if (blob_state == FFEA_BLOB_IS_DYNAMIC) {
 		if (linear_solver == FFEA_DIRECT_SOLVER) {
-		    solver = new(std::nothrow) SparseSubstitutionSolver();
+		    solver = std::make_unique<SparseSubstitutionSolver>();
 		    mass_in_blob = true;
 		} else if (linear_solver == FFEA_ITERATIVE_SOLVER) {
-		    solver = new(std::nothrow) ConjugateGradientSolver();
+		    solver = std::make_unique<ConjugateGradientSolver>();
 		    mass_in_blob = true;
 		} else if (linear_solver == FFEA_MASSLUMPED_SOLVER) {
-		    solver = new(std::nothrow) MassLumpedSolver();
+		    solver = std::make_unique<MassLumpedSolver>();
 		    mass_in_blob = true;
 		} else if (linear_solver == FFEA_NOMASS_CG_SOLVER) {
-		    solver = new(std::nothrow) NoMassCGSolver();
+		    solver = std::make_unique<NoMassCGSolver>();
 		} else {
 		    FFEA_ERROR_MESSG("Error in Blob initialisation: linear_solver=%d is not a valid solver choice\n", linear_solver);
 		}
@@ -361,9 +349,12 @@ int Blob::init(){
     }
 
     // Calculate how many faces each surface node is a part of
-    num_contributing_faces = new(std::nothrow) int[num_surface_nodes];
-
-    if (!num_contributing_faces) FFEA_ERROR_MESSG("Failed to allocate num_contributing_faces\n");
+    try {
+        num_contributing_faces = std::vector<int>(num_surface_nodes);
+    } catch(std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate num_contributing_faces\n");
+    }
+    
     for (int i = 0; i < num_surface_nodes; i++) {
         num_contributing_faces[i] = 0;
     }
@@ -433,63 +424,41 @@ int Blob::init(){
 
         // Create a conjugate gradient solver for use with the 'unknowns' (interior) poisson matrix
         printf("\t\tCreating and initialising Poisson Solver...");
-        poisson_solver = new CG_solver();
+        poisson_solver = std::make_unique<CG_solver>();
         if (poisson_solver->init(num_interior_nodes, params.epsilon2, params.max_iterations_cg) != FFEA_OK) {
             FFEA_ERROR_MESSG("Failed to initialise poisson_solver\n");
         }
 
         // Create the vector containing all values of the potential at each interior node
-        phi_Omega = new(std::nothrow) scalar[num_interior_nodes];
-
-        if (!phi_Omega) {
+        try {
+            phi_Omega = std::vector<scalar>(num_interior_nodes, 0);
+        } catch (std::bad_alloc&) {
             FFEA_ERROR_MESSG("Could not allocate memory (for phi_Omega array).\n");
         }
 
-        for (int i = 0; i < num_interior_nodes; i++) {
-            phi_Omega[i] = 0;
-        }
-
         // Create the vector containing all values of the potential on each surface node
-        phi_Gamma = new(std::nothrow) scalar[num_surface_nodes];
-
-        if (!phi_Gamma) {
+        try {
+            phi_Gamma = std::vector<scalar>(num_surface_nodes, 0);
+        } catch (std::bad_alloc&) {
             FFEA_ERROR_MESSG("Could not allocate memory (for phi_Gamma array).\n");
         }
 
-        for (int i = 0; i < num_surface_nodes; i++) {
-            phi_Gamma[i] = 0;
-        }
-
-
         /*
                         // Create the vector containing the smoothed out charge distribution across the elements
-                        q = new scalar[num_nodes];
-
-                        if(!q) {
-                                FFEA_error_text();
-                                printf("Could not allocate memory (for q array).\n");
-                                return FFEA_ERROR;
+                        try {
+                            q = std::vector<scalar>(node.size(), 0);
+                        } catch (std::bad_alloc&) {
+                            FFEA_ERROR_MESSG("Could not allocate memory (for q array).\n");
                         }
-
-                        for(int i = 0; i < num_nodes; i++) {
-                                q[i] = 0;
-                        }
-
                         // Create the vector containing all charges on each node of the Blob
-                        nodal_q = new scalar[num_nodes];
-
-                        if(!nodal_q) {
-                                FFEA_error_text();
-                                printf("Could not allocate memory (for nodal_q array).\n");
-                                return FFEA_ERROR;
-                        }
-
-                        for(int i = 0; i < num_nodes; i++) {
-                                nodal_q[i] = 0;
+                        try {
+                            nodal_q = std::vector<scalar>(node.size(), 0);
+                        } catch (std::bad_alloc&) {
+                            FFEA_ERROR_MESSG("Could not allocate memory (for nodal_q array).\n");
                         }
 
                         // Set the charges on the Blob
-                        for(int i = 0; i < num_nodes; i++) {
+                        for(int i = 0; i < node.size(); i++) {
         //			nodal_q[i] = (node[i].pos[2] - (2.9e-8/2.0)) * 1e35; //1e26;
                                 nodal_q[i] = 1e26;
         //			printf("%e %e\n", node[i].pos[2], nodal_q[i]);
@@ -498,20 +467,16 @@ int Blob::init(){
                         // Apply mass matrix to obtain smooth extrapolated charge density across elements
                         M->apply(nodal_q, q);
 
-                        for(int i = 0; i < num_nodes; i++) {
+                        for(int i = 0; i < node.size(); i++) {
                                 node[i].rho = q[i];
                         }
          */
 
         // Create the vector containing the charge distribution across the elements
-        q = new(std::nothrow) scalar[node.size()];
-
-        if (!q) {
+        try {
+            q = std::vector<scalar>(node.size(), 0);
+        } catch (std::bad_alloc&) {
             FFEA_ERROR_MESSG("Could not allocate memory (for q array).\n");
-        }
-
-        for (int i = 0; i < node.size(); i++) {
-            q[i] = 0;
         }
 
         // const scalar charge_density = 6.0e25;
@@ -531,14 +496,10 @@ int Blob::init(){
         // }
 
         // Create the Right Hand Side vector for the Poisson solver
-        poisson_rhs = new(std::nothrow) scalar[num_interior_nodes];
-
-        if (!poisson_rhs) {
+        try {
+            poisson_rhs = std::vector<scalar>(num_interior_nodes, 0);
+        } catch (std::bad_alloc&) {
             FFEA_ERROR_MESSG("Could not allocate memory (for poisson_rhs array).\n");
-        }
-
-        for (int i = 0; i < num_interior_nodes; i++) {
-            poisson_rhs[i] = 0;
         }
 
         // build_poisson_matrices_and_setup_for_solve();
@@ -821,25 +782,21 @@ void Blob::rotate(float r11, float r12, float r13, float r21, float r22, float r
 
 
     if (beads) {
-        if (num_beads > 0) {
-            // Move all beads to the origin:
-            for (int i = 0; i < num_beads; i++) {
-                bead_position[3*i] -= com[0];
-                bead_position[3*i+1] -= com[1];
-                bead_position[3*i+2] -= com[2];
-            }
+        // Move all beads to the origin:
+        for (int i = 0; i < bead_position.size(); ++i) {
+            bead_position[i][0] -= com[0];
+            bead_position[i][1] -= com[1];
+            bead_position[i][2] -= com[2];
+        }
+        // Do the actual rotation and bring the beads back to its initial position:
+        for (int i = 0; i < bead_position.size(); ++i) {
+            x = bead_position[i][0];
+            y = bead_position[i][1];
+            z = bead_position[i][2];
 
-            // Do the actual rotation and bring the beads back to its initial position:
-            for (int i = 0; i < num_beads; i++) {
-                x = bead_position[3*i];
-                y = bead_position[3*i+1];
-                z = bead_position[3*i+2];
-
-                bead_position[3*i  ] = x * r11 + y * r12 + z * r13 + com[0];
-                bead_position[3*i+1] = x * r21 + y * r22 + z * r23 + com[1];
-                bead_position[3*i+2] = x * r31 + y * r32 + z * r33 + com[2];
-
-            }
+            bead_position[i][0] = x * r11 + y * r12 + z * r13 + com[0];
+            bead_position[i][1] = x * r21 + y * r22 + z * r23 + com[1];
+            bead_position[i][2] = x * r31 + y * r32 + z * r33 + com[2];
         }
     }
 }
@@ -884,13 +841,11 @@ arr3 Blob::position(scalar x, scalar y, scalar z) {
 }
 
 void Blob::position_beads(scalar x, scalar y, scalar z) {
-
-    for (int i = 0; i < num_beads; i ++) {
-        bead_position[3*i] += x;
-        bead_position[3*i+1] += y;
-        bead_position[3*i+2] += z;
+    for (int i = 0; i < bead_position.size(); i ++) {
+        bead_position[i][0] += x;
+        bead_position[i][1] += y;
+        bead_position[i][2] += z;
     }
-
 }
 
 void Blob::move(scalar dx, scalar dy, scalar dz) {
@@ -1521,7 +1476,7 @@ int Blob::get_num_faces() {
 }
 
 int Blob::get_num_beads() {
-    return num_beads;
+    return bead_position.size();
 }
 
 int Blob::getNumBindingSites() {
@@ -1529,8 +1484,7 @@ int Blob::getNumBindingSites() {
 }
 
 bool Blob::is_using_beads() {
-    if (num_beads > 0) return true;
-    else return false;
+    return !bead_position.empty();
 }
 
 /*
@@ -1585,8 +1539,7 @@ tetra_element_linear *Blob::get_element(int i) {
  * @ingroup FMM
  **/
 void Blob::get_bead_position(int i, arr3 &v) {
-
-    arr3Store<scalar,arr3>( arr3_view<scalar,arr3>(bead_position+3*i,3), v);
+    arr3Store<scalar,arr3>(bead_position[i], v);
 }
 
 /**
@@ -1594,7 +1547,7 @@ void Blob::get_bead_position(int i, arr3 &v) {
  *
  * @ingroup FMM
  **/
-int *Blob::get_bead_type_ptr() {
+std::vector<int> &Blob::get_bead_types() {
     return bead_type;
 
 }
@@ -1604,9 +1557,8 @@ int *Blob::get_bead_type_ptr() {
  *
  * @ingroup FMM
  **/
-int Blob::get_bead_type(int i) {
+int Blob::get_bead_type(int i) const {
     return bead_type[i];
-
 }
 
 /**
@@ -1614,7 +1566,7 @@ int Blob::get_bead_type(int i) {
  *
  * @ingroup FMM
  **/
-vector<int> Blob::get_bead_assignment(int i) {
+std::vector<int> &Blob::get_bead_assignment(int i) {
     return bead_assignment[i];
 }
 
@@ -2045,11 +1997,12 @@ int Blob::apply_ctforces() {
     scalar totalArea;
     arr3 traction;
     int auxndx = 0;
+    std::vector<scalar> faceAreas = std::vector<scalar>();
     for (int i=0; i<num_slsets_ctf; i++) {
         totalArea = 0;
-        scalar *faceAreas = new scalar[ctf_sl_surfsize[i]];
+        faceAreas.reserve(ctf_sl_surfsize[i]);
         for (int j=0; j<ctf_sl_surfsize[i]; j++) {
-            faceAreas[j] = surface[ctf_sl_faces[auxndx + j]].get_area();
+            faceAreas.push_back(surface[ctf_sl_faces[auxndx + j]].get_area());
             totalArea += faceAreas[j];
         }
         for (int j=0; j<ctf_sl_surfsize[i]; j++) {
@@ -2059,11 +2012,10 @@ int Blob::apply_ctforces() {
             surface[ctf_sl_faces[auxndx+j]].add_force_to_node(2, traction);
         }
         auxndx += ctf_sl_surfsize[i];
-        delete[] faceAreas;
+        faceAreas.clear();
     }
 
 	return FFEA_OK;
-
 }
 
 /*
@@ -2845,10 +2797,10 @@ int Blob::load_beads(const char *beads_filename, scalar scale) {
     printf("\t\tScaling beads positions using scale: %e\n", scale);
 
 
-    vector<string> stypes;
-    vector<scalar> positions;
+    std::vector<string> stypes;
     string type;
     scalar x, y, z;
+    bead_position.clear();
 
     // a set of constant strings, and a number of temporary vectors
     //    to parse the lines in search of " < nodes = ... > ".
@@ -2858,7 +2810,7 @@ int Blob::load_beads(const char *beads_filename, scalar scale) {
     const char *splitNodes = ",";
     const char *defineRange = "-";
     const string defineField = "=";
-    vector<string> v1, v2, v3, v4;
+    std::vector<string> v1, v2, v3, v4;
 
     // 1 - read the data, positions and bead-types to memory before storing,
     //       as well as the set of nodes where every bead will be associated to.
@@ -2878,15 +2830,12 @@ int Blob::load_beads(const char *beads_filename, scalar scale) {
         x = stod( line.substr(28,10) ) * scale;
         y = stod( line.substr(38,8) ) * scale;
         z = stod( line.substr(46,8) ) * scale;
-        positions.push_back(x);
-        positions.push_back(y);
-        positions.push_back(z);
-
+        bead_position.push_back({ x, y, z });
 
         // 1.3 - look for node restrictions within "< nodes = ...  >"
         // 1.3.1 - split the line in a vector using "<":
         boost::split(v1, line, boost::is_any_of(openField));
-        bead_assignment.push_back(vector<int>()); // add a row.
+        bead_assignment.push_back(std::vector<int>()); // add a row.
         // 1.3.2 - for each of them:
         for (unsigned int j=0; j<v1.size(); j++) {
             // 1.3.3 - remove the closing bracket ">"
@@ -2930,17 +2879,16 @@ int Blob::load_beads(const char *beads_filename, scalar scale) {
 
     // 2 - store the data efficiently:
     // 2.1 - positions:
-    bead_position = new(std::nothrow) scalar[positions.size()];
-    if (!bead_position) FFEA_ERROR_MESSG("Failed to allocate memory for bead positions\n")
-        for (unsigned int i=0; i<positions.size(); i++) {
-            bead_position[i] = positions[i];
-        }
+    bead_position.shrink_to_fit();
 
     // 2.2 - bead types are integers starting from zero:
     vector<string>::iterator it;
-    bead_type = new(std::nothrow) int[stypes.size()];
-    if (!bead_type) FFEA_ERROR_MESSG("Failed to allocate memory for bead types\n")
-        int index;
+    try {
+        bead_type = std::vector<int>(stypes.size());
+    } catch (std::bad_alloc&) {
+        FFEA_ERROR_MESSG("Failed to allocate memory for bead types\n")
+    }
+    int index;
     for (unsigned int i=0; i<stypes.size(); i++) {
         it = std::find(pc_params.types.begin(), pc_params.types.end(), stypes[i]);
         if (it == pc_params.types.end()) { // type in beads file not matching the types in .ffea file!!
@@ -2951,11 +2899,9 @@ int Blob::load_beads(const char *beads_filename, scalar scale) {
     }
 
     // 2.3 - num_beads:
-    num_beads = stypes.size();
     beads_on_blob = true;
 
     return FFEA_OK;
-
 }
 
 int Blob::load_ctforces(const string& ctforces_fname) {
@@ -3327,15 +3273,10 @@ void Blob::add_steric_nodes() {
  *      * They can be removed later on.
  */
 int Blob::forget_beads() {
-    num_beads = 0;
-    delete[] bead_position;
-    bead_position = nullptr;
-    delete[] bead_type;
-    bead_type = nullptr;
+    bead_position.clear();
+    bead_type.clear();
     return FFEA_OK;
-
 }
-
 
 void Blob::print_node_positions() {
     for (const auto &node_i : node) {
@@ -3344,10 +3285,10 @@ void Blob::print_node_positions() {
 }
 
 void Blob::print_bead_positions() {
-    for (int i=0; i<num_beads; i++) {
-        cout << "---b: " << bead_position[3*i] << " "
-             << bead_position[3*i+1] << " "
-             << bead_position[3*i+2] << endl;
+    for (const auto &bead : bead_position) {
+        cout << "---b: " << bead[0] << " "
+             << bead[1] << " "
+             << bead[2] << endl;
     }
 }
 

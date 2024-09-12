@@ -31,9 +31,9 @@
 #include "SparsityPattern.h"
 #include "ConnectivityTypes.h"
 
-#include <stdio.h>
-#include <math.h>
+#include <cstdio>
 #include <set>
+#include <memory>
 #include <omp.h>
 #include <algorithm>  // std::find
 #include <Eigen/Sparse>
@@ -284,17 +284,17 @@ public:
     void get_bead_position(int i, arr3 &v);
 
     /** get the pointer to "bead_type"  [precomp] */
-    int *get_bead_type_ptr();
+    std::vector<int> &get_bead_types();
 
     /** get_bead_type [precomp] */
-    int get_bead_type(int i);
+    int get_bead_type(int i) const;
 
     /**
      * @brief returns the list of nodes where bead i should be assigned to.
      *
      * @ingroup FMM
      **/
-    vector<int> get_bead_assignment(int i);
+    std::vector<int> &get_bead_assignment(int i);
 
 
     scalar get_ssint_area();
@@ -483,10 +483,6 @@ private:
     /** Total number of nodes on Blob interior */
     int num_interior_nodes;
 
-    /** Amount of interacting beads within this Blob
-      *   will be zero after info is loaded into PreComp_solver */
-    int num_beads;
-
     /** Number of ctforces to be applied to this Blob */
     int num_l_ctf;
     int num_r_ctf;
@@ -523,18 +519,18 @@ private:
     /** Additional pinned node list for binding processes */
     set<int> bsite_pinned_nodes_list;
 
+    // Interacting beads within this blob, not tracked beyond PreComp_solver
     /** Array with bead positions xyzxyzxyz.... [precomp]
       *   will be nullptr after info is loaded into PreComp_solver */
-    scalar *bead_position{};
+    std::vector<arr3> bead_position;
 
     /** 2D vector with the set of nodes where every bead should be assigned to.
       *   It will be removed after PreComp_solver is initialised [precomp] */
     std::vector<std::vector<int>> bead_assignment;
 
     /** Array with bead types [precomp]
-      *   will be nullptr after info is loaded into PreComp_solver */
-
-    int *bead_type{};
+      *   will be empty after info is loaded into PreComp_solver */
+    std::vector<int> bead_type;
 
     /** Array with the nodes having linear ctforces assigned */
     std::vector<int> ctf_l_nodes;
@@ -589,7 +585,7 @@ private:
      * or ConjugateGradientSolver). The Solver solves the equation Mx = f where M is the
      * mass matrix of this Blob and f is the force vector.
      */
-    Solver *solver;
+    std::unique_ptr<Solver> solver;
 
     /** Remember what type of solver we are using */
     int linear_solver;
@@ -626,16 +622,16 @@ private:
     scalar rmsd{};
     //@}
 
-    CG_solver *poisson_solver;
+    std::unique_ptr<CG_solver> poisson_solver;
     SparseMatrixFixedPattern *poisson_surface_matrix;
     SparseMatrixFixedPattern *poisson_interior_matrix;
-    scalar *phi_Omega;
-    scalar *phi_Gamma;
-    scalar *q;
-    scalar *nodal_q;
-    scalar *poisson_rhs;
+    std::vector<scalar> phi_Omega;
+    std::vector<scalar> phi_Gamma;
+    std::vector<scalar> q;
+    //std::vector<scalar> nodal_q;
+    std::vector<scalar> poisson_rhs;
 
-    int *num_contributing_faces;
+    std::vector<int> num_contributing_faces;
 
     connectivity_entry *element_connectivity_table{};
 

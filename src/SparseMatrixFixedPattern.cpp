@@ -95,7 +95,7 @@ void SparseMatrixFixedPattern::build() {
 }
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result' */
-void SparseMatrixFixedPattern::apply(scalar *in, scalar *result) {
+void SparseMatrixFixedPattern::apply(const std::vector<scalar> &in, std::vector<scalar> &result) {
     for (int i = 0; i < num_rows; i++) {
         result[i] = 0;
         for (int j = key[i]; j < key[i + 1]; j++) {
@@ -106,16 +106,15 @@ void SparseMatrixFixedPattern::apply(scalar *in, scalar *result) {
 
 /* Applies this matrix to the given vector 'in', writing the result to 'result'. 'in' is made of 'arr3's */
 /* Designed for use in NoMassCGSolver */
-/*void SparseMatrixFixedPattern::apply(arr3 *in, arr3 *result) {
-    int i, j;
+/*void SparseMatrixFixedPattern::apply(const std::vector<arr3> &in, std::vector<arr3> &result) {
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-#pragma omp parallel for default(none) private(i, j) shared(result, in)
+#pragma omp parallel for default(none) shared(result, in)
 #endif
-    for (i = 0; i < num_rows / 3; i++) {
+    for (int i = 0; i < num_rows / 3; ++i) {
         result[i][0] = 0;
         result[i][1] = 0;
         result[i][2] = 0;
-        for (j = key[3 * i]; j < key[(3 * i) + 1]; j++) {
+        for (int j = key[3 * i]; j < key[(3 * i) + 1]; ++j) {
             if (entry[j].column_index % 3 == 0) {
                 result[i][0] += entry[j].val * in[entry[j].column_index / 3][0];
             } else if (entry[j].column_index % 3 == 1) {
@@ -124,7 +123,7 @@ void SparseMatrixFixedPattern::apply(scalar *in, scalar *result) {
                 result[i][0] += entry[j].val * in[entry[j].column_index / 3][2];
             }
         }
-        for (j = key[(3 * i) + 1]; j < key[(3 * i) + 2]; j++) {
+        for (int j = key[(3 * i) + 1]; j < key[(3 * i) + 2]; ++j) {
             if (entry[j].column_index % 3 == 0) {
                 result[i][1] += entry[j].val * in[entry[j].column_index / 3][0];
             } else if (entry[j].column_index % 3 == 1) {
@@ -133,7 +132,7 @@ void SparseMatrixFixedPattern::apply(scalar *in, scalar *result) {
                 result[i][1] += entry[j].val * in[entry[j].column_index / 3][2];
             }
         }
-        for (j = key[(3 * i) + 2]; j < key[(3 * i) + 3]; j++) {
+        for (int j = key[(3 * i) + 2]; j < key[(3 * i) + 3]; ++j) {
             if (entry[j].column_index % 3 == 0) {
                 result[i][2] += entry[j].val * in[entry[j].column_index / 3][0];
             } else if (entry[j].column_index % 3 == 1) {
@@ -304,12 +303,11 @@ SparseMatrixFixedPattern * SparseMatrixFixedPattern::apply(SparseMatrixFixedPatt
     return result_sparse;
 }
 
-void SparseMatrixFixedPattern::calc_inverse_diagonal(scalar *inv_D) {
-    int i;
+void SparseMatrixFixedPattern::calc_inverse_diagonal(std::vector<scalar> &inv_D) {
 //#ifdef FFEA_PARALLEL_WITHIN_BLOB
-//#pragma omp parallel for default(none) private(i) shared(inv_D)
+//#pragma omp parallel for default(none)  shared(inv_D)
 //#endif
-    for (i = 0; i < num_rows; i++) {
+    for (int i = 0; i < num_rows; i++) {
         inv_D[i] = 1.0 / (*(diagonal[i]));
     }
 }
@@ -321,10 +319,9 @@ void SparseMatrixFixedPattern::print() {
 }
 
 void SparseMatrixFixedPattern::print_dense() {
-    int i, j, l;
-    for (i = 0; i < num_rows; ++i) {
-        l = 0;
-        for (j = 0; j < num_rows; ++j) {
+    for (int i = 0; i < num_rows; ++i) {
+        int l = 0;
+        for (int j = 0; j < num_rows; ++j) {
             if (j == entry[key[i] + l].column_index && key[i] + l < key[i + 1]) {
                 printf("%e,", entry[key[i] + l].val);
                 l++;
@@ -341,10 +338,9 @@ void SparseMatrixFixedPattern::print_dense_to_file(std::vector<arr3> &a) {
     FILE *fout, *fout2;
     fout = fopen("dense_matrix.csv", "w");
     fout2 = fopen("force.csv", "w");
-    int i, j, l;
-    for (i = 0; i < num_rows; ++i) {
-        l = 0;
-        for (j = 0; j < num_rows; ++j) {
+    for (int i = 0; i < num_rows; ++i) {
+        int l = 0;
+        for (int j = 0; j < num_rows; ++j) {
             if (j == entry[key[i] + l].column_index && key[i] + l < key[i + 1]) {
                 fprintf(fout, "%e,", entry[key[i] + l].val);
                 l++;
@@ -354,7 +350,7 @@ void SparseMatrixFixedPattern::print_dense_to_file(std::vector<arr3> &a) {
         }
         fprintf(fout, "\n");
     }
-    for (i = 0; i < num_rows / 3; ++i) {
+    for (int i = 0; i < num_rows / 3; ++i) {
         fprintf(fout2, "%e\n%e\n%e\n", a[i][0], a[i][1], a[i][2]);
     }
     fclose(fout);
@@ -374,7 +370,6 @@ void SparseMatrixFixedPattern::print_row_column() {
 
 void SparseMatrixFixedPattern::check_symmetry() {
     int row;
-
     for (int i = 0; i < num_rows / 3; i++) {
         for (int j = key[i]; j < key[i + 1]; j++) {
             printf("%e ", entry[j].val);
@@ -423,7 +418,6 @@ int SparseMatrixFixedPattern::get_num_rows() {
 }
 
 int SparseMatrixFixedPattern::get_num_columns() {
-
     int i, num_columns = 0;
     for(i = 0; i < num_nonzero_elements; ++i) {
         if(entry[i].column_index > num_columns) {
