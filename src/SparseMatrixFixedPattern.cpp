@@ -43,7 +43,7 @@ SparseMatrixFixedPattern::~SparseMatrixFixedPattern() {
     num_nonzero_elements = 0;
 }
 
-int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, std::vector<sparse_entry> entry, std::vector<int> key, std::vector<sparse_entry_sources> source_list) {
+int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, std::vector<sparse_entry> &&entry, std::vector<int> &&key, std::vector<sparse_entry_sources> source_list) {
     this->num_rows = num_rows;
     this->num_nonzero_elements = num_nonzero_elements;
     this->entry = entry;
@@ -69,16 +69,16 @@ int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, std::
 }
 
 // Initialise matrix without a source list (doesn't need rebuilding)
-int SparseMatrixFixedPattern::init(int num_rows, int num_entries, const std::vector<scalar> &entries, std::vector<int> key, const std::vector<int> &col_indices) {
+int SparseMatrixFixedPattern::init(int num_rows, const std::vector<scalar> &entries, std::vector<int> &&key, const std::vector<int> &col_indices) {
     this->num_rows = num_rows;
-    this->num_nonzero_elements = num_entries;
+    this->num_nonzero_elements = entries.size();
     this->key = key;
     try {
-        this->entry = std::vector<sparse_entry>(num_entries);
+        this->entry = std::vector<sparse_entry>(entries.size());
     } catch(std::bad_alloc &) {
         FFEA_ERROR_MESSG("Failed to allocate 'entry' in SparseMAtrixFixedPattern::init\n");
     }
-    for(int i = 0; i < num_entries; ++i) {
+    for(int i = 0; i < entries.size(); ++i) {
         entry[i].column_index = col_indices[i];
         entry[i].val = entries[i];
     }
@@ -300,7 +300,8 @@ std::shared_ptr<SparseMatrixFixedPattern> SparseMatrixFixedPattern::apply(std::s
     }
 
     std::shared_ptr<SparseMatrixFixedPattern> result_sparse = std::make_shared<SparseMatrixFixedPattern>();
-    result_sparse->init(num_rows_result, num_entries_result, entries_result, key_result, col_indices_result);    
+    // std::move() is used here to convert key_result to a rval, allowing it's ownership to be transferred to init()
+    result_sparse->init(num_rows_result, entries_result, std::move(key_result), col_indices_result);
     return result_sparse;
 }
 

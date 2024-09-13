@@ -3438,7 +3438,8 @@ int World::load_kinetic_maps(vector<string> map_fnames, vector<int> map_from, ve
         fin.close();
 
         // Create sparse matrix
-        kinetic_map[blob_index][map_from[i]][map_to[i]]->init(num_rows, num_entries, entries, key, col_index);
+        // Use of std::move() here moves the local scope entry/key into the method (converts them to rval)
+        kinetic_map[blob_index][map_from[i]][map_to[i]]->init(num_rows, entries, std::move(key), col_index);
     }
 
     return FFEA_OK;

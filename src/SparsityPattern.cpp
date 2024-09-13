@@ -129,7 +129,8 @@ std::shared_ptr<SparseMatrixFixedPattern> SparsityPattern::create_sparse_matrix(
     key[num_rows] = pos;
 
     // Initialise the sparse matrix with the array of entries and the row access key
-    sm->init(num_rows, num_nonzero_elements, entry, key, source_list);
+    // Use of std::move() here moves the local scope entry/key into the method (converts them to rval)
+    sm->init(num_rows, num_nonzero_elements, std::move(entry), std::move(key), source_list);
 
     // Return pointer to the newly allocated and initialised sparse matrix
     return sm;
