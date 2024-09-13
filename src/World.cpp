@@ -37,9 +37,9 @@ World::World()
     spring_array = nullptr;
     kinetic_map = {};
     kinetic_return_map = {};
-    kinetic_state = nullptr;
-    kinetic_rate = nullptr;
-    kinetic_base_rate = nullptr;
+    kinetic_state = {};
+    kinetic_rate = {};
+    kinetic_base_rate = {};
     num_springs = 0;
     mass_in_system = false;
     num_threads = 1;
@@ -101,13 +101,10 @@ World::~World()
     
     kinetic_map.clear();
     kinetic_return_map.clear();
-
-    delete[] kinetic_state;
-    kinetic_state = nullptr;
-    delete[] kinetic_rate;
-    kinetic_rate = nullptr;
-    delete[] kinetic_base_rate;
-    kinetic_base_rate = nullptr;
+    
+    kinetic_state.clear();
+    kinetic_rate.clear();
+    kinetic_base_rate.clear();
 
     delete[] phi_Gamma;
     phi_Gamma = nullptr;
@@ -248,8 +245,8 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         }
 
         // A 3D matrix describing the switching rates for each blob i.e. kinetic_rate[blob_index][from_conf][to_conf]
-        kinetic_rate = new scalar **[params.num_blobs];
-        kinetic_base_rate = new scalar **[params.num_blobs];
+        kinetic_rate = std::vector<std::vector<std::vector<scalar>>>(params.num_blobs);
+        kinetic_base_rate = std::vector<std::vector<std::vector<scalar>>>(params.num_blobs);
 
         // A 3D matrix holding the position maps enabling the switch from one conformation to another i.e. kinetic_map[blob_index][from_conf][to_conf]
         kinetic_map = std::vector<std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>>(params.num_blobs);
@@ -260,7 +257,7 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         kinetic_return_map = std::vector<std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>>(params.num_blobs);
 
         // A 2D matrix holding the information about the 'num_states' kinetic states for each blob
-        kinetic_state = new KineticState *[params.num_blobs];
+        kinetic_state = std::vector<std::vector<KineticState>>(params.num_blobs);
 
         // Assign all memory
         for (i = 0; i < params.num_blobs; ++i) {
@@ -3670,8 +3667,7 @@ int World::load_kinetic_states(string states_fname, int blob_index)
     // Load a default, single state
     if (states_fname == "")
     {
-
-        kinetic_state[blob_index] = new KineticState[1];
+        kinetic_state[blob_index] = std::vector<KineticState>(1);
         kinetic_state[blob_index][0].init();
 
         return FFEA_OK;
@@ -3713,7 +3709,7 @@ int World::load_kinetic_states(string states_fname, int blob_index)
     getline(fin, buf_string);
 
     // Create state objects
-    kinetic_state[blob_index] = new KineticState[num_states];
+    kinetic_state[blob_index] = std::vector<KineticState>(num_states);
 
     // Get actual states (each line varies)
     for (i = 0; i < num_states; ++i)
@@ -3806,11 +3802,11 @@ int World::load_kinetic_rates(string rates_fname, int blob_index)
     {
 
         // Create rates matrix
-        kinetic_rate[blob_index] = new scalar *[1];
-        kinetic_base_rate[blob_index] = new scalar *[1];
+        kinetic_rate[blob_index] = std::vector<std::vector<scalar>>(1);
+        kinetic_base_rate[blob_index] = std::vector<std::vector<scalar>>(1);
 
-        kinetic_rate[blob_index][0] = new scalar[1];
-        kinetic_base_rate[blob_index][0] = new scalar[1];
+        kinetic_rate[blob_index][0] = std::vector<scalar>(1);
+        kinetic_base_rate[blob_index][0] = std::vector<scalar>(1);
 
         kinetic_rate[blob_index][0][0] = 1.0;
         kinetic_base_rate[blob_index][0][0] = 1.0;
@@ -3839,12 +3835,12 @@ int World::load_kinetic_rates(string rates_fname, int blob_index)
     crap = fgets(buf, 255, fin);
 
     // Create rates matrix
-    kinetic_rate[blob_index] = new scalar *[num_states];
-    kinetic_base_rate[blob_index] = new scalar *[num_states];
+    kinetic_rate[blob_index] = std::vector<std::vector<scalar>>(num_states);
+    kinetic_base_rate[blob_index] = std::vector<std::vector<scalar>>(num_states);
     for (i = 0; i < num_states; ++i)
     {
-        kinetic_rate[blob_index][i] = new scalar[num_states];
-        kinetic_base_rate[blob_index][i] = new scalar[num_states];
+        kinetic_rate[blob_index][i] = std::vector<scalar>(num_states);
+        kinetic_base_rate[blob_index][i] = std::vector<scalar>(num_states);
     }
 
     scalar total_prob;

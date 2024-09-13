@@ -158,9 +158,9 @@ private:
 
     //@{
     /** @brief Kinetic State and Rate objects */
-    KineticState **kinetic_state;
-    scalar ***kinetic_rate;
-    scalar ***kinetic_base_rate;
+    std::vector<std::vector<KineticState>> kinetic_state;
+    std::vector<std::vector<std::vector<scalar>>> kinetic_rate;
+    std::vector<std::vector<std::vector<scalar>>> kinetic_base_rate;
     //@}
 
     /** @brief An array of springs which connect nodes if necessary */
