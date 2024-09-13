@@ -31,15 +31,14 @@ SparseMatrixFixedPattern::SparseMatrixFixedPattern() {
     entry = {};
     key = {};
     source_list = {};
-    diagonal = nullptr;
+    diagonal = {};
 }
 
 SparseMatrixFixedPattern::~SparseMatrixFixedPattern() {
-    delete[] diagonal;
     entry.clear();
     key.clear();
     source_list.clear();
-    diagonal = nullptr;
+    diagonal.clear();
     num_rows = 0;
     num_nonzero_elements = 0;
 }
@@ -52,13 +51,16 @@ int SparseMatrixFixedPattern::init(int num_rows, int num_nonzero_elements, std::
     this->source_list = source_list;
 
     // Work out which elements are on the diagonal
-    diagonal = new(std::nothrow) scalar*[num_rows];
-    if (!diagonal) FFEA_ERROR_MESSG("Failed to allocate 'diagonal' array in SparseMatrixFixedPattern::init\n");
+    try {
+        this->diagonal = std::vector<scalar*>(num_rows);
+    } catch(std::bad_alloc &) {
+        FFEA_ERROR_MESSG("Failed to allocate 'diagonal' array in SparseMatrixFixedPattern::init\n");
+    }
 
     for (int i = 0; i < num_rows; i++) {
         for (int j = key[i]; j < key[i + 1]; j++) {
             if (i == entry[j].column_index) {
-                diagonal[i] = &(entry[j].val);
+                diagonal[i] = &this->entry[j].val;
             }
         }
     }

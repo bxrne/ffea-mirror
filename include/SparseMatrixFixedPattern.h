@@ -106,7 +106,7 @@ private:
     std::vector<int> key;
 
     /** An array of pointers to the diagonal elements of the matrix (for fast calculation of inverse diagonal) */
-    scalar **diagonal;
+    std::vector<scalar *>diagonal;
 
     /** Lists the source of contributions to each corresponding entry in the entry array */
     std::vector<sparse_entry_sources> source_list;
