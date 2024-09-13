@@ -252,27 +252,24 @@ int World::init(string FFEA_script_filename, int frames_to_delete, int mode, boo
         kinetic_base_rate = new scalar **[params.num_blobs];
 
         // A 3D matrix holding the position maps enabling the switch from one conformation to another i.e. kinetic_map[blob_index][from_conf][to_conf]
-        kinetic_map.resize(params.num_blobs);
+        kinetic_map = std::vector<std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>>(params.num_blobs);
 
         // A 3D matrix holding pointers to the products of the above maps to make an 'identity' map i.e.:
         //kinetic_double_map[blob_index][conf_index][via_conf_index] = kinetic_map[blob_index][via_conf_index][conf_index] * kinetic_map[blob_index][conf_index][via_conf_index]
         // Used to compare energies between conformers before actually switching
-        kinetic_return_map.resize(params.num_blobs);
+        kinetic_return_map = std::vector<std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>>(params.num_blobs);
 
         // A 2D matrix holding the information about the 'num_states' kinetic states for each blob
         kinetic_state = new KineticState *[params.num_blobs];
 
         // Assign all memory
         for (i = 0; i < params.num_blobs; ++i) {
-            kinetic_map[i].resize(params.num_conformations[i]);
-            kinetic_return_map[i].resize(params.num_conformations[i]);
-            if (params.num_conformations[i] == 1) {
-                kinetic_map[i].clear();
-                kinetic_return_map[i].clear();
-            } else {
+            if (params.num_conformations[i] != 1) {
+                kinetic_map[i] = std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>(params.num_conformations[i]);
+                kinetic_return_map[i] = std::vector<std::vector<std::shared_ptr<SparseMatrixFixedPattern>>>(params.num_conformations[i]);
                 for (j = 0; j < params.num_conformations[i]; ++j) {
-                    kinetic_map[i][j].resize(params.num_conformations[i], nullptr);
-                    kinetic_return_map[i][j].resize(params.num_conformations[i], nullptr);
+                    kinetic_map[i][j] = std::vector<std::shared_ptr<SparseMatrixFixedPattern>>(params.num_conformations[i], nullptr);
+                    kinetic_return_map[i][j] = std::vector<std::shared_ptr<SparseMatrixFixedPattern>>(params.num_conformations[i], nullptr);
                 }
             }
         }
@@ -3459,6 +3456,12 @@ int World::build_kinetic_identity_maps() {
     for (int i = 0; i < params.num_blobs; ++i) {
         for (int j = 0; j < params.num_conformations[i]; ++j) {
             for (int k = j + 1; k < params.num_conformations[i]; ++k) {
+                if (!kinetic_map[i][j][k]) {
+                    printf("Kinetic map not setup right! 1");
+                }
+                if (!kinetic_map[i][k][j]) {
+                    printf("Kinetic map not setup right! 2");
+                }
                 kinetic_return_map[i][j][k] = kinetic_map[i][k][j]->apply(kinetic_map[i][j][k]);
                 kinetic_return_map[i][k][j] = kinetic_map[i][j][k]->apply(kinetic_map[i][k][j]);
             }
