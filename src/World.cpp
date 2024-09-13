@@ -5108,7 +5108,7 @@ void World::print_checkpoints()
     for (int i = 0; i < num_threads; i++)
     {
         (*rng)[i].GetState(state.data());
-        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+        fprintf(checkpoint_out, "%u %u %u %u %u %u\n", state[0], state[1], state[2],
                 state[3], state[4], state[5]);
         //for(int j = 0; j < 6; ++j) {
         // cout << " " << state[j];
@@ -5121,7 +5121,7 @@ void World::print_checkpoints()
     //cout << oldThreads << " " << thermal_seeds << " " << num_threads << endl << flush;
     for (int i = 0; i < oldThreads; i++)
     {
-        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", Seeds[i + num_threads][0],
+        fprintf(checkpoint_out, "%u %u %u %u %u %u\n", Seeds[i + num_threads][0],
                 Seeds[i + num_threads][1], Seeds[i + num_threads][2], Seeds[i + num_threads][3],
                 Seeds[i + num_threads][4], Seeds[i + num_threads][5]);
         // for(int j = 0; j < 6; ++j) {
@@ -5135,7 +5135,7 @@ void World::print_checkpoints()
     {
         fprintf(checkpoint_out, "RNGStream dedicated to the kinetics:\n");
         kinetic_rng->GetState(state.data());
-        fprintf(checkpoint_out, "%lu %lu %lu %lu %lu %lu\n", state[0], state[1], state[2],
+        fprintf(checkpoint_out, "%u %u %u %u %u %u\n", state[0], state[1], state[2],
                 state[3], state[4], state[5]);
     }
     //cout << "hi" << endl << flush;
