@@ -215,10 +215,6 @@ private:
     /** @brief Output file for the trajectory beads. Completely optional. */
     FILE *trajbeads_out;
 
-    /** Reader objects */
-    FFEA_input_reader *ffeareader;
-    FFEA_input_reader *systemreader;
-
     //@{
     /** Energies */
     scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, ssintenergy, preCompenergy;
@@ -250,9 +246,9 @@ private:
     /** @brief
      * Vector of the electrostatic potential on each surface in entire system
      */
-    scalar *phi_Gamma;
-    scalar *J_Gamma;
-    scalar *work_vec;
+    std::vector<scalar> phi_Gamma;
+    std::vector<scalar> J_Gamma;
+    std::vector<scalar> work_vec;
 
     /** @brief
      * Biconjugate gradient stabilised solver for nonsymmetric matrices
@@ -260,7 +256,7 @@ private:
     BiCGSTAB_solver nonsymmetric_solver;
 
     /** Van der Waals solver */
-    VdW_solver *vdw_solver;
+    std::unique_ptr<VdW_solver> vdw_solver;
 
     /** @brief LJ parameters matrix */
     SSINT_matrix ssint_matrix;
@@ -286,9 +282,9 @@ private:
 
     int load_springs(const char *fname);
 
-    rod::Rod_blob_interface* rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader* systemreader, rod::Rod** rod_array, Blob** blob_array);
+    rod::Rod_blob_interface* rod_blob_interface_from_block(vector<string> block, int interface_id, FFEA_input_reader &systemreader, rod::Rod** rod_array, Blob** blob_array);
 
-    rod::Rod* rod_from_block(vector<string> block, int block_id, FFEA_input_reader* systemreader);
+    rod::Rod* rod_from_block(vector<string> block, int block_id, FFEA_input_reader &systemreader);
 
     void update_rod_steric_nbr_lists(rod::Rod* rod_a, rod::Rod* rod_b);
 
