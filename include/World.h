@@ -164,10 +164,7 @@ private:
     //@}
 
     /** @brief An array of springs which connect nodes if necessary */
-    Spring *spring_array;
-
-    /** @brief And how many springs are there? */
-    int num_springs;
+    std::vector<Spring> spring_array;
 
     /** @brief How many kinetic binding sites are there? */
     int num_binding_sites;
@@ -217,7 +214,8 @@ private:
 
     //@{
     /** Energies */
-    scalar kineticenergy, strainenergy, springenergy, **springfieldenergy, ssintenergy, preCompenergy;
+    scalar kineticenergy, strainenergy, springenergy, ssintenergy, preCompenergy;
+    std::vector<std::vector<scalar>> springfieldenergy;
     //@}
 
     /** Momenta */

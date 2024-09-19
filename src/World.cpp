@@ -34,13 +34,12 @@ World::World()
     // Initialise everything to zero
     blob_array = nullptr;
     rod_array = nullptr;
-    spring_array = nullptr;
+    spring_array = {};
     kinetic_map = {};
     kinetic_return_map = {};
     kinetic_state = {};
     kinetic_rate = {};
     kinetic_base_rate = {};
-    num_springs = 0;
     mass_in_system = false;
     num_threads = 1;
     rng = {};
@@ -63,7 +62,7 @@ World::World()
     kineticenergy = 0.0;
     strainenergy = 0.0;
     springenergy = 0.0;
-    springfieldenergy = nullptr;
+    springfieldenergy = {};
     ssintenergy = 0.0;
     preCompenergy = 0.0;
 
@@ -88,10 +87,8 @@ World::~World()
     active_blob_array = nullptr;
     delete[] rod_array;
     rod_array = nullptr;
-
-    delete[] spring_array;
-    spring_array = nullptr;
-    num_springs = 0;
+    
+    spring_array.clear();
 
     mass_in_system = false;
     
@@ -147,8 +144,7 @@ World::~World()
     strainenergy = 0.0;
     springenergy = 0.0;
 
-    delete[] springfieldenergy;
-    springfieldenergy = nullptr;
+    springfieldenergy.clear();
 
     ssintenergy = 0.0;
     preCompenergy = 0.0;
@@ -4066,6 +4062,7 @@ int World::load_springs(const char *fname)
     }
 
     // read in the number of springs in the file
+    int num_springs;
     if (fscanf(in, "num_springs %d\n", &num_springs) != 1)
     {
         fclose(in);
@@ -4074,7 +4071,7 @@ int World::load_springs(const char *fname)
     printf("\t\tNumber of springs = %d\n", num_springs);
 
     // Allocate memory for springs
-    spring_array = new Spring[num_springs];
+    spring_array = std::vector<Spring>(num_springs);
 
     // Read in next line
     crap = fscanf(in, "springs:\n");
@@ -4146,10 +4143,10 @@ int World::load_springs(const char *fname)
     fclose(in);
 
     // Inititalise the energy array (move to a solver in the future, like the ssint)
-    springfieldenergy = new scalar *[params.num_blobs];
+    springfieldenergy = std::vector<std::vector<scalar>>(params.num_blobs);
     for (i = 0; i < params.num_blobs; ++i)
     {
-        springfieldenergy[i] = new scalar[params.num_blobs];
+        springfieldenergy[i] = std::vector<scalar>(params.num_blobs);
     }
     printf("\t\tRead %d springs from %s\n", num_springs, fname);
     activate_springs();
@@ -4570,7 +4567,7 @@ void World::rod_box_length_check(rod::Rod *current_rod, std::vector<float> dim)
 
 void World::activate_springs()
 {
-    for (int i = 0; i < num_springs; ++i)
+    for (int i = 0; i < spring_array.size(); ++i)
     {
 
         // If both ends of spring are active molecules, activate! This could probably be done more quickly with pointers if necessary in future
@@ -4589,7 +4586,7 @@ int World::apply_springs()
 {
     scalar force_mag;
     arr3 n1, n0, force0, force1, sep, sep_norm;
-    for (int i = 0; i < num_springs; ++i)
+    for (int i = 0; i < spring_array.size(); ++i)
     {
         if (spring_array[i].am_i_active == true)
         {
@@ -5172,7 +5169,7 @@ void World::make_measurements()
             }
         }
 
-        for (i = 0; i < num_springs; ++i)
+        for (i = 0; i < spring_array.size(); ++i)
         {
             active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], a);
             active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], b);
