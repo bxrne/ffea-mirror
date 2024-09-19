@@ -26,6 +26,7 @@
 #include "mpi.h"
 #endif
 #include <filesystem>
+#include <fstream>
 
 
 World::World()
@@ -3752,12 +3753,12 @@ int World::load_kinetic_rates(string rates_fname, int blob_index)
 {
 
     int i, j, num_states;
-    char *crap;
-    char buf[255];
+    const int buf_len = 255;
+    char buf[buf_len];
     string buf_string;
     vector<string> sline;
     vector<string>::iterator it;
-    FILE *fin;
+    std::ifstream fin;
 
     // Load a default, single rate
     if (rates_fname == "")
@@ -3777,16 +3778,17 @@ int World::load_kinetic_rates(string rates_fname, int blob_index)
     }
 
     // Open the file
-    fin = fopen(rates_fname.c_str(), "rb");
+    fin.open(rates_fname.c_str(), std::ifstream::in|std::ifstream::binary);
 
     // Get header stuff and check for errors
-    crap = fgets(buf, 255, fin);
+    fin.getline(buf, buf_len);
     if (strcmp(buf, "ffea kinetic rates file\n") != 0)
     {
         FFEA_ERROR_MESSG("\nExpected 'ffea kinetic rates file' as first line. This may not be an FFEA kinetic rates file\n")
     }
-
-    if (fscanf(fin, "num_states %d\n", &num_states) != 1)
+    fin.get(buf, buf_len, ' ');
+    fin >> num_states;
+    if (strcmp(buf, "num_states")||!fin.good())
     {
         FFEA_ERROR_MESSG("\nExpected 'num_states %%d' as second line. Unable to read further.\n")
     }
@@ -3794,7 +3796,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index)
     {
         FFEA_ERROR_MESSG("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.\n", rates_fname.c_str(), num_states, params.num_states[blob_index])
     }
-    crap = fgets(buf, 255, fin);
+    fin.getline(buf, buf_len);
 
     // Create rates matrix
     kinetic_rate[blob_index] = std::vector<std::vector<scalar>>(num_states);
@@ -3813,7 +3815,7 @@ int World::load_kinetic_rates(string rates_fname, int blob_index)
         total_prob = 0.0;
 
         // Get a line and split it
-        crap = fgets(buf, 255, fin);
+        fin.getline(buf, buf_len);
         boost::split(sline, buf, boost::is_any_of(" "), boost::token_compress_on);
         if (sline.size() > num_states)
         {
