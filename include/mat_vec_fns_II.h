@@ -262,6 +262,7 @@ template <typename T, size_t N,
     template<typename, size_t> typename Array2>
 T distance(const Array1<T, N> &a, const Array2<T, N> &b) {
     T result = 0;
+#pragma omp simd reduction(+:result)
     for (int i = 0; i < N; ++i) {
         const T t = a[i] - b[i];
         result += t * t;
@@ -271,6 +272,7 @@ T distance(const Array1<T, N> &a, const Array2<T, N> &b) {
 template <typename T>
 T distance(const std::vector<T> &a, const std::vector<T> &b) {
     T result = 0;
+#pragma omp simd reduction(+:result)
     for (int i = 0; i < a.size(); ++i) {
         const T t = a[i] - b[i];
         result += t * t;
@@ -280,26 +282,27 @@ T distance(const std::vector<T> &a, const std::vector<T> &b) {
 /** Return the length of a vector */
 template <typename T, size_t N, template<typename, size_t> typename Array>
 T magnitude(const Array<T, N>& a) {
-    T s = 0.0;
-#pragma omp simd reduction(+:s)
+    T result = 0.0;
+#pragma omp simd reduction(+:result)
     for (int i = 0; i < N; i++) {
-        s += a[i] * a[i];
+        result += a[i] * a[i];
     }
-    return sqrt(s);
+    return std::sqrt(result);
 }
 template <typename T>
 T magnitude(const std::vector<T>& a) {
-    T s = 0.0;
-#pragma omp simd reduction(+:s)
+    T result = 0.0;
+#pragma omp simd reduction(+:result)
     for (int i = 0; i < a.size(); i++) {
-        s += a[i] * a[i];
+        result += a[i] * a[i];
     }
-    return sqrt(s);
+    return  std::sqrt(result);
 }
 /** Given a scalar f, change v so that v += f*u */
 template <typename T, size_t N, template<typename, size_t> typename Array>
 T magnitude2(const Array<T, N> &a) {
     T result = 0;
+#pragma omp simd reduction(+:result)
     for (int i = 0; i < N; ++i) {
         const T t = a[i] - a[i];
         result += t * t;
@@ -309,6 +312,7 @@ T magnitude2(const Array<T, N> &a) {
 template <typename T>
 T magnitude2(const std::vector<T> &a) {
     T result = 0;
+#pragma omp simd reduction(+:result)
     for (int i = 0; i < a.size(); ++i) {
         const T t = a[i] - a[i];
         result += t * t;
