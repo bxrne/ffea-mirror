@@ -57,10 +57,6 @@ int BEM_Poisson_Boltzmann::init(NearestNeighbourLinkedListCube *lookup) {
     this->lookup = lookup;
     this->num_faces = lookup->get_pool_size();
 
-    //			int n2 = num_faces * num_faces;
-    //			mat_C = new scalar[n2];
-    //			mat_D = new scalar[n2];
-
     /* Create and initialise our sparse matrices */
     mat_C = std::make_unique<SparseMatrixUnknownPattern>();
     if (!mat_C) FFEA_ERROR_MESSG("Could not allocate C matrix\n");
