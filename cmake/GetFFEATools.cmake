@@ -44,21 +44,19 @@ endfunction()
 ffea_search_python_module(venv)
 set(VENV_EXECUTABLE ${Python3_EXECUTABLE} -m venv)
 set(VENV_DIR ${CMAKE_BINARY_DIR}/venv)
-  set(VENV_BYPRODUCTS "${VENV_DIR}")
-	if(WIN32)
-		set(VENV_PIP "${VENV_DIR}\\Scripts\\pip.exe")
-	else()
-		set(VENV_PIP ${VENV_DIR}/bin/pip)
-	endif()
-	# make a venv to install our python package in it
-	add_custom_command(TARGET ${PYTHON_MODULE_TARGET_NAME} POST_BUILD
-		# create venv
-    COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
-    # Install the ffeatools requirements.txt
-    COMMAND ${VENV_PIP} install -r "${FFEATools_SOURCE_DIR}/requirements.txt"
-    # Manually install ffeatools
-    COMMAND ${CMAKE_COMMAND} -E env CC=gcc ${VENV_PIP} install --editable "${FFEATools_SOURCE_DIR}" -v
-    BYPRODUCTS ${VENV_BYPRODUCTS}
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Install ${PYTHON_DISTRIBUTION_NAME} FFEATools into ${VENV_DIR}"
-  )
+set(VENV_BYPRODUCTS "${VENV_DIR}")
+if(WIN32)
+    set(VENV_PIP "${VENV_DIR}\\Scripts\\pip.exe")
+else()
+    set(VENV_PIP ${VENV_DIR}/bin/pip)
+endif()
+# make a venv to install our python package in it
+add_custom_target(ffeatools_venv
+# create venv
+COMMAND ${VENV_EXECUTABLE} ${VENV_DIR}
+# Manually install ffeatools and it's dependencies
+COMMAND ${CMAKE_COMMAND} -E env CC=gcc ${VENV_PIP} install --editable "${ffeatools_SOURCE_DIR}" -v
+BYPRODUCTS ${VENV_BYPRODUCTS}
+WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+COMMENT "Install ${PYTHON_DISTRIBUTION_NAME} FFEATools into ${VENV_DIR}"
+)
