@@ -15,8 +15,8 @@ try:
     ndc_extractor = FFEA_rod.cc_extractor
 except ImportError:
     from ffeatools import wrap
-    from ffeatools import FFEA_script
-    from ffeatools import FFEA_rod
+    from ffeatools import ffea_script
+    from ffeatools import ffea_rod
     import ffeatools.rod.cc_extractor as ndc_extractor
 
 try:
