@@ -34,7 +34,7 @@ except:
     try:
         from ffeatools.ffea_script import ffea_script as FFEA_script
     except ImportError:
-        print("Failure to import FFEA_trajectory")
+        print("Failure to import FFEA_script")
         sys.exit(1) # failure to import
 
 
