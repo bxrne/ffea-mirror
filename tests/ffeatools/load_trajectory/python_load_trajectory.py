@@ -40,7 +40,7 @@ except:
         sys.exit(1) # failure to import
 
 try:
-    test_load_traj = FFEA_trajectory.FFEA_trajectory("unit_test_traj.ftj")
+    test_load_traj = FFEA_trajectory("unit_test_traj.ftj")
     sys.exit(0)
 except IOError:
     print("Couldn't find trajectory file that's supposed to be packed in with these tests. Probably a CMake issue!")
