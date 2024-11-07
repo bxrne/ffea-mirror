@@ -3691,12 +3691,8 @@ void World::get_system_dimensions(arr3 &dimension)
     dimension[2] = 0;
 
     arr3 min, max;
-    min[0] = INFINITY;
-    min[1] = INFINITY;
-    min[2] = INFINITY;
-    max[0] = -1 * INFINITY;
-    max[1] = -1 * INFINITY;
-    max[2] = -1 * INFINITY;
+    std::fill(min.begin(), min.end(), std::numeric_limits<scalar>::max());
+    std::fill(max.begin(), max.end(), std::numeric_limits<scalar>::min());
 
     arr3 blob_min, blob_max;
     for (int i = 0; i < params.num_blobs; i++) {
