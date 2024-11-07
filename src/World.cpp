@@ -3699,35 +3699,11 @@ void World::get_system_dimensions(arr3 &dimension)
     max[2] = -1 * INFINITY;
 
     arr3 blob_min, blob_max;
-    for (int i = 0; i < params.num_blobs; i++)
-    {
+    for (int i = 0; i < params.num_blobs; i++) {
         active_blob_array[i]->get_min_max(blob_min, blob_max);
-        if (blob_min[0] < min[0])
-        {
-            min[0] = blob_min[0];
-        }
-        if (blob_min[1] < min[1])
-        {
-            min[1] = blob_min[1];
-        }
-        if (blob_min[2] < min[2])
-        {
-            min[2] = blob_min[2];
-        }
-
-        if (blob_max[0] > max[0])
-        {
-            max[0] = blob_max[0];
-        }
-
-        if (blob_max[1] > max[1])
-        {
-            max[1] = blob_max[1];
-        }
-
-        if (blob_max[2] > max[2])
-        {
-            max[2] = blob_max[2];
+        for (int j = 0; j < 3; ++j) {
+            min[j] = std::min(blob_min[j], min[j]);
+            max[j] = std::max(blob_max[j], max[j]);
         }
     }
 
@@ -3735,29 +3711,9 @@ void World::get_system_dimensions(arr3 &dimension)
     for (int i = 0; i < params.num_rods; i++)
     {
         rod_array[i]->get_min_max(rod_array[i]->current_r, rod_min, rod_max);
-        if (rod_max[0] > max[0])
-        {
-            max[0] = rod_max[0];
-        }
-        if (rod_max[1] > max[1])
-        {
-            max[1] = rod_max[1];
-        }
-        if (rod_max[2] > max[2])
-        {
-            max[2] = rod_max[2];
-        }
-        if (rod_min[0] < min[0])
-        {
-            min[0] = rod_min[0];
-        }
-        if (rod_min[1] < min[1])
-        {
-            min[1] = rod_min[1];
-        }
-        if (rod_min[2] < min[2])
-        {
-            min[2] = rod_min[2];
+        for (int j = 0; j < 3; ++j) {
+            min[j] = std::min<scalar>(rod_min[j], min[j]);
+            max[j] = std::max<scalar>(rod_max[j], max[j]);
         }
     }
 
