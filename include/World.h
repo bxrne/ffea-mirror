@@ -123,16 +123,16 @@ public:
     void print_kinetic_rates_to_screen(int type);
 
     /* */
-    void get_system_CoM(arr3 &system_CoM);
+    void get_system_CoM(arr3 &system_CoM) const;
 
     /* */
-    void get_system_centroid(arr3 &centroid);
+    void get_system_centroid(arr3 &centroid) const;
 
     /* */
-    void get_system_dimensions(arr3 &dimenstion_vector);
+    void get_system_dimensions(arr3 &dimenstion_vector) const;
 
     /* */
-    int get_num_blobs();
+    int get_num_blobs() const;
 
 
 private:

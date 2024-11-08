@@ -2330,7 +2330,7 @@ void World::read_and_build_system(const vector<string> &script_vector)
     {
 
         // Initialise some blob_conf stuff:
-        blob_conf.push_back(Blob_conf());
+        blob_conf.emplace_back(Blob_conf());
         blob_conf[i].set_centroid = 0;
         blob_conf[i].set_velocity = 0;
         blob_conf[i].set_rotation = 0;
@@ -2358,7 +2358,7 @@ void World::read_and_build_system(const vector<string> &script_vector)
             }
 
             // Error check
-            if (conformation_vector.size() == 0)
+            if (conformation_vector.empty())
             {
                 throw FFEAException("In 'Blob' block %d, expected at least a single 'conformation' block.", i);
             }
@@ -2476,10 +2476,10 @@ void World::read_and_build_system(const vector<string> &script_vector)
                 }
                 else
                 {
-                    topology.push_back("");
-                    material.push_back("");
-                    stokes.push_back("");
-                    pin.push_back("");
+                    topology.emplace_back("");
+                    material.emplace_back("");
+                    stokes.emplace_back("");
+                    pin.emplace_back("");
                     set_top = 1;
                     set_mat = 1;
                     set_stokes = 1;
@@ -2489,19 +2489,19 @@ void World::read_and_build_system(const vector<string> &script_vector)
                 // Optional stuff
                 if (set_preComp == 0)
                 {
-                    beads.push_back("");
+                    beads.emplace_back("");
                     set_preComp = 1;
                 }
 
                 if (set_binding == 0)
                 {
-                    binding.push_back("");
+                    binding.emplace_back("");
                     set_binding = 1;
                 }
 
                 if (set_pin == 0)
                 {
-                    pin.push_back("");
+                    pin.emplace_back("");
                     set_pin = 1;
                 }
             }
@@ -2590,8 +2590,6 @@ void World::read_and_build_system(const vector<string> &script_vector)
         }
 
         // Finally, get the extra blob data (solver, scale, centroid etc)
-        int rotation_type = -1;
-
         for (const auto &blob_str : blob_vector)
         {
             systemreader.parse_tag(blob_str, lrvalue);
@@ -2635,7 +2633,7 @@ void World::read_and_build_system(const vector<string> &script_vector)
             }
             else if (lrvalue[0] == "calc_compress")
             {
-                calc_compress = atof(lrvalue[1].c_str());
+                calc_compress = static_cast<int>(atof(lrvalue[1].c_str()));
             }
             else if (lrvalue[0] == "compress")
             {
@@ -2654,9 +2652,8 @@ void World::read_and_build_system(const vector<string> &script_vector)
                 lrvalue[1] = boost::erase_last_copy(boost::erase_first_copy(lrvalue[1], "("), ")");
                 boost::trim(lrvalue[1]);
                 systemreader.split_string(lrvalue[1], blob_conf[i].velocity, ",", 3);
-                for (int ivt = 0; ivt < 3; ivt++)
-                {
-                    blob_conf[i].velocity[ivt] /= mesoDimensions::velocity;
+                for (auto &ivt  : blob_conf[i].velocity){
+                    ivt /= mesoDimensions::velocity;
                 }
             }
             else if (lrvalue[0] == "rotation")
@@ -2840,9 +2837,9 @@ void World::read_and_build_system(const vector<string> &script_vector)
         rod_array[i] = rod_from_block(script_vector, i, systemreader);
 
         // Carry over params from script file
-        rod_array[i]->viscosity = params.stokes_visc;
-        rod_array[i]->timestep = params.dt;
-        rod_array[i]->kT = params.kT;
+        rod_array[i]->viscosity = static_cast<float>(params.stokes_visc);
+        rod_array[i]->timestep = static_cast<float>(params.dt);
+        rod_array[i]->kT = static_cast<float>(params.kT);
         rod_array[i]->calc_noise = params.calc_noise;
         rod_array[i]->calc_steric = params.calc_steric_rod;
         rod_array[i]->calc_vdw = params.calc_vdw_rod;
@@ -2910,11 +2907,9 @@ void World::read_and_build_system(const vector<string> &script_vector)
  * */
 void World::load_kinetic_maps(const vector<string> &map_fnames, const vector<int> &map_from, const vector<int> &map_to, int blob_index)
 {
-
-    unsigned int i, j, num_rows, num_cols, num_entries;
     string buf_string;
     vector<string> string_vec;
-    for (i = 0; i < map_fnames.size(); ++i)
+    for (int i = 0; i < map_fnames.size(); ++i)
     {
 
         cout << "\t\t\tReading map " << i << ", " << map_fnames.at(i) << ": from conformation " << map_from.at(i) << " to " << map_to.at(i) << endl;
@@ -2935,7 +2930,7 @@ void World::load_kinetic_maps(const vector<string> &map_fnames, const vector<int
         // Get nodes to and from and check against the structures
         getline(fin, buf_string);
         boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
-        num_cols = atoi(string_vec.at(string_vec.size() - 1).c_str());
+        const int num_cols = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
         if (num_cols != blob_array[blob_index][map_from.at(i)].get_num_nodes())
         {
@@ -2944,7 +2939,7 @@ void World::load_kinetic_maps(const vector<string> &map_fnames, const vector<int
 
         getline(fin, buf_string);
         boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
-        num_rows = atoi(string_vec.at(string_vec.size() - 1).c_str());
+        const int num_rows = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
         if (num_rows != blob_array[blob_index][map_to.at(i)].get_num_nodes())
         {
@@ -2954,7 +2949,7 @@ void World::load_kinetic_maps(const vector<string> &map_fnames, const vector<int
         // Get num_entries
         getline(fin, buf_string);
         boost::split(string_vec, buf_string, boost::is_space(), boost::token_compress_on);
-        num_entries = atoi(string_vec.at(string_vec.size() - 1).c_str());
+        const int num_entries = atoi(string_vec.at(string_vec.size() - 1).c_str());
 
         // Create some memory for the matrix stuff
         std::vector<scalar> entries = std::vector<scalar>(num_entries);
@@ -2968,7 +2963,7 @@ void World::load_kinetic_maps(const vector<string> &map_fnames, const vector<int
         // 'entries -'
         fin >> buf_string;
         fin >> buf_string;
-        for (j = 0; j < num_entries; j++)
+        for (int j = 0; j < num_entries; j++)
         {
             fin >> buf_string;
             entries[j] = atof(buf_string.c_str());
@@ -2977,7 +2972,7 @@ void World::load_kinetic_maps(const vector<string> &map_fnames, const vector<int
         // 'key -'
         fin >> buf_string;
         fin >> buf_string;
-        for (j = 0; j < num_rows + 1; j++)
+        for (int j = 0; j < num_rows + 1; j++)
         {
             fin >> buf_string;
             key[j] = atoi(buf_string.c_str());
@@ -2986,7 +2981,7 @@ void World::load_kinetic_maps(const vector<string> &map_fnames, const vector<int
         // 'columns -'
         fin >> buf_string;
         fin >> buf_string;
-        for (j = 0; j < num_entries; j++)
+        for (int j = 0; j < num_entries; j++)
         {
             fin >> buf_string;
             col_index[j] = atoi(buf_string.c_str());
@@ -3034,26 +3029,18 @@ void World::build_kinetic_identity_maps() {
 
 void World::calculate_kinetic_rates()
 {
-    int i, j;
-    int current_state;
-    float prob_sum;
-
-    int base_bsindex, target_bsindex, other_blob_index;
-    int base_type, target_type;
-    BindingSite *base_site, *target_site;
-
     // For each blob
-    for (i = 0; i < params.num_blobs; ++i)
+    for (int i = 0; i < params.num_blobs; ++i)
     {
 
         // Get current state
-        current_state = active_blob_array[i]->get_state_index();
+        int current_state = active_blob_array[i]->get_state_index();
         //cout << "Current State = " << current_state << endl;
         // Set total probability to 0
-        prob_sum = 0.0;
+        scalar prob_sum = 0.0;
 
         // And for each state we could switch to
-        for (j = 0; j < params.num_states[i]; ++j)
+        for (int j = 0; j < params.num_states[i]; ++j)
         {
 
             // No need to check if j == current_state
@@ -3084,13 +3071,13 @@ void World::calculate_kinetic_rates()
                 kinetic_rate[i][current_state][j] = 0.0;
 
                 // Get the base and target types
-                base_type = kinetic_state[i][j].get_base_bsite_type();
-                target_type = kinetic_state[i][j].get_target_bsite_type();
+                int base_type = kinetic_state[i][j].get_base_bsite_type();
+                int target_type = kinetic_state[i][j].get_target_bsite_type();
 
                 // Scan all sites on this blob
-                for (base_bsindex = 0; base_bsindex < active_blob_array[i]->getNumBindingSites(); ++base_bsindex)
+                for (int base_bsindex = 0; base_bsindex < active_blob_array[i]->getNumBindingSites(); ++base_bsindex)
                 {
-                    base_site = active_blob_array[i]->get_binding_site(base_bsindex);
+                    BindingSite *base_site = active_blob_array[i]->get_binding_site(base_bsindex);
 
                     // If wrong type, move on
                     if (base_site->get_type() != base_type)
@@ -3099,7 +3086,7 @@ void World::calculate_kinetic_rates()
                     }
 
                     // Else, scan all other binding sites in the world
-                    for (other_blob_index = 0; other_blob_index < params.num_blobs; ++other_blob_index)
+                    for (int other_blob_index = 0; other_blob_index < params.num_blobs; ++other_blob_index)
                     {
 
                         // If same blob, continue (for now)
@@ -3109,10 +3096,10 @@ void World::calculate_kinetic_rates()
                         }
 
                         // Scan all sites on this blob too
-                        for (target_bsindex = 0; target_bsindex < active_blob_array[other_blob_index]->getNumBindingSites(); ++target_bsindex)
+                        for (int target_bsindex = 0; target_bsindex < active_blob_array[other_blob_index]->getNumBindingSites(); ++target_bsindex)
                         {
 
-                            target_site = active_blob_array[other_blob_index]->get_binding_site(target_bsindex);
+                            BindingSite *target_site = active_blob_array[other_blob_index]->get_binding_site(target_bsindex);
 
                             // If wrong type, move on
                             if (target_site->get_type() != target_type)
@@ -3172,14 +3159,12 @@ void World::calculate_kinetic_rates()
 
 void World::choose_new_kinetic_state(int blob_index, int *target)
 {
-
-    int i;
     scalar switch_check;
 
     // Make some bins
     vector<scalar[2]> bin(params.num_states[blob_index]);
     scalar total = 0.0;
-    for (i = 0; i < params.num_states[blob_index]; ++i)
+    for (int i = 0; i < params.num_states[blob_index]; ++i)
     {
 
         // Lower limit
@@ -3197,7 +3182,7 @@ void World::choose_new_kinetic_state(int blob_index, int *target)
     switch_check = kinetic_rng->RandU01();
 
     // See which bin this falls into
-    for (i = 0; i < params.num_states[blob_index]; ++i)
+    for (int i = 0; i < params.num_states[blob_index]; ++i)
     {
         if (switch_check > bin[i][0] && switch_check <= bin[i][1])
         {
@@ -3208,13 +3193,10 @@ void World::choose_new_kinetic_state(int blob_index, int *target)
 
 void World::load_kinetic_states(string states_fname, int blob_index)
 {
-
-    int i, j, num_states, conf_index, from, to; //, site_index;
     const int MAX_BUF_SIZE = 255;
-    char buf[MAX_BUF_SIZE];
+    std::array<char, MAX_BUF_SIZE> buf = {};
     string buf_string;
     vector<string> sline;
-    vector<string>::iterator it;
 
     // Load a default, single state
     if (states_fname == "")
@@ -3237,9 +3219,9 @@ void World::load_kinetic_states(string states_fname, int blob_index)
     cout << "\n\t\tReading in Kinetic States file: " << states_fname << endl;
 
     // Get header stuff and check for errors
-    fin.getline(buf, MAX_BUF_SIZE);
+    fin.getline(buf.data(), MAX_BUF_SIZE);
 
-    if (strcmp(buf, "ffea kinetic states file") != 0)
+    if (strcmp(buf.data(), "ffea kinetic states file") != 0)
     {
         throw FFEAException("\nExpected 'ffea kinetic states file' as first line. This may not be an FFEA kinetic states file.");
     }
@@ -3248,8 +3230,8 @@ void World::load_kinetic_states(string states_fname, int blob_index)
     getline(fin, buf_string);
     boost::trim(buf_string);
     boost::split(sline, buf_string, boost::is_space(), boost::token_compress_on);
-    ;
-    num_states = atoi(sline.at(1).c_str());
+    
+    int num_states = atoi(sline.at(1).c_str());
 
     if (num_states != params.num_states[blob_index])
     {
@@ -3263,7 +3245,7 @@ void World::load_kinetic_states(string states_fname, int blob_index)
     kinetic_state[blob_index] = std::vector<KineticState>(num_states);
 
     // Get actual states (each line varies)
-    for (i = 0; i < num_states; ++i)
+    for (int i = 0; i < num_states; ++i)
     {
 
         // Get conformation_index first
@@ -3271,7 +3253,7 @@ void World::load_kinetic_states(string states_fname, int blob_index)
         boost::trim(buf_string);
         boost::split(sline, buf_string, boost::is_space(), boost::token_compress_on);
 
-        conf_index = atoi(sline.at(1).c_str());
+        int conf_index = atoi(sline.at(1).c_str());
 
         if (conf_index < 0 || conf_index >= params.num_conformations[blob_index])
         {
@@ -3287,12 +3269,9 @@ void World::load_kinetic_states(string states_fname, int blob_index)
         // Check line consistency
 
         // No sites defined
-        if (sline.size() == 1)
-        {
-            from = -1;
-            to = -1;
-        }
-        else
+        int from = -1;
+        int to = -1;
+        if (sline.size() != 1)
         {
 
             if (sline.size() - 1 != 2)
@@ -3303,17 +3282,17 @@ void World::load_kinetic_states(string states_fname, int blob_index)
             sline.erase(sline.begin());
 
             // Reset counter
-            j = -1;
-            for (it = sline.begin(); it != sline.end(); ++it)
+            int j = -1;
+            for (auto &it : sline)
             {
                 j++;
                 if (j == 0)
                 {
-                    from = atoi((*it).c_str());
+                    from = atoi(it.c_str());
                 }
                 else if (j == 1)
                 {
-                    to = atoi((*it).c_str());
+                    to = atoi(it.c_str());
 
                     if (from >= binding_matrix.num_interaction_types || to >= binding_matrix.num_interaction_types)
                     {
@@ -3338,13 +3317,11 @@ void World::load_kinetic_states(string states_fname, int blob_index)
 
 void World::load_kinetic_rates(string rates_fname, int blob_index)
 {
-    int i, j, num_states;
-    char *crap;
-    char buf[255];
+    const int MAX_BUF_SIZE = 255;
+    std::array<char, MAX_BUF_SIZE> buf = {};
     string buf_string;
     vector<string> sline;
     vector<string>::iterator it;
-    FILE *fin;
 
     // Load a default, single rate
     if (rates_fname == "")
@@ -3364,15 +3341,15 @@ void World::load_kinetic_rates(string rates_fname, int blob_index)
     }
 
     // Open the file
-    fin = fopen(rates_fname.c_str(), "rb");
+    FILE*fin = fopen(rates_fname.c_str(), "rb");
 
     // Get header stuff and check for errors
-    crap = fgets(buf, 255, fin);
-    if (strcmp(buf, "ffea kinetic rates file\n") != 0)
+    fgets(buf.data(), 255, fin);
+    if (strcmp(buf.data(), "ffea kinetic rates file\n") != 0)
     {
         throw FFEAException("\nExpected 'ffea kinetic rates file' as first line. This may not be an FFEA kinetic rates file.");
     }
-
+    int num_states;
     if (fscanf(fin, "num_states %d\n", &num_states) != 1)
     {
         throw FFEAException("\nExpected 'num_states %%d' as second line. Unable to read further.");
@@ -3381,12 +3358,12 @@ void World::load_kinetic_rates(string rates_fname, int blob_index)
     {
         throw FFEAException("\nnum_states defined in '%s', %d, does not correspond to the initial script file, %d.", rates_fname.c_str(), num_states, params.num_states[blob_index]);
     }
-    crap = fgets(buf, 255, fin);
+     fgets(buf.data(), 255, fin);
 
     // Create rates matrix
     kinetic_rate[blob_index] = std::vector<std::vector<scalar>>(num_states);
     kinetic_base_rate[blob_index] = std::vector<std::vector<scalar>>(num_states);
-    for (i = 0; i < num_states; ++i)
+    for (int i = 0; i < num_states; ++i)
     {
         kinetic_rate[blob_index][i] = std::vector<scalar>(num_states);
         kinetic_base_rate[blob_index][i] = std::vector<scalar>(num_states);
@@ -3395,19 +3372,19 @@ void World::load_kinetic_rates(string rates_fname, int blob_index)
     scalar total_prob;
 
     // Get each state's rates and check total probability is conserved
-    for (i = 0; i < num_states; ++i)
+    for (int i = 0; i < num_states; ++i)
     {
         total_prob = 0.0;
 
         // Get a line and split it
-        crap = fgets(buf, 255, fin);
+        fgets(buf.data(), 255, fin);
         boost::split(sline, buf, boost::is_any_of(" "), boost::token_compress_on);
         if (sline.size() > num_states)
         {
             throw FFEAException("\nState %d contains %zd rate values, instead of 'num_states', %d.", i, sline.size(), num_states);
         }
 
-        j = -1;
+        int j = -1;
         for (it = sline.begin(); it != sline.end(); ++it)
         {
 
@@ -3438,23 +3415,22 @@ void World::load_kinetic_rates(string rates_fname, int blob_index)
 
 void World::print_kinetic_rates_to_screen(int type)
 {
-    int i, j, k;
     cout << "Kinetic Rates:" << endl;
-    for (i = 0; i < params.num_blobs; ++i)
+    for (int i = 0; i < params.num_blobs; ++i)
     {
         cout << "\tBlob " << i << ":\n"
              << endl;
         cout << "\tto";
-        for (j = 0; j < params.num_states[i]; ++j)
+        for (int j = 0; j < params.num_states[i]; ++j)
         {
             cout << "\t" << j;
         }
         cout << endl
              << "from" << endl;
-        for (j = 0; j < params.num_states[i]; ++j)
+        for (int j = 0; j < params.num_states[i]; ++j)
         {
             cout << j << "\t\t";
-            for (k = 0; k < params.num_states[i]; ++k)
+            for (int k = 0; k < params.num_states[i]; ++k)
             {
                 if (type == 0)
                 {
@@ -3473,11 +3449,9 @@ void World::print_kinetic_rates_to_screen(int type)
 }
 
 /* */
-void World::get_system_CoM(arr3 &system_CoM)
+void World::get_system_CoM(arr3 &system_CoM) const
 {
-    system_CoM[0] = 0;
-    system_CoM[1] = 0;
-    system_CoM[2] = 0;
+    std::fill(system_CoM.begin(), system_CoM.end(), 0);
     scalar total_mass = 0;
     for (int i = 0; i < params.num_blobs; i++)
     {
@@ -3495,12 +3469,10 @@ void World::get_system_CoM(arr3 &system_CoM)
 }
 
 /* */
-void World::get_system_centroid(arr3 &centroid)
+void World::get_system_centroid(arr3 &centroid) const
 {
     /** Blob centroid */
-    centroid[0] = 0;
-    centroid[1] = 0;
-    centroid[2] = 0;
+    std::fill(centroid.begin(), centroid.end(), 0);
     int total_num_nodes = 0;
     for (int i = 0; i < params.num_blobs; i++)
     {
@@ -3519,9 +3491,9 @@ void World::get_system_centroid(arr3 &centroid)
         rod::float3 rod_centroid;
         rod_array[i]->get_centroid(rod_array[i]->current_r, rod_centroid);
         /** I'm leaving it like this and there's nothing you can do about it */
-        centroid[0] += rod_centroid[0] * rod_array[i]->num_nodes;
-        centroid[1] += rod_centroid[1] * rod_array[i]->num_nodes;
-        centroid[2] += rod_centroid[2] * rod_array[i]->num_nodes;
+        centroid[0] += static_cast<scalar>(rod_centroid[0] * static_cast<float>(rod_array[i]->num_nodes));
+        centroid[1] += static_cast<scalar>(rod_centroid[1] * static_cast<float>(rod_array[i]->num_nodes));
+        centroid[2] += static_cast<scalar>(rod_centroid[2] * static_cast<float>(rod_array[i]->num_nodes));
         total_num_nodes += rod_array[i]->num_nodes;
     }
 
@@ -3530,17 +3502,15 @@ void World::get_system_centroid(arr3 &centroid)
     centroid[2] /= total_num_nodes;
 }
 
-void World::get_system_dimensions(arr3 &dimension)
+void World::get_system_dimensions(arr3 &dimension) const
 {
-    dimension[0] = 0;
-    dimension[1] = 0;
-    dimension[2] = 0;
-
-    arr3 min, max;
+    arr3 min;
+    arr3 max;
     std::fill(min.begin(), min.end(), std::numeric_limits<scalar>::max());
     std::fill(max.begin(), max.end(), std::numeric_limits<scalar>::min());
 
-    arr3 blob_min, blob_max;
+    arr3 blob_min;
+    arr3 blob_max;
     for (int i = 0; i < params.num_blobs; i++) {
         active_blob_array[i]->get_min_max(blob_min, blob_max);
         for (int j = 0; j < 3; ++j) {
@@ -3549,7 +3519,8 @@ void World::get_system_dimensions(arr3 &dimension)
         }
     }
 
-    rod::float3 rod_min, rod_max;
+    rod::float3 rod_min;
+    rod::float3 rod_max;
     for (int i = 0; i < params.num_rods; i++)
     {
         rod_array[i]->get_min_max(rod_array[i]->current_r, rod_min, rod_max);
@@ -3564,19 +3535,17 @@ void World::get_system_dimensions(arr3 &dimension)
     dimension[2] = max[2] - min[2];
 }
 
-int World::get_num_blobs()
+int World::get_num_blobs() const
 {
-
     return params.num_blobs;
 }
 
 void World::load_springs(const char *fname)
 {
-
-    int i, crap;
+    
     FILE *in = nullptr;
     const int max_line_size = 50;
-    char line[max_line_size];
+    std::array<char, max_line_size> line = {};
 
     // open the spring file
     if (!(in = fopen(fname, "rb")))
@@ -3586,12 +3555,12 @@ void World::load_springs(const char *fname)
     printf("\tReading in springs file: %s\n", fname);
 
     // first line should be the file type "ffea springs file"
-    if (!fgets(line, max_line_size, in))
+    if (!fgets(line.data(), max_line_size, in))
     {
         fclose(in);
         throw FFEAException("Error reading first line of spring file");
     }
-    if (strcmp(line, "ffea springs file\n") != 0)
+    if (strcmp(line.data(), "ffea springs file\n") != 0)
     {
         fclose(in);
         throw FFEAException("This is not a 'ffea spring file' (read '%s')", line);
@@ -3610,8 +3579,8 @@ void World::load_springs(const char *fname)
     spring_array = std::vector<Spring>(num_springs);
 
     // Read in next line
-    crap = fscanf(in, "springs:\n");
-    for (i = 0; i < num_springs; ++i)
+    fscanf(in, "springs:\n");
+    for (int i = 0; i < num_springs; ++i)
     {
         if (fscanf(in, "%lf %lf %d %d %d %d %d %d\n", &spring_array[i].k, &spring_array[i].l, &spring_array[i].blob_index[0], &spring_array[i].blob_index[1], &spring_array[i].conformation_index[0], &spring_array[i].conformation_index[1], &spring_array[i].node_index[0], &spring_array[i].node_index[1]) != 8)
         {
@@ -3665,7 +3634,7 @@ void World::load_springs(const char *fname)
 
     // Inititalise the energy array (move to a solver in the future, like the ssint)
     springfieldenergy = std::vector<std::vector<scalar>>(params.num_blobs);
-    for (i = 0; i < params.num_blobs; ++i)
+    for (int i = 0; i < params.num_blobs; ++i)
     {
         springfieldenergy[i] = std::vector<scalar>(params.num_blobs);
     }
@@ -3694,7 +3663,7 @@ rod::Rod_blob_interface *World::rod_blob_interface_from_block(vector<string> blo
     rod::float3 rotation;
     rod::float3 node_weighting;
 
-    for (auto &tag_str : block)
+    for (const auto &tag_str : block)
     {
 
         systemreader.parse_tag(tag_str, tag_out);
@@ -3711,10 +3680,7 @@ rod::Rod_blob_interface *World::rod_blob_interface_from_block(vector<string> blo
         {
             continue;
         }
-
-        // Set filename
-        //if (tag_out[0] == "output" && coupling_parent){ current_rod->change_filename(tag_out[1]); }
-
+        
         // parse coupling block
         if (tag_out[0] == "coupling type" && coupling_parent && (tag_out[1] == "rod-to-blob" || tag_out[1] == "blob-to-rod"))
         {
@@ -4085,18 +4051,11 @@ void World::rod_box_length_check(rod::Rod *current_rod, std::vector<float> dim)
 
 void World::activate_springs()
 {
-    for (int i = 0; i < spring_array.size(); ++i)
+    for (auto &spring : spring_array)
     {
-
         // If both ends of spring are active molecules, activate! This could probably be done more quickly with pointers if necessary in future
-        if (spring_array[i].conformation_index[0] == active_blob_array[spring_array[i].blob_index[0]]->conformation_index && spring_array[i].conformation_index[1] == active_blob_array[spring_array[i].blob_index[1]]->conformation_index)
-        {
-            spring_array[i].am_i_active = true;
-        }
-        else
-        {
-            spring_array[i].am_i_active = false;
-        }
+        spring.am_i_active = (spring.conformation_index[0] == active_blob_array[spring.blob_index[0]]->conformation_index && 
+                              spring.conformation_index[1] == active_blob_array[spring.blob_index[1]]->conformation_index);
     }
 }
 
@@ -4104,12 +4063,12 @@ void World::apply_springs()
 {
     scalar force_mag;
     arr3 n1, n0, force0, force1, sep, sep_norm;
-    for (int i = 0; i < spring_array.size(); ++i)
+    for (auto& spring : spring_array)
     {
-        if (spring_array[i].am_i_active == true)
+        if (spring.am_i_active == true)
         {
-            active_blob_array[spring_array[i].blob_index[1]]->get_node(spring_array[i].node_index[1], n1);
-            active_blob_array[spring_array[i].blob_index[0]]->get_node(spring_array[i].node_index[0], n0);
+            active_blob_array[spring.blob_index[1]]->get_node(spring.node_index[1], n1);
+            active_blob_array[spring.blob_index[0]]->get_node(spring.node_index[0], n0);
             sep[0] = n1[0] - n0[0];
             sep[1] = n1[1] - n0[1];
             sep[2] = n1[2] - n0[2];
@@ -4134,7 +4093,7 @@ void World::apply_springs()
                 }
             }
 
-            force_mag = spring_array[i].k * (magnitude(sep) - spring_array[i].l);
+            force_mag = spring.k * (magnitude(sep) - spring.l);
             force0[0] = force_mag * sep_norm[0];
             force0[1] = force_mag * sep_norm[1];
             force0[2] = force_mag * sep_norm[2];
@@ -4142,8 +4101,8 @@ void World::apply_springs()
             force1[0] = -1 * force_mag * sep_norm[0];
             force1[1] = -1 * force_mag * sep_norm[1];
             force1[2] = -1 * force_mag * sep_norm[2];
-            active_blob_array[spring_array[i].blob_index[0]]->add_force_to_node(force0, spring_array[i].node_index[0]);
-            active_blob_array[spring_array[i].blob_index[1]]->add_force_to_node(force1, spring_array[i].node_index[1]);
+            active_blob_array[spring.blob_index[0]]->add_force_to_node(force0, spring.node_index[0]);
+            active_blob_array[spring.blob_index[1]]->add_force_to_node(force1, spring.node_index[1]);
         }
     }
 }
