@@ -2736,7 +2736,7 @@ void Blob::load_ctforces(const string& ctforces_fname) {
 
     // read the input file, taking out comments as <!-- -->
     //  and put it into the ctforces_lines vector of strings:
-    reader.file_to_lines(ctforces_fname, &ctforces_lines);
+    reader.file_to_lines(ctforces_fname, ctforces_lines);
 
 
     // 1 - READ AND CHECK THE HEADER:

@@ -90,16 +90,16 @@ public:
     void init(string FFEA_script_filename, int frames_to_delete, int mode, bool writeEnergy);
 
     /* */
-    void get_smallest_time_constants();
+    void get_smallest_time_constants() const;
 
     /* */
-    void lem(set<int> blob_indices, int num_modes);
+    void lem(const set<int> &blob_indices, int num_modes);
 
     /* */
-    void dmm(set<int> blob_indices, int num_modes);
+    void dmm(const set<int> &blob_indices, int num_modes);
 
     /* */
-    void dmm_rp(set<int> blob_indices, int num_modes);
+    void dmm_rp(const set<int> &blob_indices, int num_modes);
 
     /* */
     void run();
