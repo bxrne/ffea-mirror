@@ -2724,7 +2724,7 @@ void World::read_and_build_system(const vector<string> &script_vector)
     //    thread they will be. Hopefully will work, though that
     //    leaves us with schedule static.
 #ifdef FFEA_PARALLEL_PER_BLOB
-#pragma omp parallel for default(none) schedule(static) private(i, j) shared(blob_conf) // shared(params, blob_array, systemreader, blob_conf)
+#pragma omp parallel for default(none) schedule(static) shared(blob_conf) // shared(params, blob_array, systemreader, blob_conf)
 
 #endif
     for (int i = 0; i < params.num_blobs; ++i)
