@@ -48,16 +48,17 @@ elseif(USE_FFEATOOLS_INTERNAL)
       GIT_PROGRESS TRUE)
     #set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
     FetchContent_MakeAvailable(FFEATools)
-
-
-
+    # Backup any existing Python vars that may have been set by the user
+    if(NOT Python3_FOUND)
+        set(BACKUP_Python3_ROOT_DIR ${Python3_ROOT_DIR})
+    endif()
     # Has a venv with ffeatools already been created?
     set(VENV_DIR ${CMAKE_BINARY_DIR}/venv)
     unset(Python3_EXECUTABLE)
     unset(Python3_FOUND)
     set(ENV{VIRTUAL_ENV} "${VENV_DIR}")
     unset(ENV{CONDA_PREFIX})
-    #set(Python3_ROOT_DIR "${VENV_DIR}")
+    set(Python3_ROOT_DIR "${VENV_DIR}")
     set(Python3_FIND_VIRTUALENV ONLY)
     find_package(Python3 ${PYTHON3_EXACT_VERSION_ARG} QUIET COMPONENTS Interpreter)
     #message(STATUS "first python ${Python3_EXECUTABLE}")
@@ -66,6 +67,11 @@ elseif(USE_FFEATOOLS_INTERNAL)
 
     if(NOT Python3_FOUND)
         # venv python was not found
+        # Restore backed up python vars
+        if(BACKUP_Python3_EXECUTABLE OR BACKUP_Python3_ROOT_DIR)
+            set(Python3_ROOT_DIR ${BACKUP_Python3_ROOT_DIR})
+            message(STATUS "Python3_ROOT_DIR: ${Python3_ROOT_DIR}")
+        endif()
         # locate system python
         find_package(Python3 ${PYTHON3_EXACT_VERSION_ARG} REQUIRED COMPONENTS Interpreter)
         #message(STATUS "second python ${Python3_EXECUTABLE}")
@@ -113,6 +119,10 @@ elseif(USE_FFEATOOLS_INTERNAL)
         unset(ENV{VIRTUAL_ENV})
         unset(Python3_FIND_VIRTUALENV)
         #message(STATUS "third python ${Python3_EXECUTABLE}")
+        # Restore user set Python root dir
+        if(BACKUP_Python3_ROOT_DIR)
+            set(Python3_ROOT_DIR BACKUP_Python3_ROOT_DIR)
+        endif()
     endif()
     # check that ffeatools is available
     ffea_search_python_module(ffeatools)
