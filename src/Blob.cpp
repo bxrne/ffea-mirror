@@ -106,17 +106,17 @@ Blob::~Blob() {
 }
 
 
-void Blob::config(const int blob_index, const int conformation_index, const string& node_filename,
+void Blob::config(const int _blob_index, const int _conformation_index, const string& node_filename,
                  const string& topology_filename, const string& surface_filename, const string& material_params_filename,
                  const string& stokes_filename, const string& ssint_filename, const string& pin_filename,
-                 const string& binding_filename, const string& beads_filename, scalar scale, scalar calc_compress,
-                 scalar compress, int linear_solver, int blob_state, const SimulationParams &params,
-                 const PreComp_params &pc_params, SSINT_matrix *ssint_matrix,
-                 BindingSite_matrix *binding_matrix, std::shared_ptr<std::vector<RngStream>> &rng){
+                 const string& binding_filename, const string& beads_filename, const scalar _scale, const scalar _calc_compress,
+                const scalar _compress, const int _linear_solver, const int _blob_state, const SimulationParams &_params,
+                 const PreComp_params &_pc_params, SSINT_matrix *_ssint_matrix,
+                 BindingSite_matrix *_binding_matrix, std::shared_ptr<std::vector<RngStream>> &_rng){
 
     // Which blob and conformation am i?
-    this->blob_index = blob_index;
-    this->conformation_index = conformation_index;
+    this->blob_index = _blob_index;
+    this->conformation_index = _conformation_index;
 
     // Input files:
     this->s_node_filename = node_filename;
@@ -130,32 +130,32 @@ void Blob::config(const int blob_index, const int conformation_index, const stri
     this->s_pin_filename = pin_filename;
 
     // scaling coordinates:
-    this->scale = scale;
+    this->scale = _scale;
 
     // compressing:
-    this->calc_compress = calc_compress;
-    this->compress = compress;
+    this->calc_compress = _calc_compress;
+    this->compress = _compress;
 
     // precomputed configuration:
-    this->pc_params = pc_params;
+    this->pc_params = _pc_params;
 
     // BindingSite_matrix:
-    this->binding_matrix = binding_matrix;
+    this->binding_matrix = _binding_matrix;
 
     // lennard-jones interaction matrix:
-    this->ssint_matrix = ssint_matrix;
+    this->ssint_matrix = _ssint_matrix;
 
     // Store the simulation parameters
-    this->params = params;
+    this->params = _params;
 
     // Store the pointer to the random number generator array
-    this->rng = rng;
+    this->rng = _rng;
 
     // Get the blob state
-    this->blob_state = blob_state;
+    this->blob_state = _blob_state;
 
     // Need to know solver type
-    this->linear_solver = linear_solver;
+    this->linear_solver = _linear_solver;
 }
 
 void Blob::init(){
@@ -257,14 +257,11 @@ void Blob::init(){
 
     // Calculate how many faces each surface node is a part of
     try {
-        num_contributing_faces = std::vector<int>(num_surface_nodes);
+        num_contributing_faces = std::vector<int>(num_surface_nodes, 0);
     } catch(std::bad_alloc &) {
         throw FFEAException("Failed to allocate num_contributing_faces");
     }
-    
-    for (int i = 0; i < num_surface_nodes; i++) {
-        num_contributing_faces[i] = 0;
-    }
+
     for (int i = 0; i < surface.size(); i++) {
         for (int j = 0; j < 3; j++) {
             num_contributing_faces[surface[i].n[j]->index]++;
@@ -288,20 +285,19 @@ void Blob::init(){
 
         // Calculate the Sparsity Pattern for the Poisson matrix (interior and exterior)
         printf("\t\tCalculating sparsity pattern for Poisson matrix and RHS 'knowns' matrix\n");
-        SparsityPattern sparsity_pattern_knowns, sparsity_pattern_unknowns;
+        SparsityPattern sparsity_pattern_knowns;
+        SparsityPattern sparsity_pattern_unknowns;
         sparsity_pattern_knowns.init(num_interior_nodes);
         sparsity_pattern_unknowns.init(num_interior_nodes);
 
-        scalar *mem_loc;
-        int ni_index, nj_index;
-        for (int el = 0; el < elem.size(); el++) {
-            for (int ni = 0; ni < 10; ni++) {
-                for (int nj = 0; nj < 10; nj++) {
+        for (auto &el : elem) {
+            for (int ni = 0; ni < 10; ++ni) {
+                for (int nj = 0; nj < 10; ++nj) {
 
-                    ni_index = elem[el].n[ni]->index;
-                    nj_index = elem[el].n[nj]->index;
+                    const int ni_index = el.n[ni]->index;
+                    const int nj_index = el.n[nj]->index;
 
-                    mem_loc = elem[el].get_K_alpha_element_mem_loc(ni, nj);
+                    scalar *mem_loc = el.get_K_alpha_element_mem_loc(ni, nj);
 
                     /* We don't care about rows of the matrix before row num_surface_nodes */
                     if (ni_index >= num_surface_nodes) {
@@ -348,35 +344,6 @@ void Blob::init(){
             throw FFEAException("Could not allocate memory (for phi_Gamma array).");
         }
 
-        /*
-                        // Create the vector containing the smoothed out charge distribution across the elements
-                        try {
-                            q = std::vector<scalar>(node.size(), 0);
-                        } catch (std::bad_alloc&) {
-                            throw FFEAException("Could not allocate memory (for q array).\n");
-                        }
-                        // Create the vector containing all charges on each node of the Blob
-                        try {
-                            nodal_q = std::vector<scalar>(node.size(), 0);
-                        } catch (std::bad_alloc&) {
-                            throw FFEAException("Could not allocate memory (for nodal_q array).\n");
-                        }
-
-                        // Set the charges on the Blob
-                        for(int i = 0; i < node.size(); i++) {
-        //			nodal_q[i] = (node[i].pos[2] - (2.9e-8/2.0)) * 1e35; //1e26;
-                                nodal_q[i] = 1e26;
-        //			printf("%e %e\n", node[i].pos[2], nodal_q[i]);
-                        }
-
-                        // Apply mass matrix to obtain smooth extrapolated charge density across elements
-                        M->apply(nodal_q, q);
-
-                        for(int i = 0; i < node.size(); i++) {
-                                node[i].rho = q[i];
-                        }
-         */
-
         // Create the vector containing the charge distribution across the elements
         try {
             q = std::vector<scalar>(node.size(), 0);
@@ -384,21 +351,16 @@ void Blob::init(){
             throw FFEAException("Could not allocate memory (for q array).");
         }
 
-        // const scalar charge_density = 6.0e25;
         const scalar charge_density = 6.0e25 * mesoDimensions::volume / mesoDimensions::charge;
-        for (int n = 0; n < elem.size(); n++) {
+        for (auto& el : elem) {
             for (int i = 0; i < 10; i++) {
-                q[elem[n].n[i]->index] += charge_density * elem[n].vol_0;
+                q[el.n[i]->index] += charge_density * el.vol_0;
             }
         }
 
-        for (int i = 0; i < node.size(); i++) {
+        for (int i = 0; i < node.size(); ++i) {
             node[i].rho = q[i];
         }
-
-        // for(int i = 0; i < node.size(); i++) {
-        //     printf("q[%d] = %e\n", i, q[i]);
-        // }
 
         // Create the Right Hand Side vector for the Poisson solver
         try {
@@ -406,9 +368,6 @@ void Blob::init(){
         } catch (std::bad_alloc&) {
             throw FFEAException("Could not allocate memory (for poisson_rhs array).");
         }
-
-        // build_poisson_matrices_and_setup_for_solve();
-        // poisson_solver->solve(poisson_interior_matrix, phi_Omega, poisson_rhs);
 
         printf("\t\tdone.\n");
     }
@@ -449,7 +408,7 @@ bool Blob::check_inversion() {
 	}
 
 	// Are we screwed?
-	if(invEls.size()) {
+	if(!invEls.empty()) {
 		printf("\n");
 		FFEA_error_text();
 		printf("%zu inverted elements: ", invEls.size());
@@ -507,7 +466,6 @@ void Blob::update_internal_forces() {
             if (elem[n].calc_shape_function_derivatives_and_volume(J)) {
                 FFEA_error_text();
                 printf("Element %d has inverted during update\n", n);
-           	    //elem[n].print_structural_details();
 	            num_inversions++;
             }
 
@@ -568,13 +526,6 @@ void Blob::update_positions() {
     // Update node velocities and positions
     euler_integrate();
 
-    // todo: remove this
-    //for (int i=0; i<this->get_num_elements(); i++){
-    //    for (int j=0; j<9; j++){
-    //        printf("%f", this->get_element(i)->n[j]->pos[0]);
-    //    }
-    //}
-
     // Linearise the 2nd order elements
     for (int n = 0; n < elem.size(); n++) {
         elem[n].linearise_element();
@@ -586,7 +537,7 @@ void Blob::reset_solver() {
     solver->init(node, elem, params, pinned_nodes_list, bsite_pinned_nodes_list);
 }
 
-void Blob::translate_linear(arr3 *vec) {
+void Blob::translate_linear(const std::vector<arr3> &vec) {
     // Get a mapping from all node indices to just linear node indices
     int num_linear_nodes = get_num_linear_nodes();
     vector<int> map(num_linear_nodes);
@@ -633,9 +584,11 @@ void Blob::rotate(scalar xang, scalar yang, scalar zang, bool beads) {
            r[2][0], r[2][1], r[2][2], beads);
 }
 
-void Blob::rotate(scalar r11, scalar r12, scalar r13, scalar r21, scalar r22, scalar r23, scalar r31, scalar r32, scalar r33, bool beads) {
+void Blob::rotate(const scalar r11, const scalar r12, const scalar r13, const scalar r21, const scalar r22, const scalar r23, const scalar r31, const scalar r32, const scalar r33, bool beads) {
     arr3 com;
-    scalar x, y, z;
+    scalar x;
+    scalar y;
+    scalar z;
 
     get_centroid(com);
 
@@ -643,49 +596,49 @@ void Blob::rotate(scalar r11, scalar r12, scalar r13, scalar r21, scalar r22, sc
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
     #pragma omp parallel for default(none) shared(com)
 #endif
-    for (int i = 0; i < node.size(); i++) {
+    for (int i = 0; i < node.size(); ++i) {
         node[i].pos[0] -= com[0];
         node[i].pos[1] -= com[1];
         node[i].pos[2] -= com[2];
     }
 
     // Do the actual rotation and bring the nodes back to its initial position:
-    for (int i = 0; i < node.size(); i++) {
-        x = node[i].pos[0];
-        y = node[i].pos[1];
-        z = node[i].pos[2];
+    for (auto& n : node) {
+        x = n.pos[0];
+        y = n.pos[1];
+        z = n.pos[2];
 
-        node[i].pos[0] = x * r11 + y * r12 + z * r13 + com[0];
-        node[i].pos[1] = x * r21 + y * r22 + z * r23 + com[1];
-        node[i].pos[2] = x * r31 + y * r32 + z * r33 + com[2];
-
-
+        n.pos[0] = x * r11 + y * r12 + z * r13 + com[0];
+        n.pos[1] = x * r21 + y * r22 + z * r23 + com[1];
+        n.pos[2] = x * r31 + y * r32 + z * r33 + com[2];
     }
 
 
     if (beads) {
         // Move all beads to the origin:
-        for (int i = 0; i < bead_position.size(); ++i) {
-            bead_position[i][0] -= com[0];
-            bead_position[i][1] -= com[1];
-            bead_position[i][2] -= com[2];
+        for (auto& b : bead_position) {
+            b[0] -= com[0];
+            b[1] -= com[1];
+            b[2] -= com[2];
         }
         // Do the actual rotation and bring the beads back to its initial position:
-        for (int i = 0; i < bead_position.size(); ++i) {
-            x = bead_position[i][0];
-            y = bead_position[i][1];
-            z = bead_position[i][2];
+        for (auto& b : bead_position) {
+            x = b[0];
+            y = b[1];
+            z = b[2];
 
-            bead_position[i][0] = x * r11 + y * r12 + z * r13 + com[0];
-            bead_position[i][1] = x * r21 + y * r22 + z * r23 + com[1];
-            bead_position[i][2] = x * r31 + y * r32 + z * r33 + com[2];
+            b[0] = x * r11 + y * r12 + z * r13 + com[0];
+            b[1] = x * r21 + y * r22 + z * r23 + com[1];
+            b[2] = x * r31 + y * r32 + z * r33 + com[2];
         }
     }
 }
 
 
-arr3 Blob::position(scalar x, scalar y, scalar z) {
-    scalar centroid_x = 0.0, centroid_y = 0.0, centroid_z = 0.0;
+arr3 Blob::position(const scalar x, const scalar y, const scalar z) {
+    scalar centroid_x = 0.0;
+    scalar centroid_y = 0.0;
+    scalar centroid_z = 0.0;
     arr3 v;
     // scalar dx, dy, dz;
 
@@ -722,26 +675,25 @@ arr3 Blob::position(scalar x, scalar y, scalar z) {
 
 }
 
-void Blob::position_beads(scalar x, scalar y, scalar z) {
-    for (int i = 0; i < bead_position.size(); i ++) {
-        bead_position[i][0] += x;
-        bead_position[i][1] += y;
-        bead_position[i][2] += z;
+void Blob::position_beads(const scalar x, const scalar y, const scalar z) {
+    for (auto& b : bead_position) {
+        b[0] += x;
+        b[1] += y;
+        b[2] += z;
     }
 }
 
-void Blob::move(scalar dx, scalar dy, scalar dz) {
-    for (auto& node_i : node) {
-        node_i.pos[0] += dx;
-        node_i.pos[1] += dy;
-        node_i.pos[2] += dz;
+void Blob::move(const scalar dx, const scalar dy, const scalar dz) {
+    for (auto& n : node) {
+        n.pos[0] += dx;
+        n.pos[1] += dy;
+        n.pos[2] += dz;
     }
     for(int i = 0; i < get_num_faces(); ++i) {
         if(get_motion_state() != FFEA_BLOB_IS_DYNAMIC && surface[i].n[3] != nullptr) {
             surface[i].n[3]->pos[0] += dx;
             surface[i].n[3]->pos[1] += dy;
             surface[i].n[3]->pos[2] += dz;
-            //fprintf(stderr, "Surface %d = %f %f %f\n", i, dx, dy, dz);
         }
     }
 }
@@ -751,14 +703,12 @@ void Blob::get_CoM(arr3 &com) {
     com[1] = 0;
     com[2] = 0;
 
-    for (int n = 0; n < elem.size(); n++) {
-        com[0] += (elem[n].mass * elem[n].n[0]->pos[0] + elem[n].n[1]->pos[0] + elem[n].n[2]->pos[0] + elem[n].n[3]->pos[0]) / 4;
-        com[1] += (elem[n].mass * elem[n].n[0]->pos[1] + elem[n].n[1]->pos[1] + elem[n].n[2]->pos[1] + elem[n].n[3]->pos[1]) / 4;
-        com[2] += (elem[n].mass * elem[n].n[0]->pos[2] + elem[n].n[1]->pos[2] + elem[n].n[2]->pos[2] + elem[n].n[3]->pos[2]) / 4;
+    for (auto &el : elem) {
+        com[0] += (el.mass * el.n[0]->pos[0] + el.n[1]->pos[0] + el.n[2]->pos[0] + el.n[3]->pos[0]) / 4;
+        com[1] += (el.mass * el.n[0]->pos[1] + el.n[1]->pos[1] + el.n[2]->pos[1] + el.n[3]->pos[1]) / 4;
+        com[2] += (el.mass * el.n[0]->pos[2] + el.n[1]->pos[2] + el.n[2]->pos[2] + el.n[3]->pos[2]) / 4;
     }
-    if (elem.empty()) {
-        return;
-    } else {
+    if (!elem.empty()) {
         com[0] /= elem.size();
         com[1] /= elem.size();
         com[2] /= elem.size();
@@ -788,7 +738,7 @@ void Blob::calc_and_store_centroid(arr3 &com) {
 }
 
 // This one returns an array rather than arsing about with pointers
-arr3 Blob::calc_centroid() {
+arr3 Blob::calc_centroid() const {
     arr3 com;
     com[0] = 0.0;
     com[1] = 0.0;
@@ -854,10 +804,10 @@ void Blob::linearise_elements() {
 }
 
 void Blob::linearise_force() {
-    int nIdx[NUM_NODES_QUADRATIC_TET];
-    for (int i=0; i< elem.size(); i++) {
+    std::array<int, NUM_NODES_QUADRATIC_TET> nIdx;
+    for (auto &el : elem) {
         for (int j=0; j<NUM_NODES_QUADRATIC_TET; j++) {
-            nIdx[j] = elem[i].n[j]->index;
+            nIdx[j] = el.n[j]->index;
         }
         for (int j=0; j<3; j++){
            force[nIdx[0]][j] += 0.5 * ( force[nIdx[4]][j] + force[nIdx[5]][j] + force[nIdx[6]][j]);
@@ -873,36 +823,38 @@ void Blob::linearise_force() {
     }
 }
 
-void Blob::compress_blob(scalar compress) {
-    arr3 cog,cogaft;
+void Blob::compress_blob(const scalar _compress) {
+    arr3 cog;
     this->get_centroid(cog);
     //loop moves nodes in by
     for (auto& node_i : node) {
-        node_i.pos[0] *= compress;
-        node_i.pos[1] *= compress;
-        node_i.pos[2] *= compress;
+        node_i.pos[0] *= _compress;
+        node_i.pos[1] *= _compress;
+        node_i.pos[2] *= _compress;
     }
+    arr3 cogaft;
     this->get_centroid(cogaft);
 
-    if (!(fabs(cogaft[0] - cog[0]*compress) < 0.000001&&fabs(cogaft[1] - cog[1]*compress) < 0.000001&&fabs(cogaft[2] - cog[2]*compress) < 0.000001)) {
+    if (!(fabs(cogaft[0] - cog[0] * _compress) < 0.000001 &&
+          fabs(cogaft[1] - cog[1] * _compress) < 0.000001 &&
+          fabs(cogaft[2] - cog[2] * _compress) < 0.000001)) {
         printf("FRIENDLY WARNING: Centre of Geometry has moved during compression. Compression feature implemented for spherical objects so other shapes may experience issues.\n");
     }
 }
 
-void Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
-    FILE *out;
-    char new_node_filename[] = "VIEWERNODE_";
-    int i;
+void Blob::create_viewer_node_file(const char *node_filename, const scalar scale) {
+    FILE *out = nullptr;
+    std::string new_node_filename = "VIEWERNODE_";
 
     // Name new node file
-    strcat(new_node_filename, node_filename);
+    new_node_filename += node_filename;
 
 
     //open the new node file
-    if (!(out = fopen(new_node_filename, "w"))) {
-        throw FFEAFileException(new_node_filename);
+    if (!(out = fopen(new_node_filename.c_str(), "w"))) {
+        throw FFEAFileException(new_node_filename.c_str());
     }
-    printf("\t\tWriting to viewer nodes file: %s\n", new_node_filename);
+    printf("\t\tWriting to viewer nodes file: %s\n", new_node_filename.c_str());
 
     fprintf(out, "ffea viewer node file\n");
     fprintf(out, "num_nodes %zu\n", node.size());
@@ -911,7 +863,8 @@ void Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
 
     // Write all the nodes to file
     fprintf(out, "surface nodes:\n");
-    for (i = 0; i < num_surface_nodes; i++) {
+    int i = 0;
+    for (; i < num_surface_nodes; i++) {
         fprintf(out, "%le %le %le\n", node[i].pos[0] / scale, node[i].pos[1] / scale, node[i].pos[2] / scale);
     }
 
@@ -921,10 +874,10 @@ void Blob::create_viewer_node_file(const char *node_filename, scalar scale) {
     }
 
     fclose(out);
-    printf("\t\t\tWrote %d nodes from %s\n", i, new_node_filename);
+    printf("\t\t\tWrote %d nodes from %s\n", i, new_node_filename.c_str());
 }
 
-void Blob::write_nodes_to_file(FILE *trajectory_out) {
+void Blob::write_nodes_to_file(FILE *trajectory_out) const {
     // If this is a static blob, then don't bother printing out all the node positions (since there will be no change)
     if (blob_state == FFEA_BLOB_IS_STATIC) {
         fprintf(trajectory_out, "STATIC\n");
@@ -961,7 +914,7 @@ void Blob::write_nodes_to_file(FILE *trajectory_out) {
     }
 }
 
-void Blob::write_pre_print_to_file(FILE *trajectory_out) {
+void Blob::write_pre_print_to_file(FILE *trajectory_out) const {
     // If this is a static blob, then don't bother printing out all the node positions (since there will be no change)
     if (blob_state == FFEA_BLOB_IS_STATIC) {
         fprintf(trajectory_out, "STATIC\n");
@@ -1092,7 +1045,6 @@ void Blob::calculate_deformation() {
     int num_inversions = 0;
     matrix3 J;
     for (int n = 0; n < elem.size(); n++) {
-
         // calculate jacobian for this element
         elem[n].calculate_jacobian(J);
 
@@ -1116,19 +1068,18 @@ void Blob::calculate_deformation() {
 
 scalar Blob::calc_volume() {
     scalar volume = 0.0;
-    for(int i = 0; i < elem.size(); ++i) {
-        volume += elem[i].calc_volume();
+    for(auto &el : elem) {
+        volume += el.calc_volume();
     }
     return volume;
 }
 
 scalar Blob::calculate_strain_energy() {
-    int n;
-    scalar C, detF, strain_energy = 0.0;
+    scalar strain_energy = 0.0;
     calculate_deformation();
-    for(n = 0; n < elem.size(); ++n) {
-        C = elem[n].E - elem[n].G * 2.0 / 3.0;
-        detF = elem[n].vol / elem[n].vol_0;
+    for(int n = 0; n < elem.size(); ++n) {
+        scalar C = elem[n].E - elem[n].G * 2.0 / 3.0;
+        scalar detF = elem[n].vol / elem[n].vol_0;
         strain_energy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3)
                                           + 0.5 * C * (detF * detF - 1)
                                           - ((2 * elem[n].G) + C) * log(detF)
@@ -1138,17 +1089,8 @@ scalar Blob::calculate_strain_energy() {
 }
 
 void Blob::make_measurements() {
-    int n, i, j;
-    scalar kenergy, senergy;
-    arr3 total_ssint_xz_force;
-    scalar total_ssint_xz_energy = 0.0, total_ssint_xz_area = 0.0;
-    scalar temp1, temp2, temp3;
-    scalar cogx = 0.0, cogy = 0.0, cogz = 0.0, lx = 0.0, ly = 0.0, lz = 0.0, brmsd = 0.0;
-    scalar r[4][3];
-    vector12 vec;
-
-    kenergy = 0.0;
-    senergy = 0.0;
+    scalar kenergy = 0.0;
+    scalar senergy = 0.0;
 
     // OpenMP can't reduce members of classes :(
     //initialise(L);
@@ -1156,14 +1098,14 @@ void Blob::make_measurements() {
     initialise(CoM);
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-    #pragma omp parallel for default(none) reduction(+:kenergy, senergy) private(n, vec, temp1, temp2, temp3)
+    #pragma omp parallel for default(none) reduction(+:kenergy, senergy)
 #endif
-    for (n = 0; n < elem.size(); n++) {
+    for (int n = 0; n < elem.size(); n++) {
         if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
             /*
              * Kinetic energy contribution:
              */
-
+            vector12 vec;
             // Read the u vector for this element
             elem[n].get_element_velocity_vector(vec);
 
@@ -1183,41 +1125,25 @@ void Blob::make_measurements() {
                        elem[n].n[1]->vel[2] * vec[9] +
                        elem[n].n[2]->vel[2] * vec[10] +
                        elem[n].n[3]->vel[2] * vec[11];
-
-            /*
-             * Centre of Mass contribution:
-             */
-            //com_x += elem[n].mass * (elem[n].n[0]->pos[0] + elem[n].n[1]->pos[0] + elem[n].n[2]->pos[0] + elem[n].n[3]->pos[0]) / 4;
-            //com_y += elem[n].mass * (elem[n].n[0]->pos[1] + elem[n].n[1]->pos[1] + elem[n].n[2]->pos[1] + elem[n].n[3]->pos[1]) / 4;
-            //com_z += elem[n].mass * (elem[n].n[0]->pos[2] + elem[n].n[1]->pos[2] + elem[n].n[2]->pos[2] + elem[n].n[3]->pos[2]) / 4;
         }
 
         /*
          * Strain energy contribution:
          */
 
-        scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
-        temp1 = elem[n].vol / elem[n].vol_0;
+        const scalar C = elem[n].E - (2.0 / 3.0) * elem[n].G;
+        const scalar temp1 = elem[n].vol / elem[n].vol_0;
         senergy += elem[n].vol_0 * (elem[n].G * (mat3_double_contraction(elem[n].F_ij) - 3) + 0.5 * C * (temp1*temp1 - 1) - (C + 2 * elem[n].G) * log(temp1));
     }
 
     // And don't forget to multiply by a half
+    scalar lx = 0.0;
+    scalar ly = 0.0;
+    scalar lz = 0.0;
     kineticenergy = kenergy * 0.5;
     strainenergy = senergy * 0.5;
     get_CoM(CoM);
     if (linear_solver != FFEA_NOMASS_CG_SOLVER) {
-
-        // Get the centre of mass from the calculated totals
-        //if (mass <= 0.0) {
-        //   com_x = 0.0;
-        //  com_y = 0.0;
-        //com_z = 0.0;
-        //} else {
-        //    com_x *= 1.0 / mass;
-        //    com_y *= 1.0 / mass;
-        //    com_z *= 1.0 / mass;
-        //}
-
         /* Calculate angular momentum */
         // mass matrix
         const matrix4 MM = {
@@ -1228,22 +1154,23 @@ void Blob::make_measurements() {
         };
 
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
-        #pragma omp parallel for default(none) reduction(+:lx, ly, lz) shared(MM) private(n, r, temp1, temp2, temp3, i, j)
+        #pragma omp parallel for default(none) reduction(+:lx, ly, lz) shared(MM)
 #endif
-        for (n = 0; n < elem.size(); n++) {
+        for (int n = 0; n < elem.size(); n++) {
             // Find the separation vectors for this element
-            for (i = 0; i < 4; i++) {
+            std::array<std::array<scalar, 3>, 4> r;
+            for (int i = 0; i < 4; i++) {
                 r[i][0] = elem[n].n[i]->pos[0] - CoM[0];
                 r[i][1] = elem[n].n[i]->pos[1] - CoM[1];
                 r[i][2] = elem[n].n[i]->pos[2] - CoM[2];
             }
 
             // Calculate contribution to angular momentum from this element
-            temp1 = 0;
-            temp2 = 0;
-            temp3 = 0;
-            for (i = 0; i < 4; i++) {
-                for (j = 0; j < 4; j++) {
+            scalar temp1 = 0;
+            scalar temp2 = 0;
+            scalar temp3 = 0;
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 4; j++) {
                     temp1 += MM[i][j] * (r[j][1] * elem[n].n[i]->vel[2] - r[j][2] * elem[n].n[i]->vel[1]);
                     temp2 += MM[i][j] * (r[j][2] * elem[n].n[i]->vel[0] - r[j][0] * elem[n].n[i]->vel[2]);
                     temp3 += MM[i][j] * (r[j][0] * elem[n].n[i]->vel[1] - r[j][1] * elem[n].n[i]->vel[0]);
@@ -1257,10 +1184,10 @@ void Blob::make_measurements() {
         }
     }
 
+    scalar cogx = 0.0;
+    scalar cogy = 0.0;
+    scalar cogz = 0.0;
     /* Calculate RMSD value for this configuration */
-//#ifdef FFEA_PARALLEL_WITHIN_BLOB
-//#pragma omp parallel for default(none) reduction(+:brmsd, cogx, cogy, cogz) private(i, temp1, temp2, temp3)
-//#endif
     for (const auto &node_i : node) {
         /*
          * Center of geometry contribution (geometry better on nodes than elements)
@@ -1276,20 +1203,20 @@ void Blob::make_measurements() {
 
     // Remove translation and rotation (maybe make optional in future)
     bool remTrans = false;
-    // bool remRot = true;
+    scalar brmsd = 0.0;
 
     if(remTrans) {
         for(const auto& node_i : node) {
-            temp1 = node_i.pos[0] - node_i.pos_0[0] + CoG_0[0] - CoG[0];
-            temp2 = node_i.pos[1] - node_i.pos_0[1] + CoG_0[1] - CoG[1];
-            temp3 = node_i.pos[2] - node_i.pos_0[2] + CoG_0[2] - CoG[2];
+            const scalar temp1 = node_i.pos[0] - node_i.pos_0[0] + CoG_0[0] - CoG[0];
+            const scalar temp2 = node_i.pos[1] - node_i.pos_0[1] + CoG_0[1] - CoG[1];
+            const scalar temp3 = node_i.pos[2] - node_i.pos_0[2] + CoG_0[2] - CoG[2];
             brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
         }
     } else {
         for(const auto& node_i : node) {
-            temp1 = node_i.pos[0] - node_i.pos_0[0];
-            temp2 = node_i.pos[1] - node_i.pos_0[1];
-            temp3 = node_i.pos[2] - node_i.pos_0[2];
+            const scalar temp1 = node_i.pos[0] - node_i.pos_0[0];
+            const scalar temp2 = node_i.pos[1] - node_i.pos_0[1];
+            const scalar temp3 = node_i.pos[2] - node_i.pos_0[2];
             brmsd += temp1 * temp1 + temp2 * temp2 + temp3*temp3;
         }
     }
@@ -1322,42 +1249,40 @@ void Blob::make_stress_measurements(FILE *stress_out, int blob_number) {
 }
 
 void Blob::calc_centroids_and_normals_of_all_faces() {
-    int i;
-    for (i = 0; i < surface.size(); i++)
-        surface[i].calc_area_normal_centroid();
+    for (auto& s : surface)
+        s.calc_area_normal_centroid();
 }
 
 void Blob::calc_all_centroids() {
-    int i;
-    for (i = 0; i < surface.size(); i++) {
-        surface[i].calc_area_normal_centroid();
+    for (auto &s : surface) {
+        s.calc_area_normal_centroid();
     }
-    for(i = 0; i < elem.size(); ++i) {
-        elem[i].calc_centroid();
+    for(auto &e : elem) {
+        e.calc_centroid();
     }
 }
 
-int Blob::get_num_faces() {
+int Blob::get_num_faces() const {
     return surface.size();
 }
 
-int Blob::get_num_beads() {
+int Blob::get_num_beads() const {
     return bead_position.size();
 }
 
-int Blob::getNumBindingSites() {
+int Blob::getNumBindingSites() const  {
     return binding_site.size();
 }
 
-bool Blob::is_using_beads() {
+bool Blob::is_using_beads() const {
     return !bead_position.empty();
 }
 
-scalar Blob::get_rmsd() {
+scalar Blob::get_rmsd() const {
     return rmsd;
 }
 
-int Blob::get_linear_solver() {
+int Blob::get_linear_solver() const {
     return linear_solver;
 };
 
@@ -2001,46 +1926,46 @@ void Blob::enforce_box_boundaries(arr3 &box_dim) {
     }
 }
 
-int Blob::get_num_nodes() {
+int Blob::get_num_nodes() const {
     return static_cast<int>(node.size());
 }
 
-int Blob::get_num_elements() {
+int Blob::get_num_elements() const {
     return static_cast<int>(elem.size());
 }
 
-int Blob::get_motion_state() {
+int Blob::get_motion_state() const {
     return blob_state;
 }
 
-scalar Blob::get_scale() {
+scalar Blob::get_scale() const {
     return scale;
 }
 
-scalar Blob::get_RandU01() {
+scalar Blob::get_RandU01() const {
     return (*rng)[0].RandU01();
 }
 
-int Blob::get_num_linear_nodes() {
+int Blob::get_num_linear_nodes() const {
     set<int> node_indices;
-    for(int n = 0; n < elem.size(); ++n) {
+    for (const auto& el : elem) {
         for(int i = 0; i < 4; ++i) {
-            node_indices.insert(elem[n].n[i]->index);
+            node_indices.insert(el.n[i]->index);
         }
     }
     return node_indices.size();
 }
 
-scalar Blob::get_kinetic_energy() {
+scalar Blob::get_kinetic_energy() const {
     return kineticenergy;
 }
 
-scalar Blob::get_strain_energy() {
+scalar Blob::get_strain_energy() const {
     //std::cout << "Blob " << blob_index << " strain energy: " << strainenergy << "\n";
     return strainenergy;
 }
 
-void Blob::get_min_max(arr3 &blob_min, arr3 &blob_max) {
+void Blob::get_min_max(arr3 &blob_min, arr3 &blob_max) const {
     std::fill(blob_min.begin(), blob_min.end(), std::numeric_limits<scalar>::max());
     std::fill(blob_max.begin(), blob_max.end(), std::numeric_limits<scalar>::min());
 

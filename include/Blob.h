@@ -148,7 +148,7 @@ public:
     /**
       * Translates the linear nodes, then linearises the secondary nodes
       */
-    void translate_linear(arr3 *vec);
+    void translate_linear(const std::vector<arr3> &vec);
 
     /**
      * Calculates the centroid of this Blob, then brings the Blob to the origin,
@@ -202,7 +202,7 @@ public:
      */
     void get_centroid(arr3 &com);
     void calc_and_store_centroid(arr3 &com);
-    arr3 calc_centroid();
+    arr3 calc_centroid() const;
 
     void set_pos_0();
     void kinetically_set_faces(bool state);
@@ -214,13 +214,13 @@ public:
     /**
      * Dumps all the node positions (in order) from the node array to the given file stream.
      */
-    void write_nodes_to_file(FILE *trajectory_out);
+    void write_nodes_to_file(FILE *trajectory_out) const;
 
     /**
      * Dumps all the node positions (in order) from the node array to the given file stream in two steps.
      */
     void pre_print(); 
-    void write_pre_print_to_file(FILE *trajectory_out); 
+    void write_pre_print_to_file(FILE *trajectory_out) const;
     int toBePrinted_conf[2]{}; 
     int toBePrinted_state[2]{}; 
 
@@ -267,7 +267,7 @@ public:
     /*
      *
      */
-    int get_num_faces();
+    int get_num_faces() const;
 
     /**
      * Return pointer to the ith Face of this Blob's surface
@@ -402,26 +402,27 @@ public:
     /**compresses blob by compression factor specified in input script*/
     void compress_blob(scalar compress);
 
-    int get_num_nodes();
+    int get_num_nodes() const;
 
-    int get_num_elements();
+    int get_num_elements() const;
 
-    int get_motion_state();
+    int get_motion_state() const;
 
-    scalar get_scale();
+    scalar get_scale() const;
     
-    scalar get_RandU01(); 
+    scalar get_RandU01() const;
 
-    int get_num_linear_nodes();
+    int get_num_linear_nodes() const;
 
-    int get_num_beads();
-    bool is_using_beads();
+    int get_num_beads() const
+    ;
+    bool is_using_beads() const;
 
-    int getNumBindingSites();
+    int getNumBindingSites() const;
 
-    scalar get_rmsd();
+    scalar get_rmsd() const;
 
-    int get_linear_solver();
+    int get_linear_solver() const;
 
     // std::array<scalar,3> get_CoG();
     // arr3 get_CoG();
@@ -438,7 +439,7 @@ public:
 
     scalar calculate_strain_energy();
 
-    void get_min_max(arr3 &blob_min, arr3 &blob_max);
+    void get_min_max(arr3 &blob_min, arr3 &blob_max) const;
 
     /* Blob, conformation and state indices */
     int blob_index = 0;
@@ -465,8 +466,8 @@ public:
     bool there_are_beads();
     bool there_is_ssint();
 
-    scalar get_kinetic_energy();
-    scalar get_strain_energy();
+    scalar get_kinetic_energy() const;
+    scalar get_strain_energy() const;
 
     std::array<int, 3> pbc_count = {};
 
