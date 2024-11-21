@@ -109,7 +109,7 @@ Blob::~Blob() {
 void Blob::config(const int _blob_index, const int _conformation_index, const string& node_filename,
                  const string& topology_filename, const string& surface_filename, const string& material_params_filename,
                  const string& stokes_filename, const string& ssint_filename, const string& pin_filename,
-                 const string& binding_filename, const string& beads_filename, const scalar _scale, const scalar _calc_compress,
+                 const string& binding_filename, const string& beads_filename, const scalar _scale, const int _calc_compress,
                 const scalar _compress, const int _linear_solver, const int _blob_state, const SimulationParams &_params,
                  const PreComp_params &_pc_params, SSINT_matrix *_ssint_matrix,
                  BindingSite_matrix *_binding_matrix, std::shared_ptr<std::vector<RngStream>> &_rng){
@@ -249,18 +249,10 @@ void Blob::init(){
 
 
     // Allocate the force vector array for the whole Blob
-    try {
-        force = std::vector<arr3>(node.size(), {0,0,0});
-    } catch (std::bad_alloc &) {
-        throw FFEAException("Could not store the force vector array");
-    }
+    force = std::vector<arr3>(node.size(), { 0,0,0 });
 
     // Calculate how many faces each surface node is a part of
-    try {
-        num_contributing_faces = std::vector<int>(num_surface_nodes, 0);
-    } catch(std::bad_alloc &) {
-        throw FFEAException("Failed to allocate num_contributing_faces");
-    }
+    num_contributing_faces = std::vector<int>(num_surface_nodes, 0);
 
     for (int i = 0; i < surface.size(); i++) {
         for (int j = 0; j < 3; j++) {
@@ -331,25 +323,13 @@ void Blob::init(){
         poisson_solver->init(num_interior_nodes, params.epsilon2, params.max_iterations_cg);
 
         // Create the vector containing all values of the potential at each interior node
-        try {
-            phi_Omega = std::vector<scalar>(num_interior_nodes, 0);
-        } catch (std::bad_alloc&) {
-            throw FFEAException("Could not allocate memory (for phi_Omega array).");
-        }
+        phi_Omega = std::vector<scalar>(num_interior_nodes, 0);
 
         // Create the vector containing all values of the potential on each surface node
-        try {
-            phi_Gamma = std::vector<scalar>(num_surface_nodes, 0);
-        } catch (std::bad_alloc&) {
-            throw FFEAException("Could not allocate memory (for phi_Gamma array).");
-        }
+        phi_Gamma = std::vector<scalar>(num_surface_nodes, 0);
 
         // Create the vector containing the charge distribution across the elements
-        try {
-            q = std::vector<scalar>(node.size(), 0);
-        } catch (std::bad_alloc&) {
-            throw FFEAException("Could not allocate memory (for q array).");
-        }
+        q = std::vector<scalar>(node.size(), 0);
 
         const scalar charge_density = 6.0e25 * mesoDimensions::volume / mesoDimensions::charge;
         for (auto& el : elem) {
@@ -363,11 +343,7 @@ void Blob::init(){
         }
 
         // Create the Right Hand Side vector for the Poisson solver
-        try {
-            poisson_rhs = std::vector<scalar>(num_interior_nodes, 0);
-        } catch (std::bad_alloc&) {
-            throw FFEAException("Could not allocate memory (for poisson_rhs array).");
-        }
+        poisson_rhs = std::vector<scalar>(num_interior_nodes, 0);
 
         printf("\t\tdone.\n");
     }
@@ -392,7 +368,6 @@ bool Blob::check_inversion() {
 	matrix3 J;
 
 	vector<int> invEls;
-	invEls.clear();
 
     for (int n = 0; n < elem.size(); n++) {
 
@@ -1361,7 +1336,7 @@ scalar Blob::get_ssint_area() {
 
 void Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
     // matrix3 J, stress;
-    vector12 elastic_force[2];
+    std::array<vector12, 2> elastic_force;
     vector<Eigen::Triplet<scalar> > components;
 
     // Firstly, get a mapping from all node indices to just linear node indices
@@ -1388,8 +1363,8 @@ void Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
         for(int a = 0; a < 4; ++a) {
 
             // Get global index for node a
-            int global_a = elem[elem_index].n[a]->index;
-            int global_a_lin = map[elem[elem_index].n[a]->index];
+            const int global_a = elem[elem_index].n[a]->index;
+            const int global_a_lin = map[elem[elem_index].n[a]->index];
 
             for(int i = 0; i < 3; ++i) {
                 // Move node a in direction i and calculate the change
@@ -1414,7 +1389,7 @@ void Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
                 for(int b = 0; b < 4; ++b) {
                     // Get global index for node b
                     // int global_b = elem[elem_index].n[b]->index;
-                    int global_b_lin = map[elem[elem_index].n[b]->index];
+                    const int global_b_lin = map[elem[elem_index].n[b]->index];
 
                     for(int j = 0; j < 3; ++j) {
                         scalar val = (1.0 / (2 * dx)) * (elastic_force[1][4 * j + b] - elastic_force[0][4 * j + b]);
@@ -1422,8 +1397,8 @@ void Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
                         // Row is dE_p, column dx_q. Not that it should matter! Directions then nodes i.e. x0,y0,z0,x1,y1,z1..[0]n,yn,zn
                         //row = num_linear_nodes * i + global_a;
                         //column = num_linear_nodes * j + global_b;
-                        int row = 3 * global_a_lin + i;
-                        int column = 3 * global_b_lin + j;
+                        const int row = 3 * global_a_lin + i;
+                        const int column = 3 * global_b_lin + j;
                         components.push_back(Eigen::Triplet<scalar>(row, column, val));
                     }
                 }
@@ -1436,7 +1411,7 @@ void Blob::build_linear_node_elasticity_matrix(Eigen::SparseMatrix<scalar> *A) {
 }
 
 void Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
-    vector<Eigen::Triplet<scalar> > components;
+    vector<Eigen::Triplet<scalar>> components;
 
     // Firstly, get a mapping from all node indices to just linear node indices
     vector<int> map(node.size());
@@ -1486,9 +1461,7 @@ void Blob::build_linear_node_viscosity_matrix(Eigen::SparseMatrix<scalar> *K) {
     // For each node, add stokes if necessary
     if(params.calc_stokes == 1) {
         for(int global_a = 0; global_a < node.size(); ++global_a) {
-            if(map[global_a] == -1) {
-                continue;
-            } else {
+            if(map[global_a] != -1) {
                 for(int i = 0; i < 3; ++i) {
                     scalar val = node[map[global_a]].stokes_drag;
                     //row = 4 * i + map[global_a];
@@ -1580,16 +1553,10 @@ void Blob::build_linear_node_mass_matrix(Eigen::SparseMatrix<scalar> *M) {
 }
 
 void Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
-
-    int i, j, num_linear_nodes;
-    scalar mod, mod2, a;
-    Eigen_Matrix3 block, rr;
-    Eigen_Vector3 sep;
-
     // Firstly, get a mapping from all node indices to just linear node indices
     vector<int> map(node.size());
     int offset = 0;
-    for(size_t i = 0; i < node.size(); ++i) {
+    for(int i = 0; i < node.size(); ++i) {
         if(node[i].am_I_linear()) {
             map[i] = i - offset;
         } else {
@@ -1598,30 +1565,25 @@ void Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
         }
     }
 
-    num_linear_nodes = get_num_linear_nodes();
+    const int num_linear_nodes = get_num_linear_nodes();
 
     // Now build the matrix, one element at a time...
     D->setZero();
 
     // For each pair of nodes (upper triangle only)
     for(size_t n = 0; n < node.size(); ++n) {
-
         // If secondary node, continue
         if(map[n] == -1) {
             continue;
-        } else {
-            i = map[n];
         }
         for(size_t m = n; m < node.size(); ++m) {
-
             // If secondary node, continue
             if(map[m] == -1) {
                 continue;
-            } else {
-                j = map[m];
             }
 
             // Initialise directional block matrix
+            Eigen_Matrix3 block;
             block.setZero();
 
             // If we are on the block diagonal
@@ -1630,17 +1592,17 @@ void Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
             } else {
 
                 // Get distance between nodes and the outer product of the separation
-                Eigen::Vector3d vecn(node[n].pos[0], node[n].pos[1], node[n].pos[2]);
-                Eigen::Vector3d vecm(node[m].pos[0], node[m].pos[1], node[m].pos[2]);
+                const Eigen::Vector3d vecn(node[n].pos[0], node[n].pos[1], node[n].pos[2]);
+                const Eigen::Vector3d vecm(node[m].pos[0], node[m].pos[1], node[m].pos[2]);
 
-                sep = vecn - vecm;
-                mod = sep.norm();
-                mod2 = mod * mod;
-                rr = sep * sep.transpose();
+                const Eigen_Vector3 sep = vecn - vecm;
+                const scalar mod = sep.norm();
+                const scalar mod2 = mod * mod;
+                const Eigen_Matrix3 rr = sep * sep.transpose();
 
                 // Effective stokes radius. Will usually equal a anyway
 
-                a = (node[n].stokes_radius + node[m].stokes_radius) / 2.0;
+                const scalar a = (node[n].stokes_radius + node[m].stokes_radius) / 2.0;
 
                 // Condition for positive-definiteness
                 if(mod > 2 * node[n].stokes_radius && mod > 2 * node[m].stokes_radius) {
@@ -1660,13 +1622,13 @@ void Blob::build_linear_node_rp_diffusion_matrix(Eigen_MatrixX *D) {
             }
 
             // Linear node position from global nodes
-            D->block<3,3>(3 * i, 3 * j) = block;
+            D->block<3,3>(3 * map[n], 3 * map[m]) = block;
         }
     }
 
     // Fill in the lower trangle
-    for(i = 0; i < 3 * num_linear_nodes; ++i) {
-        for(j = i; j < 3 * num_linear_nodes; ++j) {
+    for(int i = 0; i < 3 * num_linear_nodes; ++i) {
+        for(int j = i; j < 3 * num_linear_nodes; ++j) {
             (*D)(j, i) = (*D)(i, j);
         }
     }
@@ -1687,27 +1649,21 @@ void Blob::solve_poisson(scalar *phi_gamma_IN, scalar *J_Gamma_OUT) {
 
         for (int i = 0; i < num_surface_nodes; i++) {
             phi_Gamma[i] /= num_contributing_faces[i];
-            //			printf("phi_Gamma[%d] = %e\n", i, phi_Gamma[i]);
         }
 
         /* Calculate the RHS vector */
         poisson_surface_matrix->apply(phi_Gamma, poisson_rhs);
         for (int i = 0; i < num_interior_nodes; i++) {
             poisson_rhs[i] = q[i + num_surface_nodes] - poisson_rhs[i];
-            //			printf("poisson_rhs[%d] = %e\n", i, poisson_rhs[i]);
         }
 
         poisson_solver->solve(poisson_interior_matrix, phi_Omega, poisson_rhs);
-
-        //		printf("int:\n");
-        //		poisson_interior_matrix->print_dense();
-
+        
         for (int n = 0; n < num_surface_nodes; n++)
             node[n].phi = phi_Gamma[n];
 
         for (int n = 0; n < num_interior_nodes; n++) {
             node[n + num_surface_nodes].phi = phi_Omega[n];
-            //			printf("phi_Omega[%d] = %e\n", n, phi_Omega[n]);
         }
 
         for (int i = 0; i < surface.size(); i++) {
@@ -1728,7 +1684,8 @@ void Blob::apply_ctforces() {
     // CTF 2 - Add the rotational forces:
     for (int i=0; i<num_r_ctf; i++) {
         // 2.1 - get the axis:
-        arr3 r, f;
+        arr3 r;
+        arr3 f;
         scalar rsize;
         // 2.1.1 - if it is defined by points:
         if (ctf_r_type[2*i] == 'p') {
@@ -1762,18 +1719,17 @@ void Blob::apply_ctforces() {
     }
 
     // CTF 3 - Add the linear surface forces:
-    scalar totalArea;
-    arr3 traction;
     int auxndx = 0;
     std::vector<scalar> faceAreas = std::vector<scalar>();
     for (int i=0; i<num_slsets_ctf; i++) {
-        totalArea = 0;
+        scalar totalArea = 0;
         faceAreas.reserve(ctf_sl_surfsize[i]);
         for (int j=0; j<ctf_sl_surfsize[i]; j++) {
             faceAreas.push_back(surface[ctf_sl_faces[auxndx + j]].get_area());
             totalArea += faceAreas[j];
         }
         for (int j=0; j<ctf_sl_surfsize[i]; j++) {
+            arr3 traction;
             resize2(faceAreas[j]/(3*totalArea), arr_view<scalar,3>(ctf_sl_forces, 3*i), traction);
             surface[ctf_sl_faces[auxndx+j]].add_force_to_node(0, traction);
             surface[ctf_sl_faces[auxndx+j]].add_force_to_node(1, traction);
@@ -1827,100 +1783,60 @@ void Blob::velocity_all(scalar vel_x, scalar vel_y, scalar vel_z) {
 
 void Blob::build_poisson_matrices() {
     if (num_interior_nodes > 0) {
-        /*
-                        scalar K[num_nodes*num_nodes];
-                        for(int i = 0; i < num_nodes * num_nodes; i++) {
-                                K[i] = 0;
-                        }
-         */
-
         /* Calculate the K_alpha matrices for each element (the diffusion matrix * epsilon * volume) */
         for (int n = 0; n < elem.size(); n++) {
             elem[n].calculate_K_alpha();
-            //			elem[n].add_K_alpha(K, num_nodes);
         }
-
-
-        /*
-                        printf("BLOB Full K:\n");
-                        int c = 0;
-                        for(int i = 0; i < num_nodes; i++) {
-                                for(int j = 0; j < num_nodes; j++) {
-                                        printf("%+e ", K[c]);
-                                        c++;
-                                }
-                                printf("\n");
-                        }
-         */
         /* Construct the poisson matrices for the current blob (based on diffusion matrices of elements) */
         poisson_surface_matrix->build();
         poisson_interior_matrix->build();
     }
 }
 
-//		int elements_are_connected(int e1, int e2);
-
-/*
-
- */
-scalar Blob::get_mass() {
+scalar Blob::get_mass() const {
     return mass;
 }
 
-/*
- */
 void Blob::enforce_box_boundaries(arr3 &box_dim) {
     if (params.wall_x_1 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
-            if (node[i].pos[0] < 0) {
-                if (node[i].vel[0] < 0) {
-                    node[i].vel[0] = 0;
-                }
+            if (node[i].pos[0] < 0 && node[i].vel[0] < 0) {
+                node[i].vel[0] = 0;
             }
         }
     }
     if (params.wall_x_2 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
-            if (node[i].pos[0] > box_dim[0]) {
-                if (node[i].vel[0] > 0) {
-                    node[i].vel[0] = 0;
-                }
+            if (node[i].pos[0] > box_dim[0] && node[i].vel[0] > 0) {
+                node[i].vel[0] = 0;
             }
         }
     }
     if (params.wall_y_1 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
-            if (node[i].pos[1] < 0) {
-                if (node[i].vel[1] < 0) {
-                    node[i].vel[1] = 0;
-                }
+            if (node[i].pos[1] < 0 && node[i].vel[1] < 0) {
+                node[i].vel[1] = 0;
             }
         }
     }
     if (params.wall_y_2 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
-            if (node[i].pos[1] > box_dim[1]) {
-                if (node[i].vel[1] > 0) {
-                    node[i].vel[1] = 0;
-                }
+            if (node[i].pos[1] > box_dim[1] && node[i].vel[1] > 0) {
+                node[i].vel[1] = 0;
             }
         }
     }
     if (params.wall_z_1 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
-            if (node[i].pos[2] < 0) {
-                if (node[i].vel[2] < 0) {
-                    node[i].vel[2] = 0;
-                }
+            if (node[i].pos[2] < 0 && node[i].vel[2] < 0) {
+                node[i].vel[2] = 0;
             }
         }
     }
     if (params.wall_z_2 == WALL_TYPE_HARD) {
         for (int i = 0; i < num_surface_nodes; i++) {
-            if (node[i].pos[2] > box_dim[2]) {
-                if (node[i].vel[2] > 0) {
-                    node[i].vel[2] = 0;
-                }
+            if (node[i].pos[2] > box_dim[2] && node[i].vel[2] > 0) {
+                node[i].vel[2] = 0;
             }
         }
     }
@@ -1949,7 +1865,7 @@ scalar Blob::get_RandU01() const {
 int Blob::get_num_linear_nodes() const {
     set<int> node_indices;
     for (const auto& el : elem) {
-        for(int i = 0; i < 4; ++i) {
+        for(int i = 0; i < NUM_NODES_LINEAR_TET; ++i) {
             node_indices.insert(el.n[i]->index);
         }
     }
@@ -1992,9 +1908,8 @@ void Blob::get_min_max(arr3 &blob_min, arr3 &blob_max) const {
 
 /*
  */
-void Blob::load_nodes(const char *node_filename, scalar scale) {
+void Blob::load_nodes(const char *node_filename, scalar load_scale) {
     FILE *in;
-    double x, y, z;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -2006,52 +1921,40 @@ void Blob::load_nodes(const char *node_filename, scalar scale) {
 
     // first line should be the file type "ffea node file"
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of node file.");
     }
     if (strcmp(line, "walrus node file\n") != 0 && strcmp(line, "ffea node file\n") != 0) {
-        fclose(in);
         throw FFEAException("This is not a 'ffea node file' (read '%s') \n", line);
     }
 
     // read in the number of nodes in the file
     int num_nodes;
     if (fscanf(in, "num_nodes %d\n", &num_nodes) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of nodes.");
     }
     printf("\t\t\tNumber of nodes = %d\n", num_nodes);
 
     // read in the number of surface nodes in the file
     if (fscanf(in, "num_surface_nodes %d\n", &num_surface_nodes) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of surface nodes.");
     }
     printf("\t\t\tNumber of surface nodes = %d\n", num_surface_nodes);
 
     // read in the number of interior nodes in the file
     if (fscanf(in, "num_interior_nodes %d\n", &num_interior_nodes) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of interior nodes.");
     }
     printf("\t\t\tNumber of interior nodes = %d\n", num_interior_nodes);
 
     // Allocate the memory for all these nodes
-    try {
-        node = std::vector<mesh_node>(num_nodes);
-        node_position = std::vector<arr3*>(num_nodes, nullptr);
-    } catch (std::bad_alloc&) {
-        fclose(in);
-        throw FFEAException("Unable to allocate memory for nodes array.");
-    }
+    node = std::vector<mesh_node>(num_nodes);
+    node_position = std::vector<arr3*>(num_nodes, nullptr);
 
     // Check for "surface nodes:" line
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error when looking for 'surface nodes:' line.");
     }
     if (strcmp(line, "surface nodes:\n") != 0) {
-        fclose(in);
         throw FFEAException("Could not find 'surface nodes:' line (found '%s' instead).", line);
     }
 
@@ -2061,28 +1964,26 @@ void Blob::load_nodes(const char *node_filename, scalar scale) {
         if (i == num_surface_nodes) {
             // Check for "interior nodes:" line
             if (!fgets(line, max_line_size, in)) {
-                fclose(in);
                 throw FFEAException("Error when looking for 'interior nodes:' line.");
             }
             if (strcmp(line, "interior nodes:\n") != 0) {
-                fclose(in);
                 throw FFEAException("Could not find 'interior nodes:' line (found '%s' instead).", line);
             }
         }
 
+        double x, y, z;
         if (fscanf(in, "%le %le %le\n", &x, &y, &z) != 3) {
-            fclose(in);
             throw FFEAException("Error reading from nodes file at node %d", i);
         } else {
-            node[i].pos[0] = scale * (scalar) x;
-            node[i].pos[1] = scale * (scalar) y;
-            node[i].pos[2] = scale * (scalar) z;
+            node[i].pos[0] = load_scale * x;
+            node[i].pos[1] = load_scale * y;
+            node[i].pos[2] = load_scale * z;
             node_position[i] = &node[i].pos;
             node[i].vel[0] = 0;
             node[i].vel[1] = 0;
             node[i].vel[2] = 0;
 
-            node[i].index = static_cast<int>(i);
+            node[i].index = i;
         }
     }
 
@@ -2105,51 +2006,39 @@ void Blob::load_topology(const char *topology_filename) {
 
     // first line should be the file type "ffea topology file"
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of topology file.");
     }
     if (strcmp(line, "walrus topology file\n") != 0 && strcmp(line, "ffea topology file\n") != 0) {
-        fclose(in);
         throw FFEAException("This is not a 'ffea topology file' (read '%s').", line);
     }
 
     // read in the total number of elements in the file
     int num_elements;
     if (fscanf(in, "num_elements %d\n", &num_elements) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of elements.");
     }
     printf("\t\t\tNumber of elements = %d\n", num_elements);
 
     // read in the number of surface elements in the file
     if (fscanf(in, "num_surface_elements %d\n", &num_surface_elements) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of surface elements.");
     }
     printf("\t\t\tNumber of surface elements = %d\n", num_surface_elements);
 
     // read in the number of interior elements in the file
     if (fscanf(in, "num_interior_elements %d\n", &num_interior_elements) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of interior elements.");
     }
     printf("\t\t\tNumber of interior elements = %d\n", num_interior_elements);
 
     // Allocate the memory for all these elements
-    try {
-        elem = std::vector<tetra_element_linear>(num_elements);
-    } catch (std::bad_alloc &) {
-        fclose(in);
-        throw FFEAException("Unable to allocate memory for element array.");
-    }
+    elem = std::vector<tetra_element_linear>(num_elements);
 
     // Check for "surface elements:" line
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error when looking for 'surface elements:' line.");
     }
     if (strcmp(line, "surface elements:\n") != 0) {
-        fclose(in);
         throw FFEAException("Could not find 'surface elements:' line (found '%s' instead).", line);
     }
 
@@ -2159,70 +2048,46 @@ void Blob::load_topology(const char *topology_filename) {
         if (i == num_surface_elements) {
             // Check for "interior elements:" line
             if (!fgets(line, max_line_size, in)) {
-                fclose(in);
                 throw FFEAException("Error when looking for 'interior elements:' line.");
             }
             if (strcmp(line, "interior elements:\n") != 0) {
-                fclose(in);
                 throw FFEAException("Could not find 'interior elements:' line (found '%s' instead).", line);
             }
         }
 
-        int n1, n2, n3, n4, n5, n6, n7, n8, n9, n10;
-        if (fscanf(in, "%d %d %d %d %d %d %d %d %d %d\n", &n1, &n2, &n3, &n4, &n5, &n6, &n7, &n8, &n9, &n10) != 10) {
-            fclose(in);
+        std::array<int, 10> n;
+        if (fscanf(in, "%d %d %d %d %d %d %d %d %d %d\n", &n[0], &n[1], &n[2], &n[3], &n[4], &n[5], &n[6], &n[7], &n[8], &n[9]) != 10) {
             throw FFEAException("Error reading from elements file at element %d", i);
-        } else {
-            // check that none of these reference nodes outside of the node array
-            if (n1 < 0 || n1 >= node.size() ||
-                    n2 < 0 || n2 >= node.size() ||
-                    n3 < 0 || n3 >= node.size() ||
-                    n4 < 0 || n4 >= node.size() ||
-                    n5 < 0 || n5 >= node.size() ||
-                    n6 < 0 || n6 >= node.size() ||
-                    n7 < 0 || n7 >= node.size() ||
-                    n8 < 0 || n8 >= node.size() ||
-                    n9 < 0 || n9 >= node.size() ||
-                    n10 < 0 || n10 >= node.size()) {
-                fclose(in);
+        }
+        // check that none of these reference nodes outside of the node array
+        for (const auto& _n : n) {
+            if (_n < 0 || _n >= node.size()) {
                 throw FFEAException("Error: Element %d references an out of bounds node index.", i);
             }
-
-            // Link element nodes to actual nodes
-            elem[i].n[0] = &node[n1];
-            elem[i].n[1] = &node[n2];
-            elem[i].n[2] = &node[n3];
-            elem[i].n[3] = &node[n4];
-            elem[i].n[4] = &node[n5];
-            elem[i].n[5] = &node[n6];
-            elem[i].n[6] = &node[n7];
-            elem[i].n[7] = &node[n8];
-            elem[i].n[8] = &node[n9];
-            elem[i].n[9] = &node[n10];
-
-            // Assign bool to linear nodes
-            node[n1].set_linear();
-            node[n2].set_linear();
-            node[n3].set_linear();
-            node[n4].set_linear();
-            elem[i].daddy_blob = this;
-            elem[i].index = i;
         }
+
+        // Link element nodes to actual nodes
+        for (int j = 0; j < NUM_NODES_QUADRATIC_TET; ++j) {
+            elem[i].n[j] = &node[n[j]];
+        }
+
+        // Assign bool to linear nodes
+        for (int j = 0; j < NUM_NODES_LINEAR_TET; ++j) {
+            node[n[j]].set_linear();
+        }
+        elem[i].daddy_blob = this;
+        elem[i].index = i;
     }
 
     fclose(in);
 
-    if (i == 1)
-        printf("\t\t\tRead 1 element from %s\n", topology_filename);
-    else
-        printf("\t\t\tRead %d elements from %s\n", i, topology_filename);
+    printf("\t\t\tRead %d elements from %s\n", i, topology_filename);
 }
 
 /*
  */
 void Blob::load_surface(const char *surface_filename) {
-    FILE *in = nullptr;
-    int i, n1, n2, n3, element;
+    FILE *in;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -2233,97 +2098,84 @@ void Blob::load_surface(const char *surface_filename) {
 
     // first line should be the file type "ffea surface file"
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of surface file.");
     }
     if (strcmp(line, "walrus surface file\n") != 0 && strcmp(line, "ffea surface file\n") != 0) {
-        fclose(in);
         throw FFEAException("This is not a 'ffea surface file' (read '%s').", line);
     }
 
     // read in the number of faces in the file
     int num_surface_faces;
     if (fscanf(in, "num_surface_faces %d\n", &num_surface_faces) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of faces.");
     }
     printf("\t\t\tNumber of faces = %d\n", num_surface_faces);
 
     // Allocate the memory for all these faces
-    try {
-        surface = std::vector<Face>(num_surface_faces);
-    } catch (std::bad_alloc &) {
-        throw FFEAException("Failed to allocate memory for the faces.");
-    }
+    surface = std::vector<Face>(num_surface_faces);
+
 
     // Check for "faces:" line
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error when looking for 'faces:' line.");
     }
     if (strcmp(line, "faces:\n") != 0) {
-        fclose(in);
         throw FFEAException("Could not find 'faces:' line (found '%s' instead).", line);
     }
 
     // Read in all the faces from file
     scalar smallest_A = INFINITY;
-    for (i = 0; i < num_surface_faces; i++) {
-        if (fscanf(in, "%d %d %d %d\n", &element, &n1, &n2, &n3) != 4) {
-            fclose(in);
+    for (int i = 0; i < num_surface_faces; i++) {
+        int element;
+        std::array<int, 3> n;
+        if (fscanf(in, "%d %d %d %d\n", &element, &n[0], &n[1], &n[2]) != 4) {
             throw FFEAException("Error reading from surface file at face %d. There should be 4 space separated integers.", i);
-        } else {
-            // check that none of these reference nodes outside of the node array
-            if (n1 < 0 || n1 >= node.size() ||
-                    n2 < 0 || n2 >= node.size() ||
-                    n3 < 0 || n3 >= node.size()) {
-                fclose(in);
+        }
+        // check that none of these reference nodes outside of the node array
+        for (const auto& _n : n) {
+            if (_n < 0 || _n >= node.size()) {
                 throw FFEAException("Error: Surface face %d references an out of bounds node index.", i);
-            } else if (element < 0 || element >= elem.size()) {
-                fclose(in);
-                throw FFEAException("Error: Surface face %d references an out of bounds element index.", i);
             }
+        }
+        if (element < 0 || element >= elem.size()) {
+            throw FFEAException("Error: Surface face %d references an out of bounds element index.", i);
+        }
 
+        const int n1_el = elem[element].what_node_is_this(n[0]);
+        const int n2_el = elem[element].what_node_is_this(n[1]);
+        const int n3_el = elem[element].what_node_is_this(n[2]);
 
-            int n1_el = elem[element].what_node_is_this(n1), n2_el = elem[element].what_node_is_this(n2), n3_el = elem[element].what_node_is_this(n3);
+        SecondOrderFunctions::stu n1_stu = {SecondOrderFunctions::stu_lookup[n1_el].s, SecondOrderFunctions::stu_lookup[n1_el].t, SecondOrderFunctions::stu_lookup[n1_el].u};
+        SecondOrderFunctions::stu n2_stu = {SecondOrderFunctions::stu_lookup[n2_el].s, SecondOrderFunctions::stu_lookup[n2_el].t, SecondOrderFunctions::stu_lookup[n2_el].u};
+        SecondOrderFunctions::stu n3_stu = {SecondOrderFunctions::stu_lookup[n3_el].s, SecondOrderFunctions::stu_lookup[n3_el].t, SecondOrderFunctions::stu_lookup[n3_el].u};
 
-            SecondOrderFunctions::stu n1_stu = {SecondOrderFunctions::stu_lookup[n1_el].s, SecondOrderFunctions::stu_lookup[n1_el].t, SecondOrderFunctions::stu_lookup[n1_el].u};
-            SecondOrderFunctions::stu n2_stu = {SecondOrderFunctions::stu_lookup[n2_el].s, SecondOrderFunctions::stu_lookup[n2_el].t, SecondOrderFunctions::stu_lookup[n2_el].u};
-            SecondOrderFunctions::stu n3_stu = {SecondOrderFunctions::stu_lookup[n3_el].s, SecondOrderFunctions::stu_lookup[n3_el].t, SecondOrderFunctions::stu_lookup[n3_el].u};
+        SecondOrderFunctions::stu centroid_stu = {
+            (n1_stu.s + n2_stu.s + n3_stu.s) / 3.0,
+            (n1_stu.t + n2_stu.t + n3_stu.t) / 3.0,
+            (n1_stu.u + n2_stu.u + n3_stu.u) / 3.0
+        };
 
-            SecondOrderFunctions::stu centroid_stu = {
-                (n1_stu.s + n2_stu.s + n3_stu.s) / 3.0,
-                (n1_stu.t + n2_stu.t + n3_stu.t) / 3.0,
-                (n1_stu.u + n2_stu.u + n3_stu.u) / 3.0
-            };
+        const int n_op = elem[element].get_opposite_node(n1_el, n2_el, n3_el);
+        if (n_op == -1) {
+            throw FFEAException("Error: Could not find the opposite node.");
+        }
+        // now the node that we can pass is: elem[element].n[n_op]
 
-            int n_op = elem[element].get_opposite_node(n1_el, n2_el, n3_el);
-            if (n_op == -1)
-                throw FFEAException("Error: Could not find the opposite node.");
-            // now the node that we can pass is: elem[element].n[n_op]
-            // elem[element].n[n1_el]->print()  =  node[n1].print();
-
-
-            surface[i].init(i, &elem[element], &node[n1], &node[n2], &node[n3], elem[element].n[n_op], centroid_stu, this, params);
-            if (surface[i].area_0 < smallest_A) {
-                smallest_A = surface[i].area_0;
-            }
+        surface[i].init(i, &elem[element], &node[n[0]], &node[n[1]], &node[n[2]], elem[element].n[n_op], centroid_stu, this, params);
+        if (surface[i].area_0 < smallest_A) {
+            smallest_A = surface[i].area_0;
         }
     }
     fclose(in);
 
     printf("\t\t\tSmallest Face Area = %e\n", smallest_A * mesoDimensions::area);
-    if (i == 1)
-        printf("\t\t\tRead 1 surface face from %s\n", surface_filename);
-    else
-        printf("\t\t\tRead %d surface faces from %s\n", i, surface_filename);
+    printf("\t\t\tRead %d surface faces from %s\n", num_surface_faces, surface_filename);
 }
 
 /*
  */
 void Blob::load_surface_no_topology(const char *surface_filename) {
-    FILE *in = nullptr;
-    int i, n1, n2, n3, element;
+    FILE *in;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -2334,76 +2186,60 @@ void Blob::load_surface_no_topology(const char *surface_filename) {
 
     // first line should be the file type "ffea surface file"
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of surface file.");
     }
     if (strcmp(line, "walrus surface file\n") != 0 && strcmp(line, "ffea surface file\n") != 0) {
-        fclose(in);
-        throw FFEAException("This is not a 'ffea surface file' (read '%s').", line);
+       throw FFEAException("This is not a 'ffea surface file' (read '%s').", line);
     }
 
     // read in the number of faces in the file
     int num_surface_faces;
     if (fscanf(in, "num_surface_faces %d\n", &num_surface_faces) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of faces.");
     }
     printf("\t\t\tNumber of faces = %d\n", num_surface_faces);
 
     // Allocate the memory for all these faces
-    try {
-        surface = std::vector<Face>(num_surface_faces);
-    } catch (std::bad_alloc &) {
-        throw FFEAException("Failed to allocate memory for the faces.");
-    }
+    surface = std::vector<Face>(num_surface_faces);
 
     // Check for "faces:" line
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error when looking for 'faces:' line.");
     }
     if (strcmp(line, "faces:\n") != 0) {
-        fclose(in);
         throw FFEAException("Could not find 'faces:' line (found '%s' instead).", line);
     }
 
     // Read in all the faces from file (element will always be zero here, because no internal structure exists)
-    scalar smallest_A = INFINITY;
-    for (i = 0; i < surface.size(); i++) {
-        if (fscanf(in, "%d %d %d %d\n", &element, &n1, &n2, &n3) != 4) {
-            fclose(in);
+    scalar smallest_A = std::numeric_limits<scalar>::max();
+    for (int i = 0; i < surface.size(); i++) {
+        int element;
+        std::array<int, 3> n;
+        if (fscanf(in, "%d %d %d %d\n", &element, &n[0], &n[1], &n[2]) != 4) {
             throw FFEAException("Error reading from surface file at face %d. There should be 4 space separated integers.", i);
-        } else {
-            // check that none of these reference nodes outside of the node array
-            if (n1 < 0 || n1 >= node.size() ||
-                    n2 < 0 || n2 >= node.size() ||
-                    n3 < 0 || n3 >= node.size()) {
-                fclose(in);
+        }
+        // check that none of these reference nodes outside of the node array
+        for (const auto& _n : n) {
+            if (_n < 0 || _n >= node.size()) {
                 throw FFEAException("Error: Surface face %d references an out of bounds node index.", i);
             }
-
-            surface[i].init(i, &node[n1], &node[n2], &node[n3], nullptr, this, params);
-
-            if (surface[i].area_0 < smallest_A) {
-                smallest_A = surface[i].area_0;
-            }
         }
+
+        surface[i].init(i, &node[n[0]], &node[n[1]], &node[n[2]], nullptr, this, params);
+
+        smallest_A = std::min(smallest_A, surface[i].area_0);
     }
 
     fclose(in);
 
     printf("\t\t\tSmallest Face Area = %e\n", smallest_A);
-    if (i == 1)
-        printf("\t\t\tRead 1 surface face from %s\n", surface_filename);
-    else
-        printf("\t\t\tRead %d surface faces from %s\n", i, surface_filename);
+    printf("\t\t\tRead %d surface faces from %s\n", static_cast<int>(surface.size()), surface_filename);
 }
 
 /*
  */
 void Blob::load_material_params(const char *material_params_filename) {
-    FILE *in = nullptr;
-    int num_material_elements;
+    FILE *in;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -2414,33 +2250,33 @@ void Blob::load_material_params(const char *material_params_filename) {
 
     // first line should be the file type "ffea material params file"
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of material params file.");
     }
     if (strcmp(line, "walrus material params file\n") != 0 && strcmp(line, "ffea material params file\n") != 0) {
-        fclose(in);
         throw FFEAException("This is not a 'ffea material params file' (read '%s').", line);
     }
 
     // read in the number of elements in the file
+    int num_material_elements;
     if (fscanf(in, "num_elements %d\n", &num_material_elements) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of elements.");
     }
     printf("\t\t\tNumber of elements in material params file = %d\n", num_material_elements);
 
     // Check that we have same number of elements in material params file as in topology file
     if (num_material_elements != elem.size()) {
-        fclose(in);
         throw FFEAException("Number of elements in material params file (%d) does not match number of elements in topology file (%zu).", num_material_elements, elem.size());
     }
 
     // Set the material parameters for each element in the Blob
-    scalar density = 0.0, shear_visc = 0.0, bulk_visc = 0.0, shear_mod = 0.0, bulk_mod = 0.0, dielectric = 0.0;
-    int i;
-    for (i = 0; i < elem.size(); i++) {
+    scalar density;
+    scalar shear_visc;
+    scalar bulk_visc;
+    scalar shear_mod;
+    scalar bulk_mod;
+    scalar dielectric;
+    for (int i = 0; i < elem.size(); i++) {
         if (fscanf(in, "%le %le %le %le %le %le\n", &density, &shear_visc, &bulk_visc, &shear_mod, &bulk_mod, &dielectric) != 6) {
-            fclose(in);
             throw FFEAException("Error reading from material params file at element %d. There should be 6 space separated real values (density, shear_visc, bulk_visc, shear_mod, bulk_mod, dielectric).", i);
         }
         elem[i].rho = density * mesoDimensions::volume / mesoDimensions::mass ;
@@ -2453,14 +2289,13 @@ void Blob::load_material_params(const char *material_params_filename) {
 
     fclose(in);
 
-    printf("\t\t\tRead %d element material params from %s\n", i, material_params_filename);
+    printf("\t\t\tRead %d element material params from %s\n", static_cast<int>(elem.size()), material_params_filename);
 }
 
 /*
  */
 void Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
-    FILE *in = nullptr;
-    int num_stokes_nodes;
+    FILE *in;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -2471,47 +2306,43 @@ void Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
 
     // first line should be the file type "ffea stokes radii file"
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of stokes radii file.");
     }
     if (strcmp(line, "walrus stokes radii file\n") != 0 && strcmp(line, "ffea stokes radii file\n") != 0) {
-        fclose(in);
         throw FFEAException("This is not a 'ffea stokes radii file' (read '%s').", line);
     }
 
     // read in the number of nodes in the file
+    int num_stokes_nodes;
     if (fscanf(in, "num_nodes %d\n", &num_stokes_nodes) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of nodes.");
     }
     printf("\t\t\tNumber of nodes in stokes radii file = %d\n", num_stokes_nodes);
 
     // Check that we have same number of nodes in stokes radii file as in nodes file
     if (num_stokes_nodes != node.size()) {
-        fclose(in);
         throw FFEAException("Number of nodes in stokes radii file (%d) does not match number of nodes in nodes file (%zu).", num_stokes_nodes, node.size());
     }
 
     // Set the stokes radius for each node in the Blob
     scalar stokes_radius = 0.0;
-    int crap, i, check = 0;
-    for (i = 0; i < node.size(); i++) {
+    int check = 0;
+    for (int i = 0; i < node.size(); i++) {
         if (fscanf(in, "%le\n", &stokes_radius) != 1) {
             fclose(in);
             throw FFEAException("Error reading from stokes radii file at node %d. There should be 1 real value (stokes radius).", i);
         }
         node[i].stokes_radius = stokes_radius * scale;
         if (node[i].stokes_radius < 1e-12 && node[i].stokes_radius > 0.0 && check == 0) {
-            char finish[1];
             int done = 0;
             printf("WARNING. Stokes Radius on node %d in this Blob is very small, %e.\nStokes Radius is scaled by same factor as node positions, so specify in same units.\n", i, node[i].stokes_radius);
             printf("Would you like to continue (y or n)?:");
             while (done == 0) {
-                crap = scanf("%s", finish);
-                if (strcmp(finish, "y") == 0) {
+                scanf("%s", line);
+                if (strcmp(line, "y") == 0) {
                     done = 1;
                     check = 1;
-                } else if (strcmp(finish, "n") == 0) {
+                } else if (strcmp(line, "n") == 0) {
                     throw FFEAException();
                 } else {
                     printf("Please enter y or n:");
@@ -2523,7 +2354,7 @@ void Blob::load_stokes_params(const char *stokes_filename, scalar scale) {
 
     fclose(in);
 
-    printf("\t\t\tRead %d stokes radii from %s\n", i, stokes_filename);
+    printf("\t\t\tRead %d stokes radii from %s\n", static_cast<int>(node.size()), stokes_filename);
 }
 
 /**
@@ -2545,8 +2376,7 @@ void Blob::load_beads(const char *beads_filename, scalar scale) {
     }
     printf("\t\tReading in Beads file: %s\n", beads_filename);
     printf("\t\tScaling beads positions using scale: %e\n", scale);
-
-
+    
     std::vector<string> stypes;
     string type;
     scalar x, y, z;
@@ -2569,8 +2399,7 @@ void Blob::load_beads(const char *beads_filename, scalar scale) {
         // 1.1 - ignore those lines that do not start with "ATOM"
         if (line.find("ATOM",0,4) != 0)
             continue;
-
-        // cout << line << endl;
+        
         // 1.2 - get bead type and position from its positioning within the line:
         type = line.substr(11,5);
         boost::trim (type);
@@ -2596,7 +2425,6 @@ void Blob::load_beads(const char *beads_filename, scalar scale) {
             boost::trim(v2[0]);
             // 1.3.5 - see if we have "nodes" there:
             if (boost::iequals(nodesKeyword, v2[0])) {
-                // cout << " appending nodes " << v2[1] << endl;
                 // 1.3.6 - the nodes are comma sepparated:
                 boost::split(v3, v2[1], boost::is_any_of(splitNodes));
                 // 1.3.7 - and there could be ranges:
@@ -2631,11 +2459,8 @@ void Blob::load_beads(const char *beads_filename, scalar scale) {
 
     // 2.2 - bead types are integers starting from zero:
     vector<string>::iterator it;
-    try {
-        bead_type = std::vector<int>(stypes.size());
-    } catch (std::bad_alloc&) {
-        throw FFEAException("Failed to allocate memory for bead types.");
-    }
+    bead_type = std::vector<int>(stypes.size());
+
     int index;
     for (unsigned int i=0; i<stypes.size(); i++) {
         it = std::find(pc_params.types.begin(), pc_params.types.end(), stypes[i]);
@@ -2651,7 +2476,6 @@ void Blob::load_beads(const char *beads_filename, scalar scale) {
 }
 
 void Blob::load_ctforces(const string& ctforces_fname) {
-
     FFEA_input_reader reader;
     vector<string> ctforces_lines, line_split;
     int n_ctforces = 0;  // total number of forces in the input file.
@@ -2731,8 +2555,7 @@ void Blob::load_ctforces(const string& ctforces_fname) {
         throw FFEAException("--- ABORTING. Something went wrong when parsing the header of the ctforces file\n"
             "--- Check it or turn calc_ctforces to 0 in the FFEA input file");
     }
-
-
+    
     // 2 - READ AND STORE THE LINEAR PART:
     // 2.1 - First the header:
     // check that we have a line saying "linear forces:"
@@ -2779,14 +2602,14 @@ void Blob::load_ctforces(const string& ctforces_fname) {
     int cnt = 0;
     for (int i=0; i<my_lines.size(); i++) {
         boost::split(line_split, my_lines[i], boost::is_any_of(" \t"), boost::token_compress_on);
-        scalar F = boost::lexical_cast<scalar>(line_split[0]);
+        const scalar F = boost::lexical_cast<scalar>(line_split[0]);
         ctf_d[0] = boost::lexical_cast<scalar>(line_split[1]);
         ctf_d[1] = boost::lexical_cast<scalar>(line_split[2]);
         ctf_d[2] = boost::lexical_cast<scalar>(line_split[3]);
         normalize(ctf_d);  // normalise the direction of the force.
-        scalar Fx = F * ctf_d[0] / mesoDimensions::force;
-        scalar Fy = F * ctf_d[1] / mesoDimensions::force;
-        scalar Fz = F * ctf_d[2] / mesoDimensions::force;
+        const scalar Fx = F * ctf_d[0] / mesoDimensions::force;
+        const scalar Fy = F * ctf_d[1] / mesoDimensions::force;
+        const scalar Fz = F * ctf_d[2] / mesoDimensions::force;
         if (line_split[6].compare("all") != 0) {
             ctf_l_nodes[cnt] = boost::lexical_cast<int>(line_split[6]);
             ctf_l_forces[3*cnt   ]  = Fx;
@@ -2803,9 +2626,7 @@ void Blob::load_ctforces(const string& ctforces_fname) {
             }
         }
     }
-
-
-
+    
     // 3 - READ AND STORE THE ROTATIONAL PART:
     // 3.1 - First the header:
     now_reading = now_reading + n_ct_lforces;
@@ -2813,7 +2634,8 @@ void Blob::load_ctforces(const string& ctforces_fname) {
     if (now_reading >= ctforces_lines.size()) { // Out of bounds!
         if (n_ct_rforces + n_cts_lforces > 0) { // And we should be in!!!
             throw FFEAException("Wrong number of lines in ctforces. ABORTING");
-        } else return; // Oh, the work was over.
+        }
+        return; // Oh, the work was over.
     }
     // check that we have a line saying "rotational forces:"
     if (ctforces_lines[now_reading].compare(0, 18, "rotational forces:") != 0) {
@@ -2835,9 +2657,9 @@ void Blob::load_ctforces(const string& ctforces_fname) {
         if (line_split.size() != 11) { // check length:
             throw FFEAException("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
         }
-        int b_i = boost::lexical_cast<int>(line_split[8]); // read the blob index
+        const int b_i = boost::lexical_cast<int>(line_split[8]); // read the blob index
         if (b_i != blob_index) continue;
-        int c_i = boost::lexical_cast<int>(line_split[9]); // read the conformation index
+        const int c_i = boost::lexical_cast<int>(line_split[9]); // read the conformation index
         if (c_i != conformation_index) continue;
         if (line_split[10].compare("all") == 0) {
             num_r_ctf += node.size();
@@ -2849,20 +2671,16 @@ void Blob::load_ctforces(const string& ctforces_fname) {
 
     // 3.3 - And finally store the stuff properly:
     arr3 ctf_p; // temporary point in the axis.
-    try {
-        ctf_r_nodes = std::vector<int>(num_r_ctf); // allocate nodes
-        ctf_r_forces = std::vector<scalar>(num_r_ctf); // allocate forces
-        ctf_r_axis = std::vector<scalar>(6 * num_r_ctf); // allocate axis
-        ctf_r_type = std::vector<char>(2 * num_r_ctf); // allocate type of rotational force
-    } catch (std::bad_alloc &) {
-        throw FFEAException("Failed to allocate ctf_r relevant arrays\n");
-    }
+    ctf_r_nodes = std::vector<int>(num_r_ctf); // allocate nodes
+    ctf_r_forces = std::vector<scalar>(num_r_ctf); // allocate forces
+    ctf_r_axis = std::vector<scalar>(6 * num_r_ctf); // allocate axis
+    ctf_r_type = std::vector<char>(2 * num_r_ctf); // allocate type of rotational force
     const scalar mdfm1 = 1./mesoDimensions::force;
     const scalar mdlm1 = 1./mesoDimensions::length;
     cnt = 0; // reinitialise cnt
     for (int i=0; i<my_lines.size(); i++) {
         boost::split(line_split, my_lines[i], boost::is_any_of(" \t"), boost::token_compress_on);
-        scalar F = boost::lexical_cast<scalar>(line_split[0]) * mdfm1;
+        const scalar F = boost::lexical_cast<scalar>(line_split[0]) * mdfm1;
         string type = line_split[1];
         ctf_p[0] = boost::lexical_cast<scalar>(line_split[2]);
         ctf_p[1] = boost::lexical_cast<scalar>(line_split[3]);
@@ -2915,7 +2733,8 @@ void Blob::load_ctforces(const string& ctforces_fname) {
     if (now_reading >= ctforces_lines.size()) { // Out of bounds!
         if (n_cts_lforces > 0) { // And we should be in!!!
             throw FFEAException("Wrong number of lines in ctforces. ABORTING");
-        } else return; // Oh, the work was over.
+        }
+        return; // Oh, the work was over.
     }
     // check that we have a line saying "linear surface forces:"
     if (ctforces_lines[now_reading].compare(0, 22, "linear surface forces:") != 0) {
@@ -2937,9 +2756,9 @@ void Blob::load_ctforces(const string& ctforces_fname) {
         if (line_split.size() < 7) {
             throw FFEAException("Invalid line in the ctforces file:\n \t %s\n", ctforces_lines[i].c_str());
         }
-        int b_i = boost::lexical_cast<int>(line_split[4]); // read the blob index
+        const int b_i = boost::lexical_cast<int>(line_split[4]); // read the blob index
         if (b_i != blob_index) continue;
-        int c_i = boost::lexical_cast<int>(line_split[5]); // read the conformation index
+        const int c_i = boost::lexical_cast<int>(line_split[5]); // read the conformation index
         if (c_i != conformation_index) continue;
         if (line_split[6].compare("all") == 0) {
             num_sltotal_ctf += surface.size();
@@ -2953,15 +2772,11 @@ void Blob::load_ctforces(const string& ctforces_fname) {
     // 4.3 - And finally store the stuff properly:
     //     - If a face were appearing different lines, force will be applied "serially",
     //            and not summed up. They may be part of different "surfaces".
-    try {
-        ctf_sl_faces = std::vector<int>(num_sltotal_ctf);       // allocate faces
-        num_slsets_ctf = my_lines.size();
-        ctf_sl_surfsize = std::vector<int>(num_slsets_ctf);
-        ctf_sl_forces = std::vector<scalar>(3 * num_slsets_ctf); // allocate forces
-    } catch(std::bad_alloc &) {
-        throw FFEAException("Failed to allocate ctf_sl relevant arrays\n");
-    }
-    ctf_d; // direction of the force
+    ctf_sl_faces = std::vector<int>(num_sltotal_ctf);       // allocate faces
+    num_slsets_ctf = my_lines.size();
+    ctf_sl_surfsize = std::vector<int>(num_slsets_ctf);
+    ctf_sl_forces = std::vector<scalar>(3 * num_slsets_ctf); // allocate forces
+
     cnt = 0;
     for (int i=0; i<my_lines.size(); i++) {
         boost::split(line_split, my_lines[i], boost::is_any_of(" \t"), boost::token_compress_on);
@@ -2987,20 +2802,7 @@ void Blob::load_ctforces(const string& ctforces_fname) {
             }
         }
     }
-
-    /* // SELF-EXPLANATORY CHECK //
-    int auxndx = 0;
-    for (int i=0; i<num_slsets_ctf; i++) {
-      cout << "set " << i << ": ";
-      cout << "force: " << ctf_sl_forces[3*i] << ", " << ctf_sl_forces[3*i+1] << ", " << ctf_sl_forces[3*i+2] << " affecting " << ctf_sl_surfsize[i] << " faces. The faces being: ";
-      for (int j=0; j<ctf_sl_surfsize[i]; j++) {
-        cout << ctf_sl_faces[auxndx + j] << " " ;
-      }
-      cout << endl;
-      auxndx += ctf_sl_surfsize[i];
-    } */
 }
-
 
 void Blob::add_steric_nodes() {
     for(int i = 0; i < surface.size(); ++i) {
@@ -3020,13 +2822,13 @@ void Blob::forget_beads() {
     bead_type.clear();
 }
 
-void Blob::print_node_positions() {
+void Blob::print_node_positions() const {
     for (const auto &node_i : node) {
         cout << "---n: " << node_i.pos[0] << " " << node_i.pos[1] << "  " << node_i.pos[2] << endl;
     }
 }
 
-void Blob::print_bead_positions() {
+void Blob::print_bead_positions() const {
     for (const auto &bead : bead_position) {
         cout << "---b: " << bead[0] << " "
              << bead[1] << " "
@@ -3034,10 +2836,8 @@ void Blob::print_bead_positions() {
     }
 }
 
-/*
- */
 void Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, string ssint_method) {
-    FILE *in = nullptr;
+    FILE *in;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -3048,18 +2848,15 @@ void Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, stri
 
     // first line should be the file type "ffea vdw file" (.vdw) or "ffea ssint file" (.ssint)
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of VDW file.");
     }
     if (strcmp(line, "walrus vdw file\n") != 0 && strcmp(line, "ffea vdw file\n") != 0 && strcmp(line, "ffea ssint file\n") != 0) {
-        fclose(in);
         throw FFEAException("This is not a 'ffea vdw file' (read '%s').", line);
     }
 
     // read in the number of faces in the file
     int num_ssint_faces = 0;
     if (fscanf(in, "num_faces %d\n", &num_ssint_faces) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of faces.");
     }
     printf("\t\t\tNumber of faces = %d\n", num_ssint_faces);
@@ -3070,11 +2867,9 @@ void Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, stri
 
     // Check for "ssint params:" line
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error when looking for 'vdw params:' line.");
     }
     if (strcmp(line, "vdw params:\n") != 0 && strcmp(line, "ssint params:\n") != 0) {
-        fclose(in);
         throw FFEAException("Could not find 'vdw params:' line (found '%s' instead).", line);
     }
 
@@ -3085,7 +2880,6 @@ void Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, stri
     if (params.calc_ssint == 0) {
         for(int i = 0; i < surface.size(); ++i) {
             if (fscanf(in, "%d\n", &ssint_type) != 1) {
-                fclose(in);
                 throw FFEAException("Error reading from VDW file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive).", i);
             } else {
                 if (ssint_type > num_ssint_face_types - 1) {
@@ -3097,7 +2891,6 @@ void Blob::load_ssint(const char *ssint_filename, int num_ssint_face_types, stri
     } else {
         for (int i = 0; i < surface.size(); i++) {
             if (fscanf(in, "%d\n", &ssint_type) != 1) {
-                fclose(in);
                 throw FFEAException("Error reading from VDW file at face %d. There should be 1 integer denoting ssint face species (-1 - unreactive). \n", i);
             } else {
                 if (ssint_type > num_ssint_face_types - 1) {
@@ -3230,7 +3023,6 @@ void Blob::load_binding_sites() {
  */
 void Blob::load_pinned_nodes(const char *pin_filename) {
     FILE *in;
-    int i, pn_index;
     const int max_line_size = 50;
     char line[max_line_size];
 
@@ -3241,60 +3033,46 @@ void Blob::load_pinned_nodes(const char *pin_filename) {
 
     // first line should be the file type "ffea pinned nodes file"
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error reading first line of pin file.");
     }
     if (strcmp(line, "walrus pinned nodes file\n") != 0 && strcmp(line, "ffea pinned nodes file\n") != 0) {
-        fclose(in);
         throw FFEAException("This is not a 'ffea pinned nodes file' (read '%s').", line);
     }
 
     // read in the number of pinned node indices in the file
     int num_pinned_nodes;
     if (fscanf(in, "num_pinned_nodes %d\n", &num_pinned_nodes) != 1) {
-        fclose(in);
         throw FFEAException("Error reading number of pinned nodes.");
     }
     printf("\t\t\tNumber of pinned nodes = %d\n", num_pinned_nodes);
 
     // Allocate the memory for the list of pinned node indices
-    try {
-        pinned_nodes_list = std::vector<int>(num_pinned_nodes);
-    } catch (std::bad_alloc &) {
-        throw FFEAException("Failed to allocate pinned_nodes_list.");
-    }
+    pinned_nodes_list = std::vector<int>(num_pinned_nodes);
 
     // Check for "pinned nodes:" line
     if (!fgets(line, max_line_size, in)) {
-        fclose(in);
         throw FFEAException("Error when looking for 'pinned nodes:' line.");
     }
     if (strcmp(line, "pinned nodes:\n") != 0) {
-        fclose(in);
         throw FFEAException("Could not find 'pinned nodes:' line (found '%s' instead).", line);
     }
 
     // Read in all the pinned node indices from file
-    for (i = 0; i < num_pinned_nodes; i++) {
+    for (int i = 0; i < num_pinned_nodes; i++) {
+        int pn_index;
         if (fscanf(in, "%d\n", &pn_index) != 1) {
-            fclose(in);
             throw FFEAException("Error reading from pinned node file at face %d. There should be 1 integer per line.", i);
-        } else {
-            // check that this does not reference nodes outside of the node array
-            if (pn_index < 0 || pn_index >= node.size()) {
-                fclose(in);
-                throw FFEAException("Error: Pinned node %d references an out of bounds node index.", i);
-            }
-            pinned_nodes_list[i] = pn_index;
         }
+        // check that this does not reference nodes outside of the node array
+        if (pn_index < 0 || pn_index >= node.size()) {
+            throw FFEAException("Error: Pinned node %d references an out of bounds node index.", i);
+        }
+        pinned_nodes_list[i] = pn_index;
     }
 
     fclose(in);
 
-    if (i == 1)
-        printf("\t\t\tRead 1 pinned node index from %s\n", pin_filename);
-    else
-        printf("\t\t\tRead %d pinned node indices from %s\n", i, pin_filename);
+    printf("\t\t\tRead %d pinned node indices from %s\n", num_pinned_nodes, pin_filename);
 }
 
 /*
@@ -3306,7 +3084,8 @@ void Blob::calc_rest_state_info() {
     // (needed for volumetric spring calc.). Also, get the diffusion matrix info
     // for constructing the preliminary poisson solver matrix.
     matrix3 J;
-    scalar min_vol = INFINITY, temp;
+    scalar min_vol = std::numeric_limits<scalar>::max();
+    scalar temp;
     scalar longest_edge = 0;
     scalar longest_surface_edge = 0;
     int min_vol_elem = 0;
@@ -3332,14 +3111,14 @@ void Blob::calc_rest_state_info() {
             min_vol_elem = i;
         }
 
-        scalar longest_edge_i = elem[i].length_of_longest_edge();
+        const scalar longest_edge_i = elem[i].length_of_longest_edge();
         if (longest_edge_i > longest_edge) longest_edge = longest_edge_i;
 
         // Calc the mass of the element
         elem[i].mass = elem[i].vol_0 * elem[i].rho;
     }
 
-    for (int i=0; i< surface.size(); i++) {
+    for (int i=0; i < surface.size(); i++) {
         scalar longest_surface_edge_i = surface[i].length_of_longest_edge();
         if (longest_surface_edge < longest_surface_edge_i) longest_surface_edge = longest_surface_edge_i;
     }
@@ -3397,9 +3176,9 @@ void Blob::aggregate_forces_and_solve() {
             {
 #endif
 #ifdef USE_OPENMP
-                int thread_id = omp_get_thread_num();
+                const int thread_id = omp_get_thread_num();
 #else
-                int thread_id = 0;
+                const int thread_id = 0;
 #endif
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                 #pragma omp for schedule(guided)
@@ -3425,9 +3204,9 @@ void Blob::aggregate_forces_and_solve() {
                 {
 #endif
 #ifdef USE_OPENMP
-                    int thread_id = omp_get_thread_num();
+                    const int thread_id = omp_get_thread_num();
 #else
-                    int thread_id = 0;
+                    const int thread_id = 0;
 #endif
 #ifdef FFEA_PARALLEL_WITHIN_BLOB
                     #pragma omp for schedule(guided)
@@ -3449,17 +3228,13 @@ void Blob::aggregate_forces_and_solve() {
 
     // Set to zero any forces on the pinned nodes
     for (int n = 0; n < pinned_nodes_list.size(); ++n) {
-        int pn_index = pinned_nodes_list[n];
-        force[pn_index][0] = 0;
-        force[pn_index][1] = 0;
-        force[pn_index][2] = 0;
+        const int pn_index = pinned_nodes_list[n];
+        force[pn_index].fill(0);
     }
 
     // This should have a similar way of making the solver matrix become the identity matrix as the pinned nodes do
     for(set<int>::iterator it = bsite_pinned_nodes_list.begin(); it != bsite_pinned_nodes_list.end(); ++it) {
-        force[*it][0] = 0;
-        force[*it][1] = 0;
-        force[*it][2] = 0;
+        force[*it].fill(0);
     }
 
     // Use the linear solver to solve for Mx = f where M is the Blob's mass matrix,
@@ -3530,10 +3305,9 @@ void Blob::calculate_node_element_connectivity() {
 
     // go back through the elements array and fill the contributions arrays with pointers to the
     // appropriate force contributions in the elements
-    int node_index;
     for (int i = 0; i < elem.size(); i++)
         for (int j = 0; j < NUM_NODES_QUADRATIC_TET; j++) {
-            node_index = elem[i].n[j]->index;
+            const int node_index = elem[i].n[j]->index;
             node[node_index].force_contributions[node_counter[node_index]] = &elem[i].node_force[j];
             node_counter[node_index]++;
         }
@@ -3565,7 +3339,7 @@ void Blob::create_pinned_nodes(set<int> list) {
     }
 }
 
-int Blob::get_state_index() {
+int Blob::get_state_index() const {
     return state_index;
 }
 
@@ -3573,7 +3347,7 @@ void Blob::set_state_index(int index) {
     this->state_index = index;
 }
 
-int Blob::get_previous_state_index() {
+int Blob::get_previous_state_index() const {
     return previous_state_index;
 }
 
@@ -3581,11 +3355,11 @@ void Blob::set_previous_state_index(int index) {
     this->previous_state_index = index;
 }
 
-int Blob::get_conformation_index() {
+int Blob::get_conformation_index() const {
     return conformation_index;
 }
 
-int Blob::get_previous_conformation_index() {
+int Blob::get_previous_conformation_index() const {
     return previous_conformation_index;
 }
 
@@ -3603,24 +3377,17 @@ void Blob::build_mass_matrix() {
     SparsityPattern sparsity_pattern_mass_matrix;
     sparsity_pattern_mass_matrix.init(node.size());
     
-    std::vector<MassMatrixQuadratic> M_alpha;
-    try {
-        M_alpha = std::vector<MassMatrixQuadratic>(elem.size());
-    } catch(std::bad_alloc &) {
-        throw FFEAException("Failed to allocate memory for the mass matrix\n");
-    }
-
-    scalar *mem_loc;
-    int ni_index, nj_index;
+    std::vector<MassMatrixQuadratic> M_alpha = std::vector<MassMatrixQuadratic>(elem.size());
+        
     for (int el = 0; el < elem.size(); el++) {
         elem[el].construct_element_mass_matrix(M_alpha[el]);
         for (int ni = 0; ni < 10; ni++) {
             for (int nj = 0; nj < 10; nj++) {
 
-                ni_index = elem[el].n[ni]->index;
-                nj_index = elem[el].n[nj]->index;
+                const int ni_index = elem[el].n[ni]->index;
+                const int nj_index = elem[el].n[nj]->index;
 
-                mem_loc = M_alpha[el].get_M_alpha_mem_loc(ni, nj);
+                scalar* mem_loc = M_alpha[el].get_M_alpha_mem_loc(ni, nj);
 
                 sparsity_pattern_mass_matrix.register_contribution(ni_index, nj_index, mem_loc);
             }
@@ -3636,7 +3403,7 @@ void Blob::build_mass_matrix() {
     M->build();
 }
 
-bool Blob::there_is_mass() {
+bool Blob::there_is_mass() const {
     return mass_in_blob;
 }
 
@@ -3644,14 +3411,14 @@ void Blob::set_springs_on_blob(bool state) {
     springs_on_blob = state;
 }
 
-bool Blob::there_are_springs() {
+bool Blob::there_are_springs() const {
     return springs_on_blob;
 }
 
-bool Blob::there_is_ssint() {
+bool Blob::there_is_ssint() const {
     return ssint_on_blob;
 }
 
-bool Blob::there_are_beads() {
+bool Blob::there_are_beads() const {
     return beads_on_blob;
 }

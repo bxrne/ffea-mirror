@@ -117,7 +117,7 @@ public:
     void config(const int blob_index, const int conformation_index, const string& node_filename,
                const string& topology_filename, const string& surface_filename, const string& material_params_filename,
                const string& stokes_filename, const string& ssint_filename, const string& pin_filename,
-               const string& binding_filename, const string& beads_filename, scalar scale, scalar calc_compress,
+               const string& binding_filename, const string& beads_filename, scalar scale, int calc_compress,
              scalar compress, int linear_solver, int blob_state, const SimulationParams &params,
              const PreComp_params &pc_params, SSINT_matrix *ssint_matrix,
              BindingSite_matrix *binding_matrix, std::shared_ptr<std::vector<RngStream>> &rng);
@@ -249,11 +249,6 @@ public:
 
     void make_stress_measurements(FILE *stress_out, int blob_number);
 
-    /* DEPRECATED
-     *   Will be removed.
-    void calculate_vdw_bb_interaction_with_another_blob(FILE *vdw_measurement_out, int other_blob_index);
-     */
-
     /**
      * Get the centroid of all faces on the blob surface
      */
@@ -299,13 +294,7 @@ public:
 
 
     scalar get_ssint_area();
-
-    //		/*
-    //		 *
-    //		 */
-    //		int get_num_surface_elements();
-
-
+    
     /**
      * Solves the poisson equation inside this Blob for a given fixed surface potential, and calculates the surface flux out of the protein
      */
@@ -323,9 +312,7 @@ public:
     void zero_force();
 
     void set_forces_to_zero();
-
-    // arr3 get_node(int index);
-    // std::array<scalar,3> get_node(int index);
+    
     void get_node(int index, arr3 &v);
     
     void get_node_0(int index, arr3 &v);
@@ -338,10 +325,6 @@ public:
 
     void add_force_to_node(const arr3& f, int index);
 
-    // void zero_vdw_bb_measurement_data(); // DEPRECATED
-
-    // void zero_vdw_xz_measurement_data(); // DEPRECATED
-
     /**
      * Set all nodes on the Blob to the given velocity vector
      */
@@ -351,8 +334,6 @@ public:
      * Constructs the Poisson matrix for this Blob.
      */
     void build_poisson_matrices();
-
-    //		int elements_are_connected(int e1, int e2);
 
     /**
      * Builds a global viscosity matrix for this blob
@@ -377,7 +358,7 @@ public:
     /**
      * Returns the total mass of this Blob.
      */
-    scalar get_mass();
+    scalar get_mass() const;
 
     /**
      * Applies the WALL_TYPE_HARD boundary conditions simply by finding all nodes that have "passed through" the wall,
@@ -386,12 +367,6 @@ public:
      * generally very small for sensible dt).
      */
     void enforce_box_boundaries(arr3 &box_dim);
-
-    /* DEPRECTATED
-     *   Will be removed.
-     * Set the interaction flag for all faces of this Blob back to false (i.e. not interacting)
-    void reset_all_faces();
-     */
 
     void linearise_elements();
 
@@ -428,12 +403,12 @@ public:
     // arr3 get_CoG();
     void get_stored_centroid(arr3 &cog); 
 
-    int get_conformation_index();
-    int get_previous_conformation_index();
+    int get_conformation_index() const;
+    int get_previous_conformation_index() const;
     void set_previous_conformation_index(int index);
-    int get_state_index();
+    int get_state_index() const;
     void set_state_index(int index);
-    int get_previous_state_index();
+    int get_previous_state_index() const;
     void set_previous_state_index(int index);
     BindingSite* get_binding_site(int index);
 
@@ -443,8 +418,10 @@ public:
 
     /* Blob, conformation and state indices */
     int blob_index = 0;
-    int conformation_index = 0, previous_conformation_index = 0;
-    int state_index = 0, previous_state_index = 0;
+    int conformation_index = 0;
+    int previous_conformation_index = 0;
+    int state_index = 0;
+    int previous_state_index = 0;
 
     /*
      *
@@ -458,13 +435,13 @@ public:
     /** Deactivates binding sites by removing nodes to the list */
     void unpin_binding_site(set<int> node_indices);
 
-    void print_node_positions();
-    void print_bead_positions();
-    bool there_is_mass();
+    void print_node_positions() const;
+    void print_bead_positions() const;
+    bool there_is_mass() const;
     void set_springs_on_blob(bool state);
-    bool there_are_springs();
-    bool there_are_beads();
-    bool there_is_ssint();
+    bool there_are_springs() const;
+    bool there_are_beads() const;
+    bool there_is_ssint() const;
 
     scalar get_kinetic_energy() const;
     scalar get_strain_energy() const;
@@ -571,7 +548,7 @@ private:
     scalar scale = 0.0;
 
     /** Compression stuff: */
-    scalar calc_compress = 0.0;
+    int calc_compress = 0;
     scalar compress = 0.0;
 
     /** Class containing simulation parameters, such as the time step, dt */
@@ -695,12 +672,10 @@ private:
      */
     void load_beads(const char *beads_filename, scalar scale);
 
-
     /**
      * Opens and reads the given 'ffea ctforces file', and assigns the constant forces onto nodes for this Blob.
      */
     void load_ctforces(const string& ctforces_fname);
-
 
     /**
      * Opens and reads the given 'ffea binding site file', extracting all the kinetic binding sites (types and face lists) for this Blob.
